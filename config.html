@@ -466,6 +466,13 @@ body {
           </div>
           <div class="toggle-sw"></div>
         </div>
+        <div class="toggle-item active" id="tog-bday" onclick="toggleCol('bday')">
+  <div>
+    <div class="toggle-label">Anniversaires</div>
+    <div class="toggle-sub">Gestion des dates de naissance</div>
+  </div>
+  <div class="toggle-sw"></div>
+</div>
       </div>
     </div>
   </div>
@@ -605,6 +612,11 @@ body {
             <td class="val-col"><code>off</code></td>
             <td>Masque la section «&nbsp;Future logs&nbsp;» de la sidebar</td>
           </tr>
+          <tr>
+  <td><code>bday</code></td>
+  <td class="val-col"><code>off</code></td>
+  <td>Masque la gestion des anniversaires (bouton, onglet, affichage)</td>
+</tr>
         </tbody>
       </table>
       <div class="divider"></div>
@@ -723,7 +735,7 @@ const state = {
   titre: '',
   defaultTab: '',
   tabs: { bujo: true, lectures: true, collections: true },
-  cols: { colweek: true, colprojets: true, colcal: true, colfuture: true },
+  cols: { colweek: true, colprojets: true, colcal: true, colfuture: true, bday: true },
   accent: '',
 };
 
