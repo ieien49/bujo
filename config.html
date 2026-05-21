@@ -840,6 +840,10 @@ function buildUrl() {
   if (!state.cols.colprojets)  params.set('colprojets', 'off');
   if (!state.cols.colcal)      params.set('colcal', 'off');
   if (!state.cols.colfuture)   params.set('colfuture', 'off');
+if (!state.cols.bday)        params.set('bday', 'off');
+
+const paramStr = params.toString();
+  if (!state.cols.colfuture)   params.set('colfuture', 'off');
 
   const paramStr = params.toString();
   const count = [...params.keys()].length;
@@ -867,6 +871,9 @@ function buildUrl() {
 }
 
 function getCurrentUrl() {
+  if (!state.cols.colfuture)   params.set('colfuture', 'off');
+if (!state.cols.bday)        params.set('bday', 'off');
+const ps = params.toString();
   const base = document.getElementById('baseUrl').value.trim();
   if (!base) return null;
   const params = new URLSearchParams();
