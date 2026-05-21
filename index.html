@@ -180,9 +180,9 @@ body {
 
 .nbadge { font-size: 10px; color: var(--light); border-radius: 10px; padding: 1px 5px; min-width: 16px; text-align: center; flex-shrink: 0; }
 
-.nitem.n-late { color: #c0622a; }
-.nitem.n-late:hover, .nitem.n-late.active { background: #fdf2ec; color: #a04820; }
-.nitem.n-late .nbadge { color: #c0622a; }
+.nitem.n-late { color: var(--accent); }
+.nitem.n-late:hover, .nitem.n-late.active { background: var(--accent-soft); color: var(--accent); }
+.nitem.n-late .nbadge { color: var(--accent); }
 .nitem.n-bday { color: #9a5878; }
 .nitem.n-bday:hover, .nitem.n-bday.active { background: #f9f0f5; color: #6b3a55; }
 .nitem.n-bday .nbadge { color: #9a5878; }
@@ -218,10 +218,10 @@ body {
 
 
 
-.sec-label.s-late { color: #c8a890; border-color: #f0e0d0; }
+.sec-label.s-late { color: var(--accent); border-color: var(--accent-soft); }
 .day-group { margin-bottom: 10px; }
 
-.day-hdr.dh-late { color: #c0622a; }
+.day-hdr.dh-late { color: var(--accent); }
 
 /* Tâches */
 .titem {
@@ -504,7 +504,7 @@ select.cfilt { cursor: pointer; }
 }
 .proj-card {
   background: var(--accent-soft);
-  border: 1px solid #e8a020;
+  border: 1px solid var(--accent);
   border-radius: 14px;
   padding: 12px 14px;
   margin-bottom: 8px;
