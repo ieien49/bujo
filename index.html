@@ -1,0 +1,3172 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Journal</title>
+<script src="https://docs.getgrist.com/grist-plugin-api.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,500;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg:          #ffffff;
+  --bg-soft:     #f5f5f4;
+  --bg-hover:    #efefed;
+  --border:      #e8e8e6;
+  --text:        #1a1a1a;
+  --muted:       #8a8a88;
+  --light:       #c4c4c2;
+  --accent:      #e8a020;
+  --accent-soft: #fef3dc;
+  --radius:      10px;
+  --sidebar-w:   210px;
+  --tab-h:       42px;
+  --tag-lu:      #d3e8d3; --tag-lu-t:    #2d5a2d;
+  --tag-cours:   #fde8c8; --tag-cours-t: #7a4a00;
+  --tag-lire:    #e8e8f0; --tag-lire-t:  #3d3d6b;
+  --bday-border: #d4b8c8; --bday-text:   #6b3a55;
+  --bday-muted:  #b090a0; --bday-bg:     #f9f0f5;
+}
+
+body {
+  font-family: 'DM Sans', -apple-system, sans-serif;
+  background: var(--bg); color: var(--text); font-size: 13px;
+  height: 100vh; overflow: hidden;
+  display: flex; flex-direction: column;
+}
+
+/* ══════════════════════════════════════════
+   ONGLETS HORIZONTAUX (tout en haut)
+   ══════════════════════════════════════════ */
+.app-tabs {
+  display: flex; align-items: stretch;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg);
+  flex-shrink: 0; height: var(--tab-h);
+  padding: 0 16px; gap: 4px;
+}
+.app-tab {
+  display: flex; align-items: center; gap: 7px;
+  padding: 0 18px; height: var(--tab-h);
+  font-size: 13px; font-family: 'DM Sans', inherit;
+  color: var(--muted); cursor: pointer;
+  border: none; background: none;
+  border-bottom: 2px solid transparent;
+  transition: color .15s, border-color .15s;
+  white-space: nowrap; border-radius: 0;
+  margin-bottom: -1px; font-weight: 500;
+}
+.app-tab:hover { color: var(--text); }
+.app-tab.active {
+  color: var(--text);
+  border-bottom-color: var(--accent);
+}
+.tab-label { font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 600; }
+.app-tab .tab-badge {
+  font-size: 10px; background: var(--accent-soft);
+  color: var(--accent); border-radius: 10px;
+  padding: 1px 6px; min-width: 18px; text-align: center;
+  font-weight: 600;
+}
+.app-tab.active .tab-badge { background: var(--accent-soft); color: var(--accent); }
+
+
+
+.tab-label { font-family: 'Lora', serif; font-size: 12.5px; font-weight: 400; letter-spacing: .01em; }
+.app-tab.active .tab-label { font-weight: 500; }
+.app-tab .tab-badge {
+  font-size: 10px; background: var(--border);
+  color: var(--light); border-radius: 10px;
+  padding: 1px 6px; min-width: 18px; text-align: center;
+}
+.app-tab.active .tab-badge { background: var(--bg-hover); color: var(--muted); }
+
+/* ══════════════════════════════════════════
+   CORPS (sous les onglets)
+   ══════════════════════════════════════════ */
+.app-body {
+  flex: 1; display: flex; overflow: hidden;
+}
+
+/* Pages */
+.page { display: none; flex: 1; overflow: hidden; flex-direction: column; }
+.page.active { display: flex; }
+
+/* ══════════════════════════════════════════
+   PAGE BUJO — layout 2 colonnes
+   ══════════════════════════════════════════ */
+#page-bujo { flex-direction: row; }
+
+.bujo-sidebar {
+  width: var(--sidebar-w); flex-shrink: 0;
+  border-right: .5px solid var(--border);
+  display: flex; flex-direction: column;
+  padding: 14px 10px 12px;
+  overflow-y: auto; background: var(--bg);
+}
+
+/* Calendrier */
+.cal-wrap { margin-bottom: 14px; }
+.cal-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+.cal-title { font-size: 9.5px; font-weight: 500; color: var(--muted); letter-spacing: .07em; text-transform: uppercase; }
+.cal-nav { display: flex; gap: 1px; }
+.cal-nav button { border: none; background: none; cursor: pointer; color: var(--light); font-size: 14px; padding: 0 2px; line-height: 1; transition: color .12s; }
+.cal-nav button:hover { color: var(--accent); }
+.cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 1px; text-align: center; }
+.cal-day-name { font-size: 8.5px; color: var(--light); padding: 1px 0 3px; font-weight: 500; }
+.cal-day { font-size: 9.5px; color: var(--muted); padding: 2px 0; border-radius: 50%; cursor: default; line-height: 1.8; position: relative; aspect-ratio: 1; display: flex;
+  align-items: center;
+  justify-content: center;}
+.cal-day.has-task, .cal-day.has-bday { cursor: pointer; }
+.cal-day.has-task:hover, .cal-day.has-bday:hover { background: var(--bg-hover); }
+.cal-day.today.has-task:hover, .cal-day.today.has-bday:hover { background: #333; }
+
+/* Popover calendrier */
+.cal-pop {
+  position: fixed; z-index: 200;
+  background: var(--bg); border: 1px solid var(--border);
+  border-radius: 10px; box-shadow: 0 4px 20px rgba(0,0,0,.1);
+  padding: 10px 12px; min-width: 180px; max-width: 240px;
+}
+.cal-pop-date {
+  font-size: 10px; font-weight: 500; letter-spacing: .06em;
+  text-transform: uppercase; color: var(--muted);
+  margin-bottom: 8px; padding-bottom: 6px;
+  border-bottom: 1px solid var(--border);
+}
+.cal-pop-item {
+  display: flex; align-items: center; gap: 7px;
+  padding: 4px 2px; font-size: 11.5px; color: var(--text);
+  text-transform: uppercase; letter-spacing: .03em;
+}
+.cal-pop-item + .cal-pop-item { border-top: 1px solid var(--bg-hover); }
+.cal-pop-check {
+  width: 11px; height: 11px; border-radius: 50%;
+  border: 1px solid var(--light); flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+}
+.cal-pop-check.done { background: var(--text); border-color: var(--text); }
+.cal-pop-check.done::after { content: ''; display: block; width: 4px; height: 2.5px; border-left: 1px solid #fff; border-bottom: 1px solid #fff; transform: rotate(-45deg) translateY(-1px); }
+.cal-pop-bday { width: 11px; height: 11px; border-radius: 50%; border: 1.5px solid var(--bday-border); flex-shrink: 0; display: flex; align-items: center; justify-content: center; }
+.cal-pop-bday::before { content: ''; display: block; width: 3px; height: 5px; background: linear-gradient(to top, #d8a0bc 55%, #f5c842 55%); border-radius: 1px 1px 0 0; }
+.cal-pop-name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cal-pop-bday-name { color: var(--bday-text); }
+.cal-pop-age { font-size: 9.5px; color: var(--bday-muted); flex-shrink: 0; }
+.cal-day.other { color: var(--light); }
+.cal-day.today { background: var(--text); color: #fff; font-weight: 500; }
+.cal-day.has-task::after { content: ''; position: absolute; bottom: 0; left: 50%; transform: translateX(-50%); width: 3px; height: 3px; border-radius: 50%; background: var(--light); }
+.cal-day.today.has-task::after { background: rgba(255,255,255,.55); }
+.cal-day.has-bday { outline: 1.5px solid var(--bday-border); outline-offset: 1px; }
+
+/* Nav bujo */
+.nav-sec { margin-bottom: 4px; }
+.nav-sec-title { font-size: 9px; font-weight: 500; letter-spacing: .09em; text-transform: uppercase; color: var(--light); margin-bottom: 3px; padding: 0 6px; }
+.nitem {
+  display: flex; align-items: center; justify-content: space-between;
+  width: 100%; padding: 7px 10px; border-radius: 999px; border: none;
+  background: transparent; color: var(--muted); font-size: 12.5px;
+  cursor: pointer; font-family: inherit; text-align: left;
+  transition: background .1s, color .1s; gap: 4px; font-weight: 500;
+}
+.nitem:hover { background: var(--bg-hover); color: var(--text); }
+.nitem.active { background: var(--accent-soft); color: var(--accent); font-weight: 600; }
+.nitem.active .nbadge { color: var(--accent); }
+
+
+.nitem-inner { display: flex; align-items: center; gap: 5px; flex: 1; min-width: 0; overflow: hidden; }
+.nitem-label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+.nbadge { font-size: 10px; color: var(--light); border-radius: 10px; padding: 1px 5px; min-width: 16px; text-align: center; flex-shrink: 0; }
+
+.nitem.n-late { color: #c0622a; }
+.nitem.n-late:hover, .nitem.n-late.active { background: #fdf2ec; color: #a04820; }
+.nitem.n-late .nbadge { color: #c0622a; }
+.nitem.n-bday { color: #9a5878; }
+.nitem.n-bday:hover, .nitem.n-bday.active { background: #f9f0f5; color: #6b3a55; }
+.nitem.n-bday .nbadge { color: #9a5878; }
+.nav-div { height: 1px; background: var(--border); margin: 7px 4px; }
+.nav-spacer { flex: 1; }
+
+.btn-new-task {
+  display: flex; align-items: center; justify-content: center; gap: 6px;
+  width: 100%; padding: 8px 12px; border-radius: 999px;
+  border: none; background: var(--accent);
+  color: #fff; font-size: 12px; font-weight: 600; cursor: pointer;
+  font-family: inherit; transition: opacity .15s;
+  margin-top: 6px;
+}
+.btn-new-task:hover { opacity: .88; }
+
+/* Contenu bujo */
+.bujo-main { flex: 1; padding: 18px 20px; overflow-y: auto; background: var(--bg); }
+
+.section { margin-bottom: 20px; }
+.sec-label {
+  font-size: 10px; font-weight: 700; letter-spacing: .08em;
+  text-transform: uppercase; color: var(--light); margin-bottom: 8px;
+  padding-bottom: 5px; border-bottom: 1px solid var(--border);
+  font-family: 'DM Sans', sans-serif;
+}
+.day-hdr {
+  font-size: 13px; font-weight: 700; color: var(--muted);
+  margin-bottom: 6px; padding-left: 2px;
+  font-family: 'DM Sans', sans-serif;
+}
+.day-hdr.dh-today { color: var(--text); }
+
+
+
+.sec-label.s-late { color: #c8a890; border-color: #f0e0d0; }
+.day-group { margin-bottom: 10px; }
+
+.day-hdr.dh-late { color: #c0622a; }
+
+/* Tâches */
+.titem {
+  display: flex; align-items: center; gap: 10px;
+  padding: 8px 12px; border-radius: 12px;
+  border: none; margin-bottom: 4px;
+  background: var(--bg); transition: background .12s;
+  box-shadow: 0 1px 4px rgba(0,0,0,.05);
+}
+.titem:hover { background: var(--bg-soft); }
+.titem:hover .tedit { opacity: 1; }
+.titem.done { opacity: .4; }
+.tchk {
+  width: 16px; height: 16px; border-radius: 50%;
+  border: 2px solid var(--light);
+  flex-shrink: 0; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: background .12s, border-color .12s;
+}
+.tchk:hover { border-color: var(--accent); }
+.tchk.checked { background: var(--accent); border-color: var(--accent); }
+.tchk.checked::after { content: ''; display: block; width: 5px; height: 3px; border-left: 1.5px solid #fff; border-bottom: 1.5px solid #fff; transform: rotate(-45deg) translateY(-1px); }
+.tname {
+  flex: 1; font-size: 13px; color: var(--text);
+  line-height: 1.4; font-family: 'DM Sans', sans-serif;
+  text-transform: none; letter-spacing: 0; font-weight: 500;
+}
+.titem.done .tname { text-decoration: line-through; color: var(--muted); }
+.titem.bday-item .tname { color: var(--bday-text); }
+.tage { font-size: 10px; color: var(--bday-muted); margin-left: 3px; }
+.tedit { opacity: 0; background: none; border: none; cursor: pointer; color: var(--light); font-size: 13px; padding: 0 2px; flex-shrink: 0; transition: color .12s, opacity .12s; font-family: inherit; }
+.tedit:hover { color: var(--accent); }
+.empty-bujo { font-size: 12px; color: var(--light); padding: 24px 0; text-align: center; }
+
+/* ══════════════════════════════════════════
+   PAGE LECTURES
+   ══════════════════════════════════════════ */
+/* Centrage page lectures */
+#page-lectures { background: var(--bg); flex-direction: row; }
+
+.lec-topbar {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 8px 16px; border-bottom: 1px solid var(--border); flex-shrink: 0; gap: 12px;
+}
+
+.lec-sidebar {
+  width: 210px; flex-shrink: 0;
+  border-right: .5px solid var(--border);
+  display: flex; flex-direction: column;
+  padding: 14px 10px 12px;
+  overflow-y: auto; background: var(--bg);
+}
+.lec-search-wrap {
+  position: relative; margin-bottom: 8px; margin-top: 8px;
+}
+.lec-search-wrap input {
+  width: 100%; padding: 6px 9px 6px 28px;
+  border: .5px solid var(--border); border-radius: 999px;
+  font-size: 11.5px; color: var(--text);
+  background: var(--bg-soft); outline: none;
+  font-family: inherit; transition: border-color .12s;
+}
+.lec-search-wrap input:focus { border-color: var(--accent); background: var(--bg); }
+.lec-search-wrap input::placeholder { color: var(--light); }
+.lec-search-icon {
+  position: absolute; left: 9px; top: 50%;
+  transform: translateY(-50%); color: var(--light);
+  pointer-events: none;
+}
+.lec-main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+
+.tb-left { display: flex; align-items: center; gap: 5px; }
+.tb-right { display: flex; align-items: center; gap: 8px; }
+.ftag { font-size: 11.5px; padding: 4px 11px; border-radius: 100px; border: 1px solid var(--border); color: var(--muted); cursor: pointer; transition: all .12s; user-select: none; }
+.ftag:hover:not(.active) { border-color: var(--accent); color: var(--text); }
+.ftag.active { background: var(--text); color: #fff; border-color: var(--text); font-weight: 500; }
+.search-inp { width: 170px; padding: 5px 10px; font-size: 12px; border: 1px solid var(--border); border-radius: var(--radius); background: var(--bg); color: var(--text); font-family: inherit; outline: none; transition: border-color .15s; }
+.search-inp:focus { border-color: var(--accent); }
+.search-inp::placeholder { color: var(--light); }
+.btn { padding: 5px 13px; font-size: 12px; font-family: inherit; border-radius: var(--radius); cursor: pointer; transition: all .12s; font-weight: 500; border: 1px solid transparent; display: inline-flex; align-items: center; gap: 5px; line-height: 1; }
+.btn-primary { background: var(--accent); color: #fff; border-color: var(--accent); border-radius: 999px; font-weight: 600; }
+.btn-primary:hover { opacity: .85; }
+.btn-ghost { background: none; color: var(--muted); border-color: var(--border); }
+.btn-ghost:hover { background: var(--bg-hover); color: var(--text); }
+.btn-danger { background: none; color: #c0392b; border-color: #f0c0bb; }
+.btn-danger:hover { background: #fdf0ef; }
+.lec-workspace { flex: 1; overflow: auto; }
+.lec-workspace table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.lec-workspace thead { position: sticky; top: 0; z-index: 2; background: var(--bg-soft); }
+.lec-workspace th { padding: 7px 13px; text-align: left; font-size: 10.5px; font-weight: 500; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; border-bottom: 1px solid var(--border); white-space: nowrap; cursor: pointer; user-select: none; transition: color .12s; }
+.lec-workspace th:hover { color: var(--text); }
+.lec-workspace th.sorted { color: var(--text); }
+.sort-ic { margin-left: 4px; font-size: 9px; opacity: .5; }
+.lec-workspace th.sorted .sort-ic { opacity: 1; }
+.lec-workspace td { padding: 8px 13px; border-bottom: 1px solid var(--border); vertical-align: middle; max-width: 240px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.lec-workspace tr { cursor: pointer; transition: background .1s; }
+.lec-workspace tr:hover td { background: var(--bg-hover); }
+.lec-workspace tr.sel td { background: #f0efec; }
+.td-cov { padding: 4px 8px 4px 13px !important; width: 46px !important; max-width: 46px !important; }
+.td-cov-img { width: 30px; height: 42px; border-radius: 3px; object-fit: cover; display: block; border: 1px solid var(--border); }
+.td-cov-ph { width: 30px; height: 42px; border-radius: 3px; background: var(--bg-soft); border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; font-size: 13px; }
+.td-titre { font-weight: 600; font-family: 'Lora', Georgia, serif; }
+.td-auteur { color: var(--muted); }
+.td-date { color: var(--muted); font-size: 12px; }
+.frow th { padding: 4px 7px !important; background: var(--bg) !important; cursor: default !important; text-transform: none !important; letter-spacing: 0 !important; }
+.cfilt { width: 100%; font-size: 11.5px; border: 1px solid var(--border); border-radius: 4px; padding: 3px 6px; background: var(--bg-soft); color: var(--text); font-family: inherit; outline: none; transition: border-color .12s; }
+.cfilt:focus { border-color: var(--accent); background: var(--bg); }
+.cfilt::placeholder { color: var(--light); }
+select.cfilt { cursor: pointer; }
+.sbadge { display: inline-block; font-size: 10.5px; padding: 2px 8px; border-radius: 100px; font-weight: 500; }
+.s-lu    { background: var(--tag-lu);    color: var(--tag-lu-t); }
+.s-cours { background: var(--tag-cours); color: var(--tag-cours-t); }
+.s-lire  { background: var(--tag-lire);  color: var(--tag-lire-t); }
+
+/* ══════════════════════════════════════════
+   POPUP LECTURES
+   ══════════════════════════════════════════ */
+.pop-ov { position: fixed; inset: 0; background: rgba(0,0,0,.2); display: flex; align-items: center; justify-content: center; z-index: 50; backdrop-filter: blur(2px); opacity: 0; pointer-events: none; transition: opacity .18s; }
+.pop-ov.open { opacity: 1; pointer-events: all; }
+.dpanel { background: var(--bg); border-radius: 12px; box-shadow: 0 12px 40px rgba(0,0,0,.14); width: min(680px,92vw); max-height: 88vh; display: flex; flex-direction: column; transform: translateY(10px) scale(.98); transition: transform .18s; overflow: hidden; }
+.pop-ov.open .dpanel { transform: none; }
+.ph { display: flex; align-items: center; padding: 13px 18px; border-bottom: 1px solid var(--border); flex-shrink: 0; gap: 8px; }
+.ph-title { font-family: 'Lora', serif; font-size: 14px; font-weight: 500; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ph-actions { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
+.btn-ico { width: 28px; height: 28px; border-radius: var(--radius); border: none; background: none; cursor: pointer; color: var(--muted); font-size: 14px; display: flex; align-items: center; justify-content: center; transition: all .12s; }
+.btn-ico:hover { background: var(--bg-hover); color: var(--text); }
+.pbody { flex: 1; overflow-y: auto; padding: 20px 22px; }
+.pbody::-webkit-scrollbar { width: 4px; }
+.pbody::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+.save-ind { font-size: 11.5px; color: var(--muted); display: flex; align-items: center; gap: 5px; opacity: 0; transition: opacity .3s; }
+.save-ind.vis { opacity: 1; }
+.save-dot { width: 6px; height: 6px; border-radius: 50%; background: #27ae60; }
+.rh { display: flex; gap: 14px; margin-bottom: 14px; align-items: flex-start; }
+.rcov { width: 76px; height: 106px; border-radius: 5px; object-fit: cover; border: 1px solid var(--border); box-shadow: 0 2px 8px rgba(0,0,0,.1); display: block; flex-shrink: 0; }
+.rcov-ph { width: 76px; height: 106px; border-radius: 5px; background: var(--bg-soft); border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; font-size: 26px; flex-shrink: 0; }
+.rmeta { flex: 1; display: flex; flex-direction: column; gap: 5px; }
+.rtitle { font-family: 'Lora', serif; font-size: 16px; font-weight: 500; line-height: 1.3; }
+.rauteur { font-size: 12.5px; color: var(--accent); }
+.rprops { margin-bottom: 14px; }
+.rprop { display: grid; grid-template-columns: 110px 1fr; font-size: 12.5px; padding: 5px 0; border-bottom: 1px solid var(--bg-hover); align-items: center; }
+.rprop-l { color: var(--muted); }
+.rsec { margin-bottom: 13px; }
+.rsec-t { font-size: 10px; font-weight: 500; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); margin-bottom: 5px; }
+.rsec-b { font-size: 12.5px; line-height: 1.7; background: var(--bg-soft); border-radius: var(--radius); padding: 9px 11px; color: var(--text); }
+.rsec-b blockquote { border-left: 3px solid var(--border); margin: 4px 0; padding-left: 9px; color: var(--muted); font-style: italic; }
+.eg { margin-bottom: 13px; }
+.el { font-size: 10px; font-weight: 500; text-transform: uppercase; letter-spacing: .07em; color: var(--muted); margin-bottom: 5px; }
+.ei { width: 100%; padding: 6px 9px; font-size: 12.5px; font-family: inherit; border: 1px solid var(--border); border-radius: var(--radius); background: var(--bg); color: var(--text); outline: none; transition: border-color .15s; }
+.ei:focus { border-color: var(--accent); }
+.ei::placeholder { color: var(--light); }
+.es { width: 100%; padding: 6px 9px; font-size: 12.5px; font-family: inherit; border: 1px solid var(--border); border-radius: var(--radius); background: var(--bg); color: var(--text); outline: none; cursor: pointer; }
+.es:focus { border-color: var(--accent); }
+.rich-tb { display: flex; align-items: center; gap: 2px; padding: 4px 6px; background: var(--bg-soft); border: 1px solid var(--border); border-bottom: none; border-radius: var(--radius) var(--radius) 0 0; }
+.tb-b { width: 25px; height: 25px; border: none; background: none; border-radius: 4px; cursor: pointer; font-size: 11px; font-weight: 500; color: var(--muted); font-family: inherit; display: flex; align-items: center; justify-content: center; transition: all .1s; }
+.tb-b:hover { background: var(--bg-hover); color: var(--text); }
+.tb-s { width: 1px; height: 14px; background: var(--border); margin: 0 2px; }
+.rich-ed { min-height: 70px; padding: 9px 11px; border: 1px solid var(--border); border-radius: 0 0 var(--radius) var(--radius); font-size: 12.5px; line-height: 1.7; color: var(--text); outline: none; background: var(--bg); transition: border-color .15s; }
+.rich-ed:focus { border-color: var(--accent); }
+.rich-ed:empty::before { content: attr(data-ph); color: var(--light); pointer-events: none; }
+.rich-ed blockquote { border-left: 3px solid var(--border); margin: 4px 0; padding-left: 9px; color: var(--muted); font-style: italic; }
+.fd { display: flex; align-items: center; gap: 5px; flex-wrap: wrap; }
+.fd input[type=number], .fd select { font-size: 12px; font-family: inherit; color: var(--text); border: 1px solid var(--border); border-radius: 4px; padding: 4px 6px; background: var(--bg); outline: none; }
+.fd input[type=number]:focus, .fd select:focus { border-color: var(--accent); }
+.fd-m { width: 96px; } .fd-d { width: 50px; text-align: center; } .fd-y { width: 62px; text-align: center; }
+.fd-sep { color: var(--light); font-size: 11px; }
+.fd-prec { display: flex; gap: 2px; }
+.fd-pb { font-size: 10px; padding: 3px 7px; border-radius: 100px; border: 1px solid var(--border); background: none; color: var(--muted); cursor: pointer; font-family: inherit; transition: all .1s; }
+.fd-pb.active { background: var(--bg-hover); color: var(--text); border-color: var(--accent); }
+.fd-cl { font-size: 12px; color: var(--light); background: none; border: none; cursor: pointer; padding: 0 2px; transition: color .1s; }
+.fd-cl:hover { color: var(--muted); }
+
+/* Modale confirm suppression */
+.mod-ov { position: fixed; inset: 0; background: rgba(0,0,0,.2); display: flex; align-items: center; justify-content: center; z-index: 100; backdrop-filter: blur(2px); }
+.mod { background: var(--bg); border-radius: 10px; padding: 22px; width: 320px; box-shadow: 0 8px 30px rgba(0,0,0,.12); }
+.mod h3 { font-size: 14px; margin-bottom: 7px; font-family: 'Lora', serif; }
+.mod p { font-size: 12.5px; color: var(--muted); margin-bottom: 18px; line-height: 1.5; }
+.mod-act { display: flex; gap: 8px; justify-content: flex-end; }
+
+/* Modale bujo (ajout/édition tâche) */
+.bmod-ov { position: fixed; inset: 0; background: rgba(0,0,0,.07); z-index: 60; display: none; align-items: center; justify-content: center; }
+.bmod-ov.open { display: flex; }
+.bmod { background: var(--bg); border: 1px solid var(--border); border-radius: 12px; padding: 20px 22px; width: 310px; box-shadow: 0 8px 28px rgba(0,0,0,.08); }
+.bmod-title { font-size: 13px; font-weight: 500; margin-bottom: 15px; }
+.bf { margin-bottom: 11px; }
+.bf label { display: block; font-size: 9.5px; font-weight: 500; letter-spacing: .07em; text-transform: uppercase; color: var(--muted); margin-bottom: 4px; }
+.bf input[type=text] { width: 100%; padding: 6px 9px; border: 1px solid var(--border); border-radius: var(--radius); font-size: 12.5px; color: var(--text); background: var(--bg); outline: none; font-family: inherit; transition: border-color .12s; }
+.bf input[type=text]:focus { border-color: var(--accent); }
+.bf .bhint { font-size: 10px; color: var(--light); margin-top: 3px; }
+.presets { display: flex; flex-wrap: wrap; gap: 3px; margin-top: 5px; }
+.preset { font-size: 10px; padding: 2px 7px; border: 1px solid var(--border); border-radius: 20px; background: var(--bg-soft); color: var(--muted); cursor: pointer; font-family: inherit; transition: background .1s; }
+.preset:hover { background: var(--bg-hover); border-color: var(--accent); }
+.tog-row { display: flex; align-items: center; justify-content: space-between; padding: 7px 9px; border: 1px solid var(--border); border-radius: var(--radius); cursor: pointer; transition: background .12s; }
+.tog-row:hover { background: var(--bday-bg); border-color: var(--bday-border); }
+.tog-label { font-size: 12px; color: var(--muted); display: flex; align-items: center; gap: 7px; }
+.tog-sw { width: 26px; height: 15px; border-radius: 8px; background: var(--border); position: relative; transition: background .2s; flex-shrink: 0; }
+.tog-sw.on { background: #d8a0bc; }
+.tog-sw::after { content: ''; position: absolute; width: 11px; height: 11px; border-radius: 50%; background: #fff; top: 2px; left: 2px; transition: transform .2s; }
+.tog-sw.on::after { transform: translateX(11px); }
+.bday-hint { font-size: 10px; color: var(--bday-muted); margin-top: 4px; display: none; }
+.bday-hint.vis { display: block; }
+.bmod-act { display: flex; justify-content: flex-end; gap: 7px; margin-top: 16px; }
+.bc { padding: 6px 13px; border: 1px solid var(--border); border-radius: var(--radius); background: var(--bg); color: var(--muted); font-size: 12px; cursor: pointer; font-family: inherit; }
+.bc:hover { background: var(--bg-hover); }
+.bs { padding: 6px 14px; border: none; border-radius: var(--radius); background: var(--text); color: #fff; font-size: 12px; cursor: pointer; font-family: inherit; }
+.bs:hover { background: #333; }
+.bd { padding: 6px 13px; border: 1px solid #f0d0d0; border-radius: var(--radius); background: var(--bg); color: #c06060; font-size: 12px; cursor: pointer; font-family: inherit; margin-right: auto; }
+.bd:hover { background: #fff5f5; }
+
+
+/* ── Colonne agenda semaine (droite bujo) ── */
+.bujo-week-col {
+  width: 210px; flex-shrink: 0;
+  border-left: .5px solid var(--border);
+  background: var(--bg-soft);
+  display: flex; flex-direction: column;
+  padding: 14px 10px 12px;
+  overflow-y: auto;
+}
+.week-col-title {
+  font-size: 9px; font-weight: 600; letter-spacing: .1em;
+  text-transform: uppercase; color: var(--light);
+  margin-bottom: 12px; padding: 0 4px;
+  font-family: 'DM Sans', sans-serif;
+}
+.week-day {
+  margin-bottom: 10px;
+}
+.week-day-hdr {
+  display: flex; align-items: baseline; gap: 5px;
+  margin-bottom: 4px; padding: 0 4px;
+}
+.week-day-num {
+  font-family: 'Lora', Georgia, serif;
+  font-size: 18px; font-weight: 600; line-height: 1; color: var(--light);
+}
+.week-day-num.today-num {
+  color: var(--text);
+  background: var(--text); color: #fff;
+  width: 26px; height: 26px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 13px;
+}
+.week-day-name {
+  font-size: 9px; font-weight: 600; letter-spacing: .08em;
+  text-transform: uppercase; color: var(--light);
+  font-family: 'DM Sans', sans-serif;
+}
+.week-day-name.today-name { color: var(--text); }
+.week-task {
+  display: flex; align-items: flex-start; gap: 5px;
+  padding: 3px 4px; border-radius: 4px;
+  font-size: 11px; line-height: 1.35; color: var(--muted);
+  transition: background .1s; cursor: pointer; margin-bottom: 1px;
+}
+.week-task:hover { background: var(--bg-hover); color: var(--text); }
+.week-task.done-wt { opacity: .38; }
+.week-task-dot {
+  width: 5px; height: 5px; border-radius: 50%;
+  background: var(--light); flex-shrink: 0; margin-top: 4px;
+}
+.week-task-dot.bday-wt { background: var(--bday-muted); }
+.week-task-dot.late-wt { background: #d08080; }
+.week-task-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; }
+.week-empty { font-size: 10px; color: var(--light); padding: 2px 4px; font-style: italic; }
+
+/* ── Colonne projets ── */
+.bujo-proj-col {
+  width: 230px; flex-shrink: 0;
+  border-left: .5px solid var(--border);
+  background: var(--bg);
+  display: flex; flex-direction: column;
+  padding: 14px 10px 12px;
+  overflow-y: auto;
+}
+.proj-col-title {
+  font-size: 9px; font-weight: 600; letter-spacing: .1em;
+  text-transform: uppercase; color: var(--light);
+  margin-bottom: 10px; padding: 0 4px;
+  font-family: 'DM Sans', sans-serif;
+}
+.proj-card {
+  background: var(--accent-soft);
+  border: 1px solid #e8a020;
+  border-radius: 14px;
+  padding: 12px 14px;
+  margin-bottom: 8px;
+  box-shadow: 0 2px 8px rgba(0,0,0,.07);
+  transition: box-shadow .15s;
+  position: relative;
+}
+.proj-card:hover { box-shadow: 0 4px 16px rgba(0,0,0,.11); }
+
+.proj-card-top {
+  display: flex; align-items: flex-start; gap: 7px;
+}
+
+
+.proj-card:hover .proj-edit { opacity: 1; }
+.proj-card.done-card {
+  opacity: .45;
+  background: var(--bg-soft);
+}
+.proj-card-top {
+  display: flex; align-items: flex-start; gap: 7px;
+}
+.proj-chk {
+  width: 14px; height: 14px; border-radius: 3px;
+  border: 1px solid var(--light); flex-shrink: 0;
+  cursor: pointer; margin-top: 1px;
+  display: flex; align-items: center; justify-content: center;
+  transition: background .12s, border-color .12s;
+}
+.proj-chk:hover { border-color: var(--accent); }
+.proj-chk.done { background: var(--text); border-color: var(--text); }
+.proj-chk.done::after {
+  content: ''; display: block;
+  width: 5px; height: 3px;
+  border-left: 1.5px solid #fff; border-bottom: 1.5px solid #fff;
+  transform: rotate(-45deg) translateY(-1px);
+}
+.proj-name {
+  flex: 1; font-size: 12px; font-weight: 500;
+  line-height: 1.4; color: var(--text);
+  font-family: 'DM Sans', sans-serif;
+}
+.proj-name.done { text-decoration: line-through; color: var(--muted); font-weight: 400; }
+.proj-edit {
+  opacity: 0; background: none; border: none; cursor: pointer;
+  color: var(--light); font-size: 12px; padding: 0 2px;
+  transition: color .1s, opacity .12s; font-family: inherit; flex-shrink: 0;
+  line-height: 1;
+}
+.proj-edit:hover { color: var(--accent); }
+.proj-date {
+  display: inline-flex; align-items: center; gap: 4px;
+  font-size: 10px; color: var(--muted);
+  margin-top: 7px;
+  background: var(--bg-soft); border: .5px solid var(--border);
+  border-radius: 999px; padding: 2px 7px;
+}
+.proj-date svg { opacity: .6; }
+.proj-empty { font-size: 10px; color: var(--light); padding: 4px; font-style: italic; }
+.proj-add-btn {
+  display: flex; align-items: center; gap: 5px;
+  width: 100%; padding: 6px 8px; border-radius: var(--radius);
+  border: .5px dashed var(--border); background: none;
+  color: var(--light); font-size: 11px; cursor: pointer;
+  font-family: inherit; transition: border-color .12s, color .12s;
+  margin-top: 2px; margin-bottom: 10px;
+}
+.proj-add-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+/* Éditeur riche items fiches */
+.item-rich-tb {
+  display: flex; align-items: center; gap: 2px;
+  padding: 4px 6px; background: var(--bg-soft);
+  border: .5px solid var(--border); border-bottom: none;
+  border-radius: var(--radius) var(--radius) 0 0;
+}
+.item-tb-b {
+  width: 24px; height: 24px; border: none; background: none;
+  border-radius: 4px; cursor: pointer; font-size: 11px; font-weight: 600;
+  color: var(--muted); font-family: inherit;
+  display: flex; align-items: center; justify-content: center;
+  transition: all .1s;
+}
+.item-tb-b:hover { background: var(--bg-hover); color: var(--text); }
+.item-tb-sep { width: 1px; height: 13px; background: var(--border); margin: 0 2px; }
+.item-rich-ed {
+  min-height: 80px; padding: 9px 10px;
+  border: .5px solid var(--border);
+  border-radius: 0 0 var(--radius) var(--radius);
+  font-size: 12.5px; line-height: 1.7; color: var(--text);
+  outline: none; background: var(--bg); font-family: 'DM Sans', sans-serif;
+  transition: border-color .12s;
+}
+.item-rich-ed:focus { border-color: var(--accent); }
+.item-rich-ed:empty::before { content: attr(data-ph); color: var(--light); pointer-events: none; }
+.item-rich-ed blockquote { border-left: 2px solid var(--border); margin: 4px 0; padding-left: 9px; color: var(--muted); font-style: italic; }
+.item-rich-ed ul, .item-rich-ed ol { padding-left: 18px; }
+
+/* Items — couleurs */
+.item-couleur {
+  display: flex; align-items: center; gap: 10px;
+  padding: 8px 6px; border-bottom: .5px solid var(--border);
+  transition: background .1s;
+}
+.item-couleur:last-child { border-bottom: none; }
+.item-couleur:hover { background: var(--bg-soft); border-radius: var(--radius); }
+.item-couleur:hover .item-actions { opacity: 1; }
+.item-couleur-swatch {
+  width: 28px; height: 28px; border-radius: 50%;
+  flex-shrink: 0; border: .5px solid rgba(0,0,0,.12);
+}
+.item-couleur-name { font-size: 12.5px; font-weight: 500; color: var(--text); font-family: 'DM Sans', sans-serif; }
+.item-couleur-hex { font-size: 11px; color: var(--muted); font-family: monospace; margin-top: 1px; }
+
+/* Recherche globale collections */
+.col-search-bar {
+  display: flex; align-items: center; gap: 8px;
+  padding: 8px 10px; border-bottom: .5px solid var(--border);
+  background: var(--bg); flex-shrink: 0;
+}
+.col-search-input {
+  width: 100%; padding: 6px 10px 6px 30px;
+  border: .5px solid var(--border); border-radius: var(--radius);
+  font-size: 12px; color: var(--text); background: var(--bg-soft);
+  outline: none; font-family: 'DM Sans', sans-serif;
+  transition: border-color .12s, background .12s;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='13' height='13' viewBox='0 0 24 24' fill='none' stroke='%239b9a97' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='11' cy='11' r='8'/%3E%3Cpath d='m21 21-4.35-4.35'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: 9px center;
+}
+.col-search-input:focus { border-color: var(--accent); background: var(--bg); }
+.col-search-input::placeholder { color: var(--light); }
+.col-search-clear {
+  background: none; border: none; cursor: pointer; color: var(--light);
+  font-size: 14px; padding: 0 4px; transition: color .12s; font-family: inherit;
+  flex-shrink: 0;
+}
+.col-search-clear:hover { color: var(--accent); }
+/* Résultats de recherche */
+.col-search-results { flex: 1; overflow-y: auto; padding: 14px 20px; }
+.col-search-group { margin-bottom: 18px; }
+.col-search-group-title {
+  display: flex; align-items: center; gap: 8px;
+  font-size: 10px; font-weight: 600; letter-spacing: .08em;
+  text-transform: uppercase; color: var(--muted);
+  margin-bottom: 8px; padding-bottom: 5px;
+  border-bottom: .5px solid var(--border);
+  font-family: 'DM Sans', sans-serif;
+}
+.col-search-group-icon {
+  width: 18px; height: 18px; border-radius: 5px;
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+}
+.col-search-group-icon svg { width: 10px; height: 10px; stroke: #fff; }
+.col-search-item {
+  display: flex; align-items: flex-start; gap: 8px;
+  padding: 7px 6px; border-radius: var(--radius);
+  cursor: pointer; transition: background .1s;
+}
+.col-search-item:hover { background: var(--bg-soft); }
+.col-search-item-name { font-size: 12.5px; color: var(--text); font-family: 'DM Sans', sans-serif; flex: 1; }
+.col-search-item-name em { background: #ffe066; color: var(--text); font-style: normal; border-radius: 2px; padding: 0 1px; }
+.col-search-item-tag { font-size: 10px; color: var(--muted); font-family: 'DM Sans', sans-serif; }
+.col-search-empty { text-align: center; padding: 2rem; color: var(--light); font-size: 12.5px; font-family: 'DM Sans', sans-serif; }
+
+* { scrollbar-width: thin; scrollbar-color: var(--border) transparent; }
+
+/* ══════════════════════════════════════════
+   PAGE COLLECTIONS
+   ══════════════════════════════════════════ */
+#page-collections { background: var(--bg); flex-direction: row; }
+
+/* ── Sidebar ── */
+.col-sidebar {
+  width: 210px; flex-shrink: 0;
+  border-right: .5px solid var(--border);
+  background: var(--bg);
+  display: flex; flex-direction: column;
+  padding: 14px 10px 12px;
+  overflow-y: auto;
+}
+
+.fiches-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 10px;
+}
+.fiches-grid .item-fiche {
+  margin-bottom: 0;
+}
+
+/* ── Item sidebar ── */
+.col-item {
+  display: flex; align-items: center; gap: 9px;
+  width: 100%; padding: 7px 8px; border-radius: var(--radius); border: none;
+  background: transparent; color: var(--muted); font-size: 12px;
+  cursor: pointer; font-family: 'DM Sans', inherit; text-align: left;
+  transition: background .12s, color .12s; margin-bottom: 2px;
+}
+.col-item:hover { background: var(--bg-soft); color: var(--text); }
+.col-item.active { background: var(--bg-soft); color: var(--text); font-weight: 500; }
+.col-item.active .col-item-label { color: var(--text); }
+
+/* ── Icône : carré coloré, SVG blanc ── */
+.col-item-icon {
+  width: 26px; height: 26px; border-radius: 7px;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0; overflow: hidden;
+  /* La couleur vient du style inline ; l'icône SVG hérite stroke=white */
+}
+.col-item-icon svg { width: 14px; height: 14px; stroke: #fff; color: #fff; flex-shrink: 0; }
+.col-item-label { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.col-item-count {
+  font-size: 10px; color: var(--light); background: var(--bg-soft);
+  border-radius: 10px; padding: 1px 6px; min-width: 18px; text-align: center;
+}
+.col-item.active .col-item-count { background: var(--border); color: var(--muted); }
+.col-new-btn {
+  display: flex; align-items: center; gap: 6px;
+  width: 100%; padding: 6px 8px; border-radius: var(--radius);
+  border: .5px solid var(--border); background: var(--bg);
+  color: var(--muted); font-size: 11.5px; cursor: pointer;
+  font-family: inherit; transition: background .12s, border-color .12s;
+  margin-top: 8px;
+}
+.col-new-btn:hover { background: var(--bg-soft); border-color: var(--accent); color: var(--text); }
+
+/* ── Main panel ── */
+.col-main {
+  flex: 1; display: flex; flex-direction: column;
+  background: var(--bg); overflow: hidden; position: relative;
+}
+
+/* ── Header collection (inspiré des stat-headers du widget GEDCOM) ── */
+.col-main-header {
+  display: flex; align-items: center; gap: 14px;
+  padding: 14px 20px; border-bottom: .5px solid var(--border);
+  flex-shrink: 0; background: var(--bg);
+}
+/* Grande icône avec couleur de thème + SVG blanc */
+.col-main-icon {
+  width: 38px; height: 38px; border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0; overflow: hidden;
+}
+.col-main-icon svg { width: 22px; height: 22px; stroke: #fff; color: #fff; }
+.col-main-name {
+  font-family: 'Lora', Georgia, serif;
+  font-size: 15px; font-weight: 600; flex: 1; color: var(--text);
+  letter-spacing: .01em;
+}
+/* Badge thème (style badge GEDCOM) */
+.col-main-type {
+  display: inline-flex; align-items: center;
+  padding: 3px 10px; border-radius: 999px;
+  font-size: 10px; font-weight: 600; letter-spacing: .06em;
+  text-transform: uppercase; font-family: 'DM Sans', sans-serif;
+  background: var(--bg-soft); color: var(--muted);
+  border: .5px solid var(--border);
+}
+.col-main-body { flex: 1; overflow-y: auto; padding: 16px 20px; }
+
+/* Bouton ajout item */
+.col-add-item-btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 5px 12px; border: .5px solid var(--border);
+  border-radius: var(--radius); background: var(--bg);
+  color: var(--muted); font-size: 11.5px; cursor: pointer;
+  font-family: inherit; transition: background .12s, border-color .12s;
+  margin-bottom: 16px;
+}
+.col-add-item-btn:hover { background: var(--bg-soft); border-color: var(--accent); color: var(--text); }
+
+/* ── Items listes ── */
+.item-liste {
+  display: flex; align-items: flex-start; gap: 9px;
+  padding: 8px 6px; border-bottom: .5px solid var(--border);
+  transition: background .1s;
+}
+.item-liste:last-child { border-bottom: none; }
+.item-liste:hover { background: var(--bg-soft); border-radius: var(--radius); }
+.item-liste:hover .item-actions { opacity: 1; }
+.item-chk {
+  width: 15px; height: 15px; border-radius: 3px;
+  border: .5px solid var(--light); flex-shrink: 0;
+  cursor: pointer; margin-top: 2px;
+  display: flex; align-items: center; justify-content: center;
+  transition: background .12s, border-color .12s;
+}
+.item-chk:hover { border-color: var(--accent); }
+.item-chk.done { background: var(--text); border-color: var(--text); }
+.item-chk.done::after { content: ''; display: block; width: 5px; height: 3px; border-left: 1.5px solid #fff; border-bottom: 1.5px solid #fff; transform: rotate(-45deg) translateY(-1px); }
+.item-body { flex: 1; min-width: 0; }
+.item-titre { font-size: 13px; color: var(--text); line-height: 1.45; font-family: 'DM Sans', sans-serif; }
+.item-titre.done { text-decoration: line-through; color: var(--muted); }
+.item-tag {
+  display: inline-block; font-size: 10px; padding: 1px 7px; border-radius: 999px;
+  background: var(--bg-soft); color: var(--muted); margin-top: 4px;
+  border: .5px solid var(--border); font-family: 'DM Sans', sans-serif;
+}
+
+/* ── Items liens ── */
+.item-lien {
+  display: flex; align-items: center; gap: 10px;
+  padding: 9px 6px; border-bottom: .5px solid var(--border);
+  transition: background .1s;
+}
+.item-lien:last-child { border-bottom: none; }
+.item-lien:hover { background: var(--bg-soft); border-radius: var(--radius); }
+.item-lien:hover .item-actions { opacity: 1; }
+.item-lien-ico {
+  width: 30px; height: 30px; border-radius: 7px;
+  background: var(--bg-soft); border: .5px solid var(--border);
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.item-lien-ico svg { width: 14px; height: 14px; stroke: var(--muted); }
+.item-lien-title { font-size: 12.5px; font-weight: 500; color: var(--text); font-family: 'DM Sans', sans-serif; }
+.item-lien-url { font-size: 11px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 360px; margin-top: 1px; }
+.item-lien-url a { color: inherit; text-decoration: none; }
+.item-lien-url a:hover { color: var(--accent); text-decoration: underline; }
+
+/* ── Items fiches (cards façon projet) ── */
+.item-fiche {
+  border: .5px solid var(--border); border-radius: 8px;
+  padding: 14px 16px; margin-bottom: 9px;
+  background: var(--bg); transition: box-shadow .15s, border-color .15s;
+  cursor: pointer;
+}
+.item-fiche:hover { box-shadow: 0 2px 10px rgba(0,0,0,.08); border-color: var(--accent); }
+.item-fiche-title {
+  font-family: 'Lora', Georgia, serif;
+  font-size: 13.5px; font-weight: 600; color: var(--text); margin-bottom: 5px;
+}
+.item-fiche-preview { font-size: 12px; color: var(--muted); line-height: 1.55; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; font-family: 'DM Sans', sans-serif; }
+.item-fiche-meta { display: flex; align-items: center; gap: 8px; margin-top: 8px; }
+.item-fiche-url { font-size: 10.5px; color: var(--muted); }
+.item-fiche-url a { color: inherit; text-decoration: none; }
+.item-fiche-url a:hover { color: var(--accent); text-decoration: underline; }
+
+/* ── Actions item (hover) ── */
+.item-actions { opacity: 0; display: flex; gap: 2px; flex-shrink: 0; transition: opacity .12s; }
+.item-act-btn {
+  background: none; border: none; cursor: pointer; color: var(--light);
+  font-size: 12px; padding: 2px 5px; border-radius: 4px;
+  transition: color .1s, background .1s; font-family: inherit;
+}
+.item-act-btn:hover { color: var(--accent); background: var(--bg-soft); }
+
+/* ── État vide ── */
+.col-empty { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 3rem 2rem; text-align: center; gap: 8px; }
+.col-empty-icon { width: 48px; height: 48px; border-radius: 50%; background: var(--bg-soft); display: flex; align-items: center; justify-content: center; margin-bottom: 4px; }
+.col-empty-icon svg { width: 22px; height: 22px; stroke: var(--light); }
+.col-empty-title { font-size: 14px; font-weight: 600; color: var(--text); font-family: 'Lora', serif; }
+.col-empty-sub { font-size: 12px; color: var(--muted); max-width: 260px; font-family: 'DM Sans', sans-serif; line-height: 1.5; }
+
+/* ── Modales collections ── */
+.cmod-ov { position: fixed; inset: 0; background: rgba(0,0,0,.14); z-index: 70; display: none; align-items: center; justify-content: center; backdrop-filter: blur(2px); }
+.cmod-ov.open { display: flex; }
+.cmod {
+  background: var(--bg); border: .5px solid var(--border); border-radius: 12px;
+  padding: 22px 24px; width: min(680px,92vw); box-shadow: 0 10px 40px rgba(0,0,0,.12);
+  max-height: 88vh; overflow-y: auto;
+}
+.cmod-title { font-family: 'Lora', serif; font-size: 14px; font-weight: 600; margin-bottom: 18px; color: var(--text); }
+.cf { margin-bottom: 13px; }
+.cf label {
+  display: block; font-size: 9.5px; font-weight: 600; letter-spacing: .07em;
+  text-transform: uppercase; color: var(--muted); margin-bottom: 5px;
+  font-family: 'DM Sans', sans-serif;
+}
+.cf input[type=text], .cf input[type=url], .cf select, .cf textarea {
+  width: 100%; padding: 7px 10px; border: .5px solid var(--border);
+  border-radius: var(--radius); font-size: 12.5px; color: var(--text);
+  background: var(--bg); outline: none; font-family: inherit;
+  transition: border-color .12s;
+}
+.cf input:focus, .cf select:focus, .cf textarea:focus { border-color: var(--accent); }
+.cf textarea { min-height: 90px; resize: vertical; line-height: 1.6; }
+.cf select { cursor: pointer; }
+/* Sélecteur thème */
+.theme-picker { display: flex; gap: 8px; flex-wrap: wrap; }
+.theme-opt {
+  flex: 1; min-width: 80px; padding: 10px 8px; border-radius: 8px;
+  border: .5px solid var(--border); background: var(--bg-soft);
+  cursor: pointer; text-align: center; transition: all .12s;
+}
+.theme-opt:hover { border-color: var(--accent); background: var(--bg-hover); }
+.theme-opt.sel { border-color: var(--text); background: var(--bg); box-shadow: 0 1px 4px rgba(0,0,0,.08); }
+.theme-opt-icon { font-size: 18px; margin-bottom: 4px; }
+.theme-opt-label { font-size: 9px; color: var(--muted); font-weight: 600; letter-spacing: .06em; text-transform: uppercase; font-family: 'DM Sans', sans-serif; }
+.theme-opt.sel .theme-opt-label { color: var(--text); }
+/* Saisie SVG icône */
+.svg-input-wrap { position: relative; }
+.svg-input-wrap textarea {
+  width: 100%; padding: 7px 10px; border: .5px solid var(--border);
+  border-radius: var(--radius); font-size: 10.5px; color: var(--muted);
+  background: var(--bg); outline: none; font-family: monospace;
+  transition: border-color .12s; resize: vertical; min-height: 54px; line-height: 1.5;
+}
+.svg-input-wrap textarea:focus { border-color: var(--accent); color: var(--text); }
+.svg-preview {
+  display: flex; align-items: center; gap: 10px; margin-top: 7px;
+  padding: 9px 12px; border-radius: var(--radius);
+  border: .5px solid var(--border);
+  /* la couleur de fond vient de colColorSel via JS */
+  background: var(--bg-soft);
+}
+.svg-preview-icon { width: 30px; height: 30px; border-radius: 7px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.svg-preview-icon svg { width: 20px; height: 20px; stroke: #fff; color: #fff; }
+.svg-preview-label { font-size: 11px; color: var(--muted); font-family: 'DM Sans', sans-serif; }
+/* Couleur */
+.cmod-act { display: flex; justify-content: flex-end; gap: 8px; margin-top: 18px; }
+.cbtn-c { padding: 6px 14px; border: .5px solid var(--border); border-radius: var(--radius); background: var(--bg); color: var(--muted); font-size: 12px; cursor: pointer; font-family: inherit; transition: background .12s; }
+.cbtn-c:hover { background: var(--bg-soft); }
+.cbtn-s { padding: 6px 16px; border: none; border-radius: var(--radius); background: var(--text); color: #fff; font-size: 12px; cursor: pointer; font-family: inherit; transition: background .12s; }
+.cbtn-s:hover { background: #333; }
+.cbtn-del { padding: 6px 13px; border: .5px solid #f0d0d0; border-radius: var(--radius); background: var(--bg); color: #c06060; font-size: 12px; cursor: pointer; font-family: inherit; margin-right: auto; transition: background .12s; }
+.cbtn-del:hover { background: #fff5f5; }
+
+/* ── Modale fiche consultation ── */
+.fiche-modal-ov {
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,.22);
+  z-index: 80; display: none;
+  align-items: center; justify-content: center;
+  backdrop-filter: blur(2px);
+}
+.fiche-modal-ov.open { display: flex; }
+.fiche-modal {
+  background: var(--bg); border: .5px solid var(--border);
+  border-radius: 12px; width: min(640px, 92vw); max-height: 88vh;
+  display: flex; flex-direction: column;
+  box-shadow: 0 12px 40px rgba(0,0,0,.14);
+  overflow: hidden;
+  animation: fiche-in .18s ease;
+}
+@keyframes fiche-in { from { transform: translateY(10px) scale(.97); opacity: .5; } to { transform: none; opacity: 1; } }
+.fiche-modal-header {
+  display: flex; align-items: center; gap: 10px;
+  padding: 16px 20px; border-bottom: .5px solid var(--border);
+  flex-shrink: 0;
+}
+.fiche-modal-title {
+  font-family: 'Lora', Georgia, serif;
+  font-size: 16px; font-weight: 600; flex: 1; color: var(--text);
+  line-height: 1.3;
+}
+.fiche-modal-body { flex: 1; overflow-y: auto; padding: 20px 22px; }
+.fiche-modal-body::-webkit-scrollbar { width: 4px; }
+.fiche-modal-body::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+.fiche-modal-tag {
+  display: inline-flex; align-items: center;
+  padding: 2px 9px; border-radius: 999px;
+  font-size: 10px; font-weight: 500; letter-spacing: .04em;
+  background: var(--bg-soft); color: var(--muted);
+  border: .5px solid var(--border);
+  margin-bottom: 14px; font-family: 'DM Sans', sans-serif;
+}
+.fiche-modal-content {
+  font-size: 13.5px; line-height: 1.8; color: var(--text);
+  font-family: 'DM Sans', sans-serif;
+}
+.fiche-modal-content blockquote {
+  border-left: 2px solid var(--border); margin: 8px 0;
+  padding: 2px 12px; color: var(--muted); font-style: italic;
+}
+.fiche-modal-content ul, .fiche-modal-content ol { padding-left: 20px; }
+.fiche-url-link {
+  display: inline-flex; align-items: center; gap: 5px;
+  font-size: 12px; color: var(--muted); margin-top: 14px;
+  text-decoration: none; border: .5px solid var(--border);
+  border-radius: var(--radius); padding: 5px 11px;
+  transition: color .12s, border-color .12s; font-family: 'DM Sans', sans-serif;
+}
+.fiche-url-link:hover { color: var(--accent); border-color: var(--accent); }
+
+/* ── Barre de filtre tags dans col-main-header ── */
+.col-tag-filter {
+  display: flex; align-items: center; gap: 5px; flex-wrap: wrap;
+  padding: 8px 20px; border-bottom: .5px solid var(--border);
+  flex-shrink: 0; background: var(--bg);
+  min-height: 0; overflow: hidden;
+}
+.col-tag-filter.hidden { display: none; }
+.col-tag-pill {
+  font-size: 10.5px; padding: 3px 10px; border-radius: 999px;
+  border: .5px solid var(--border); background: var(--bg-soft);
+  color: var(--muted); cursor: pointer; font-family: 'DM Sans', sans-serif;
+  transition: all .12s;
+}
+.col-tag-pill:hover { border-color: var(--accent); color: var(--text); }
+.col-tag-pill.active { background: var(--text); color: #fff; border-color: var(--text); font-weight: 500; }
+.col-tag-label { font-size: 9px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--light); margin-right: 4px; font-family: 'DM Sans', sans-serif; }
+</style>
+</head>
+<body>
+
+<!-- ══════════════════════════════════════════
+     ONGLETS
+     ══════════════════════════════════════════ -->
+<div class="app-tabs">
+  <button class="app-tab active" data-tab="bujo" onclick="switchTab('bujo')">
+    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8"/><path d="M3 10a2 2 0 0 1 .709-1.528l7-6a2 2 0 0 1 2.582 0l7 6A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
+    <span class="tab-label">Bujo</span>
+  </button>
+  <button class="app-tab" data-tab="lectures" onclick="switchTab('lectures')">
+    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m16 6 4 14"/><path d="M12 6v14"/><path d="M8 8v12"/><path d="M4 4v16"/></svg>
+    <span class="tab-label">Lectures</span>
+    <span class="tab-badge" id="badge-lectures"></span>
+  </button>
+  <button class="app-tab" data-tab="collections" onclick="switchTab('collections')">
+    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="7" height="7" rx="1"/><rect x="15" y="3" width="7" height="7" rx="1"/><rect x="2" y="14" width="7" height="7" rx="1"/><rect x="15" y="14" width="7" height="7" rx="1"/></svg>
+    <span class="tab-label">Collections</span>
+    <span class="tab-badge" id="badge-cols"></span>
+  </button>
+</div>
+
+<!-- ══════════════════════════════════════════
+     CORPS
+     ══════════════════════════════════════════ -->
+<div class="app-body">
+
+  <!-- ── PAGE BUJO ── -->
+  <div class="page active" id="page-bujo">
+
+    <!-- Sidebar bujo -->
+    <div class="bujo-sidebar">
+      <!-- Bouton nouvelle tâche en haut -->
+      <button class="btn-new-task" onclick="currentView==='bdays'?openBmodBday():openBmod()" style="margin-bottom:12px">
+        <svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 1v10M1 6h10"/></svg>
+        Nouvelle tâche
+      </button>
+
+      <!-- Calendrier -->
+      <div class="cal-wrap">
+        <div class="cal-header">
+          <div class="cal-title" id="calLabel"></div>
+          <div class="cal-nav">
+            <button onclick="calMove(-1)">&#8249;</button>
+            <button onclick="calMove(1)">&#8250;</button>
+          </div>
+        </div>
+        <div class="cal-grid" id="calGrid"></div>
+      </div>
+
+      <!-- Nav vues bujo -->
+      <div class="nav-sec">
+        <button class="nitem active" id="n-today" onclick="setView('today')">
+          <span class="nitem-inner"><span class="nitem-label">Aujourd'hui</span></span>
+          <span class="nbadge" id="b-today"></span>
+        </button>
+        <button class="nitem n-late" id="n-late" onclick="setView('late')" style="display:none">
+          <span class="nitem-inner"><span class="nitem-label">En retard</span></span>
+          <span class="nbadge" id="b-late"></span>
+        </button>
+        <button class="nitem" id="n-week" onclick="setView('week')">
+          <span class="nitem-inner"><span class="nitem-label">Cette semaine</span></span>
+          <span class="nbadge" id="b-week"></span>
+        </button>
+        <button class="nitem n-bday" id="n-bdays" onclick="setView('bdays')">
+          <span class="nitem-inner"><span class="nitem-label">Anniversaires</span></span>
+          <span class="nbadge" id="b-bdays"></span>
+        </button>
+      </div>
+
+      <div class="nav-div"></div>
+
+      <!-- Future logs (dynamique) -->
+      <div id="futureLogs"></div>
+
+    </div>
+
+    <!-- Contenu bujo -->
+    <div class="bujo-main" id="bujoMain"></div>
+    <div class="bujo-proj-col" id="bujoProjetCol"></div>
+    <div class="bujo-week-col" id="bujoWeekCol"></div>
+  </div>
+
+  <!-- ── PAGE LECTURES ── -->
+  <div class="page" id="page-lectures">
+
+  <!-- Sidebar -->
+  <div class="lec-sidebar">
+    <button class="btn-new-task" id="btnLecNew">
+      <svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 1v10M1 6h10"/></svg>
+      Nouveau
+    </button>
+    <div class="lec-search-wrap">
+      <span class="lec-search-icon">
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+      </span>
+      <input type="text" placeholder="Rechercher…" id="lecSearch">
+    </div>
+    <div class="nav-div"></div>
+    <button class="nitem active" id="lf-all" onclick="setLecFilter('all')">
+      <span class="nitem-inner"><span class="nitem-label">Tous</span></span>
+      <span class="nbadge" id="lf-badge-all"></span>
+    </button>
+    <button class="nitem" id="lf-alire" onclick="setLecFilter('À lire')">
+      <span class="nitem-inner"><span class="nitem-label">À lire</span></span>
+      <span class="nbadge" id="lf-badge-alire"></span>
+    </button>
+    <button class="nitem" id="lf-encours" onclick="setLecFilter('En cours')">
+      <span class="nitem-inner"><span class="nitem-label">En cours</span></span>
+      <span class="nbadge" id="lf-badge-encours"></span>
+    </button>
+    <button class="nitem" id="lf-lu" onclick="setLecFilter('Lu')">
+      <span class="nitem-inner"><span class="nitem-label">Lus</span></span>
+      <span class="nbadge" id="lf-badge-lu"></span>
+    </button>
+  </div>
+
+  <!-- Contenu principal -->
+  <div class="lec-main">
+    <div class="lec-workspace">
+      <table id="lecTable">
+        <thead>
+          <tr id="lecHead">
+            <th style="width:46px;cursor:default"></th>
+            <th data-lc="titre" class="sorted">Titre <span class="sort-ic">↑</span></th>
+            <th data-lc="auteur">Auteur <span class="sort-ic">↕</span></th>
+            <th data-lc="statut">Statut <span class="sort-ic">↕</span></th>
+            <th data-lc="date_edition">Édition <span class="sort-ic">↕</span></th>
+          </tr>
+          <tr class="frow">
+            <th></th>
+            <th><input class="cfilt" data-lc="titre" placeholder="Filtrer…"></th>
+            <th><input class="cfilt" data-lc="auteur" placeholder="Filtrer…"></th>
+            <th>
+              <select class="cfilt" data-lc="statut">
+                <option value="">Tous</option>
+                <option value="À lire">À lire</option>
+                <option value="En cours">En cours</option>
+                <option value="Lu">Lu</option>
+              </select>
+            </th>
+            <th><input class="cfilt" data-lc="date_edition" placeholder="Filtrer…"></th>
+          </tr>
+        </thead>
+        <tbody id="lecBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+
+
+  <!-- ── PAGE COLLECTIONS ── -->
+  <div class="page" id="page-collections">
+
+    <!-- Sidebar collections -->
+    <div class="col-sidebar">
+      <button class="btn-new-task" onclick="openColMod()" style="margin-bottom:12px">
+        <svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 1v10M1 6h10"/></svg>
+        Nouvelle collection
+      </button>
+      <div class="lec-search-wrap">
+        <span class="lec-search-icon">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+        </span>
+        <input class="col-search-input" type="text" id="colSearchInput"
+          placeholder="Rechercher…"
+          oninput="onColSearch(this.value)"
+          style="padding-left:28px;padding-right:24px;border-radius:999px;font-size:11.5px">
+        <button class="col-search-clear" id="colSearchClear" style="display:none;position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--light);font-size:13px;line-height:1;padding:0" onclick="clearColSearch()">✕</button>
+      </div>
+      <div class="nav-div"></div>
+      <div id="colList"><!-- items dynamiques --></div>
+    </div>
+
+    <!-- Contenu collection sélectionnée -->
+    <div class="col-main" id="colMain">
+      <div class="col-empty" id="colEmpty">
+        <div class="col-empty-icon">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+        </div>
+        <div class="col-empty-title">Collections</div>
+        <div class="col-empty-sub">Sélectionnez une collection dans la liste ou créez-en une nouvelle.</div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ── MODALE NOUVELLE/ÉDITION COLLECTION ── -->
+  <div class="cmod-ov" id="colModOv" onclick="handleCmodClick(event)">
+    <div class="cmod">
+      <div class="cmod-title" id="colModTitle">Nouvelle collection</div>
+      <div class="cf">
+        <label>Nom</label>
+        <input type="text" id="colNom" placeholder="Nom de la collection…">
+      </div>
+      <div class="cf">
+        <label>Thème</label>
+        <div class="theme-picker" id="themePicker">
+          <div class="theme-opt sel" data-theme="listes" onclick="selTheme('listes')">
+            <div class="theme-opt-icon">☑</div>
+            <div class="theme-opt-label">Listes</div>
+          </div>
+          <div class="theme-opt" data-theme="liens" onclick="selTheme('liens')">
+            <div class="theme-opt-icon">🔗</div>
+            <div class="theme-opt-label">Liens</div>
+          </div>
+          <div class="theme-opt" data-theme="fiches" onclick="selTheme('fiches')">
+            <div class="theme-opt-icon">📄</div>
+            <div class="theme-opt-label">Fiches</div>
+          </div>
+          <div class="theme-opt" data-theme="couleurs" onclick="selTheme('couleurs')">
+            <div class="theme-opt-icon">🎨</div>
+            <div class="theme-opt-label">Couleurs</div>
+          </div>
+        </div>
+      </div>
+      <div class="cf">
+        <label>Icône (code SVG)</label>
+        <div class="svg-input-wrap">
+          <textarea id="colIconSvg" placeholder='<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">…</svg>' oninput="updateSvgPreview()"></textarea>
+          <div class="svg-preview" id="svgPreview">
+            <div class="svg-preview-icon" id="svgPreviewIcon"></div>
+            <span class="svg-preview-label" id="svgPreviewLabel">Aperçu de l'icône</span>
+          </div>
+        </div>
+      </div>
+      <div class="cf">
+        <label>Couleur</label>
+        <div id="colorPickerWrap">
+          <select id="colColorSel" class="cf" style="width:100%;padding:7px 10px;border:1px solid var(--border);border-radius:var(--radius);font-size:12.5px;font-family:inherit;background:var(--bg);color:var(--text);outline:none;cursor:pointer" onchange="onColorSelChange()">
+            <option value="">— Aucune couleur —</option>
+          </select>
+          <div id="colorPreview" style="margin-top:6px;height:18px;border-radius:4px;transition:background .2s;border:1px solid var(--border)"></div>
+        </div>
+      </div>
+      <div class="cmod-act">
+        <button class="cbtn-del" id="colBtnDel" style="display:none" onclick="deleteCol()">Supprimer</button>
+        <button class="cbtn-c" onclick="closeColMod()">Annuler</button>
+        <button class="cbtn-s" onclick="saveCol()">Enregistrer</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── MODALE ITEM (liste / lien / fiche) ── -->
+  <div class="cmod-ov" id="itemModOv" onclick="handleItemModClick(event)">
+    <div class="cmod">
+      <div class="cmod-title" id="itemModTitle">Nouvel élément</div>
+      <div id="itemModFields"><!-- dynamique selon thème --></div>
+      <div class="cmod-act">
+        <button class="cbtn-del" id="itemBtnDel" style="display:none" onclick="deleteItem()">Supprimer</button>
+        <button class="cbtn-c" onclick="closeItemMod()">Annuler</button>
+        <button class="cbtn-s" onclick="saveItem()">Enregistrer</button>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ── MODALE FICHE CONSULTATION ── -->
+  <div class="fiche-modal-ov" id="ficheModalOv" onclick="handleFicheModalClick(event)">
+    <div class="fiche-modal">
+      <div class="fiche-modal-header">
+        <div class="fiche-modal-title" id="ficheModalTitle"></div>
+        <button class="btn btn-ghost" id="ficheModalEditBtn" onclick="ficheModalEdit()" style="font-size:12px;padding:5px 12px">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+          Modifier
+        </button>
+        <button class="btn-ico" onclick="closeFicheModal()" style="margin-left:4px">✕</button>
+      </div>
+      <div class="fiche-modal-body" id="ficheModalBody"></div>
+    </div>
+  </div>
+
+</div><!-- /app-body -->
+
+<!-- ══ POPUP LECTURES ══ -->
+<div class="pop-ov" id="popOv">
+  <div class="dpanel">
+    <div class="ph">
+      <div class="ph-title" id="popTitle">—</div>
+      <div class="ph-actions">
+        <div class="save-ind" id="saveInd"><div class="save-dot"></div> Sauvegardé</div>
+        <button class="btn btn-ghost" id="btnLecEdit" style="display:none">
+          <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+          Modifier
+        </button>
+        <button class="btn btn-primary" id="btnLecSave" style="display:none">Enregistrer</button>
+        <button class="btn-ico" id="btnLecDel" title="Supprimer" style="display:none">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 11v6"/><path d="M14 11v6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+        </button>
+        <button class="btn-ico" id="btnPopClose">✕</button>
+      </div>
+    </div>
+    <div class="pbody" id="popBody"></div>
+  </div>
+</div>
+
+<!-- ══ MODALE SUPPRESSION ══ -->
+<div class="mod-ov" id="modDel" style="display:none">
+  <div class="mod">
+    <h3>Supprimer ce livre ?</h3>
+    <p>Cette action supprimera définitivement l'entrée. Elle est irréversible.</p>
+    <div class="mod-act">
+      <button class="btn btn-ghost" id="btnDelCancel">Annuler</button>
+      <button class="btn btn-danger" id="btnDelConfirm">Supprimer</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ MODALE BUJO ══ -->
+<div class="bmod-ov" id="bmodOv" onclick="handleBmodClick(event)">
+  <div class="bmod">
+    <div class="bmod-title" id="bmodTitle">Nouvelle tâche</div>
+    <div class="bf">
+      <label>Nom</label>
+      <input type="text" id="bmodName" placeholder="Description…">
+    </div>
+    <div class="bf" id="bdayTogWrap">
+  <div class="tog-row" onclick="toggleBday()">
+        <span class="tog-label">
+          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-8a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8"/><path d="M4 16s.5-1 2-1 2.5 2 4 2 2.5-2 4-2 2.5 2 4 2 2-1 2-1"/><path d="M2 21h20"/><path d="M7 8v3"/><path d="M12 8v3"/><path d="M17 8v3"/><path d="M7 4h.01"/><path d="M12 4h.01"/><path d="M17 4h.01"/></svg>
+          Anniversaire récurrent
+        </span>
+        <div class="tog-sw" id="bdayTog"></div>
+      </div>
+      <div class="bday-hint" id="bdayHint">La date de naissance est conservée — s'affiche chaque année au bon jour.</div>
+    </div>
+    <div class="bf">
+      <label id="bmodDateLbl">Date</label>
+      <input type="text" id="bmodDate" placeholder="2025-04-11 · 2025-04 · 2025">
+      <div class="bhint" id="bmodDateHint">Date complète · mois · année seulement</div>
+      <div class="presets" id="bmodPresets">
+        <button class="preset" onclick="setPreset('today')">Aujourd'hui</button>
+        <button class="preset" onclick="setPreset('tomorrow')">Demain</button>
+        <button class="preset" onclick="setPreset('thisweek')">Cette semaine</button>
+        <button class="preset" onclick="setPreset('thismonth')">Ce mois</button>
+        <button class="preset" onclick="setPreset('nextmonth')">Mois prochain</button>
+        <button class="preset" onclick="setPreset('thisyear')">Cette année</button>
+        <button class="preset" onclick="setPreset('nextyear')">An prochain</button>
+      </div>
+    </div>
+    <div class="bf">
+      <div class="tog-row" onclick="toggleProjet()">
+        <span class="tog-label">
+          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 22V7a1 1 0 0 0-1-1H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-5a1 1 0 0 0-1-1H2"/><rect x="14" y="2" width="8" height="8" rx="1"/></svg>
+          Projet
+        </span>
+        <div class="tog-sw" id="projetTog"></div>
+      </div>
+    </div>
+    <div class="bmod-act">
+      <button class="bd" id="btnBdel" style="display:none" onclick="deleteBTask()">Supprimer</button>
+      <button class="bc" onclick="closeBmod()">Annuler</button>
+      <button class="bs" onclick="saveBTask()">Enregistrer</button>
+    </div>
+  </div>
+</div>
+
+<script>
+'use strict';
+
+// ══════════════════════════════════════════════
+//  CONFIG VIA URL PARAMS
+// ══════════════════════════════════════════════
+(function applyConfig() {
+  const p = new URLSearchParams(location.search);
+
+  // Couleur maître
+  const accent = p.get('accent');
+  if (accent) {
+    const hex = accent.startsWith('#') ? accent : '#' + accent;
+    document.documentElement.style.setProperty('--accent', hex);
+    // Générer une version soft (20% opacité)
+    document.documentElement.style.setProperty('--accent-soft', hex + '33');
+  }
+
+  // Masquer onglets
+  if (p.get('lectures') === 'off') {
+    document.querySelector('[data-tab="lectures"]')?.remove();
+  }
+  if (p.get('collections') === 'off') {
+    document.querySelector('[data-tab="collections"]')?.remove();
+  }
+
+  // Titre personnalisé
+  const titre = p.get('titre');
+  if (titre) {
+    document.title = titre;
+    const bujoTab = document.querySelector('[data-tab="bujo"] .tab-label');
+    if (bujoTab) bujoTab.textContent = titre;
+  }
+})();
+
+// ══════════════════════════════════════════════════════
+//  CONSTANTES
+// ══════════════════════════════════════════════════════
+const pad = n => String(n).padStart(2,'0');
+const today = new Date(); today.setHours(0,0,0,0);
+const todayStr = `${today.getFullYear()}-${pad(today.getMonth()+1)}-${pad(today.getDate())}`;
+const thisYear = today.getFullYear();
+const MFR = ['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
+const MSH = ['jan','fév','mar','avr','mai','jun','jul','aoû','sep','oct','nov','déc'];
+const DFR = ['Dimanche','Lundi','Mardi','Mercredi','Jeudi','Vendredi','Samedi'];
+
+// ══════════════════════════════════════════════════════
+//  ÉTAT
+// ══════════════════════════════════════════════════════
+let isProjet = false;
+let tasks       = [];   // données bujo
+let lecRecs     = [];   // données lectures
+let lecFiltered = [];
+let calY = today.getFullYear(), calM = today.getMonth();
+
+// Vue bujo — valeur courante
+let currentView = 'today';
+
+// Modale bujo
+let editIdx  = null;
+let isBday   = false;
+
+// Lectures
+let lecSelId    = null;
+let lecMode     = null; // 'read' | 'edit' | 'create'
+let lecFilter   = 'all';
+let lecSearch   = '';
+let lSortC = 'titre', lSortD = 1;
+let lCF = {titre:'',auteur:'',statut:'',date_edition:''};
+let saveT = null;
+
+// ══════════════════════════════════════════════════════
+//  NAVIGATION ONGLETS
+// ══════════════════════════════════════════════════════
+let colsLoaded = false;
+function switchTab(tab) {
+  document.querySelectorAll('.app-tab').forEach(t => t.classList.toggle('active', t.dataset.tab === tab));
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById('page-' + tab).classList.add('active');
+  if (tab === 'bujo') renderMain();
+  if (tab === 'collections' && !colsLoaded) {
+    colsLoaded = true;
+    if (typeof grist !== 'undefined') loadCollections();
+    else initColDemo();
+  }
+}
+
+// ══════════════════════════════════════════════════════
+//  CALENDRIER
+// ══════════════════════════════════════════════════════
+function calMove(dir) {
+  calM += dir;
+  if (calM > 11) { calM = 0; calY++; }
+  else if (calM < 0) { calM = 11; calY--; }
+  renderCal();
+}
+
+function renderCal() {
+  document.getElementById('calLabel').textContent = MFR[calM].substring(0,4).toUpperCase() + ' ' + calY;
+  const g = document.getElementById('calGrid');
+  g.innerHTML = '';
+  ['L','M','M','J','V','S','D'].forEach(d => {
+    const e = document.createElement('div'); e.className='cal-day-name'; e.textContent=d; g.appendChild(e);
+  });
+  const off = (new Date(calY,calM,1).getDay()+6)%7;
+  const dim = new Date(calY,calM+1,0).getDate();
+  const tds = new Set(tasks.filter(t=>!t.bday&&/^\d{4}-\d{2}-\d{2}$/.test(t.date)).map(t=>t.date));
+  const bds = new Set();
+  tasks.filter(t=>t.bday).forEach(t=>{
+    const mx = t.date.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    if (mx) bds.add(`${calY}-${mx[2]}-${mx[3]}`);
+  });
+  for (let i=0;i<off;i++){const e=document.createElement('div');e.className='cal-day other';g.appendChild(e);}
+  for (let d=1;d<=dim;d++){
+    const e=document.createElement('div'); e.className='cal-day';
+    e.textContent=d;
+    const ds=`${calY}-${pad(calM+1)}-${pad(d)}`;
+    if(ds===todayStr) e.classList.add('today');
+    if(tds.has(ds)) e.classList.add('has-task');
+    if(bds.has(ds)) e.classList.add('has-bday');
+    if(tds.has(ds)||bds.has(ds)){
+      e.addEventListener('click', ev => { ev.stopPropagation(); showCalPop(ds, e); });
+    }
+    g.appendChild(e);
+  }
+}
+
+// ══════════════════════════════════════════════════════
+//  POPOVER CALENDRIER
+// ══════════════════════════════════════════════════════
+function showCalPop(ds, targetEl) {
+  const pop = document.getElementById('calPop');
+  // Collecter les tâches du jour (tâches normales)
+  const dayTasks = tasks.filter(t => !t.bday && t.date === ds);
+  // Anniversaires : comparer mois-jour seulement
+  const mmdd = ds.slice(5); // MM-DD
+  const bdayTasks = tasks.filter(t => {
+    if (!t.bday) return false;
+    const mx = t.date.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    return mx && `${mx[2]}-${mx[3]}` === mmdd;
+  });
+
+  // Formater la date
+  const [y,m,d] = ds.split('-').map(Number);
+  const dateLabel = `${d} ${MFR[m-1]} ${y}`;
+
+  let html = `<div class="cal-pop-date">${dateLabel}</div>`;
+  bdayTasks.forEach(t => {
+    const mx = t.date.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    const age = mx ? (parseInt(ds.slice(0,4)) - parseInt(mx[1])) : null;
+    const ageStr = age !== null ? `<span class="cal-pop-age">${age} ans</span>` : '';
+    html += `<div class="cal-pop-item">
+      <div class="cal-pop-bday"></div>
+      <span class="cal-pop-name cal-pop-bday-name">${esc(t.name)}</span>${ageStr}
+    </div>`;
+  });
+  dayTasks.forEach(t => {
+    html += `<div class="cal-pop-item">
+      <div class="cal-pop-check${t.done?' done':''}"></div>
+      <span class="cal-pop-name${t.done?' done':''}" style="${t.done?'text-decoration:line-through;color:var(--muted)':''}">${esc(t.name)}</span>
+    </div>`;
+  });
+
+  pop.innerHTML = html;
+
+  // Positionner le popover sous la cellule cliquée
+  const rect = targetEl.getBoundingClientRect();
+  const sidebar = document.querySelector('.bujo-sidebar').getBoundingClientRect();
+  pop.style.display = 'block';
+  const popW = 210;
+  let left = rect.left;
+  // S'assurer que le popover reste dans la sidebar ou au moins visible
+  if (left + popW > sidebar.right + 8) left = sidebar.right - popW - 4;
+  if (left < sidebar.left) left = sidebar.left + 4;
+  pop.style.left = left + 'px';
+  pop.style.top = (rect.bottom + 4) + 'px';
+  pop.style.width = popW + 'px';
+}
+
+function hideCalPop() {
+  document.getElementById('calPop').style.display = 'none';
+}
+
+// Fermer le popover en cliquant ailleurs
+document.addEventListener('click', e => {
+  const pop = document.getElementById('calPop');
+  if (pop && !pop.contains(e.target)) hideCalPop();
+});
+
+// ══════════════════════════════════════════════════════
+//  BUJO — HELPERS
+// ══════════════════════════════════════════════════════
+function classify(t) {
+  if (t.bday) return 'bday';
+  const d=t.date||'';
+  if(/^\d{4}-\d{2}-\d{2}$/.test(d)) return 'full';
+  if(/^\d{4}-\d{2}$/.test(d)) return 'monthly';
+  if(/^\d{4}$/.test(d)) return 'yearly';
+  return 'none';
+}
+function isLate(t)  { return !t.bday && classify(t)==='full' && t.date<todayStr && !t.done; }
+function isWeek(t)  {
+  if(t.bday||classify(t)!=='full') return false;
+  const tm=new Date(today); tm.setDate(today.getDate()+1);
+  const nw=new Date(today); nw.setDate(today.getDate()+8);
+  const dt=new Date(t.date+'T00:00:00');
+  return dt>=tm && dt<nw;
+}
+function bdayNext(t) {
+  const mx=t.date.match(/^(\d{4})-(\d{2})-(\d{2})$/); if(!mx) return null;
+  const by=parseInt(mx[1]),mm=mx[2],dd=mx[3];
+  const occ=`${thisYear}-${mm}-${dd}`;
+  return occ>=todayStr ? {ds:occ,age:thisYear-by} : {ds:`${thisYear+1}-${mm}-${dd}`,age:thisYear-by+1};
+}
+function dayLabel(ds) {
+  const [y,m,d]=ds.split('-').map(Number);
+  const dt=new Date(y,m-1,d); dt.setHours(0,0,0,0);
+  const diff=Math.round((dt-today)/86400000);
+  if(diff===0) return {lbl:"Aujourd'hui",isT:true};
+  if(diff===1) return {lbl:'Demain',isT:false};
+  if(diff>1&&diff<7) return {lbl:DFR[dt.getDay()],isT:false};
+  if(diff<0) return {lbl:`${d} ${MSH[m-1]} ${y}`,isT:false,late:true};
+  return {lbl:`${d} ${MSH[m-1]} ${y}`,isT:false};
+}
+function fmtM(ds){const [y,m]=ds.split('-').map(Number);return MFR[m-1]+' '+y;}
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+
+// ══════════════════════════════════════════════════════
+//  BUJO — HTML tâche
+// ══════════════════════════════════════════════════════
+function tHTML(t,i,age){
+  if(t.bday){
+    const a = age !== undefined ? `<span class="tage">${age} ans</span>` : '';
+    return `<div class="titem bday-item">
+      <div class="bdot" style="display:flex;align-items:center;justify-content:center;width:16px;height:16px;flex-shrink:0">
+        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#c8a0b8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-8a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8"/><path d="M4 16s.5-1 2-1 2.5 2 4 2 2.5-2 4-2 2.5 2 4 2 2-1 2-1"/><path d="M2 21h20"/><path d="M7 8v3"/><path d="M12 8v3"/><path d="M17 8v3"/><path d="M7 4h.01"/><path d="M12 4h.01"/><path d="M17 4h.01"/></svg>
+      </div>
+      <div class="tname">${esc(t.name)}${a}</div>
+      <button class="tedit" onclick="openBmod(${i})">&#9998;</button>
+    </div>`;
+  }
+  return `<div class="titem${t.done?' done':''}">
+    <div class="tchk${t.done?' checked':''}" onclick="toggleT(${i})"></div>
+    <div class="tname">${esc(t.name)}</div>
+    <button class="tedit" onclick="openBmod(${i})">&#9998;</button>
+  </div>`;
+}
+
+
+// ══════════════════════════════════════════════════════
+//  COLONNE AGENDA SEMAINE (droite bujo)
+// ══════════════════════════════════════════════════════
+function renderWeekCol() {
+  const el = document.getElementById('bujoWeekCol');
+  if (!el) return;
+  const DAYS = ['Dim','Lun','Mar','Mer','Jeu','Ven','Sam'];
+  const mon = new Date(today);
+  mon.setDate(today.getDate() - ((today.getDay() + 6) % 7));
+
+  // Mois courant au format YYYY-MM pour les tâches mensuelles
+  const thisMonthKey = `${today.getFullYear()}-${pad(today.getMonth()+1)}`;
+  const monthTasks = tasks.filter(t => !t.bday && t.date === thisMonthKey);
+
+  let html = `<div class="week-col-title">Cette semaine</div>`;
+
+  for (let d = 0; d < 7; d++) {
+    const day = new Date(mon);
+    day.setDate(mon.getDate() + d);
+    const ds = `${day.getFullYear()}-${pad(day.getMonth()+1)}-${pad(day.getDate())}`;
+    const isToday = ds === todayStr;
+    const isPast  = ds < todayStr;
+
+    // Tâches du jour exact
+    const dayTasks = tasks.filter(t => !t.bday && t.date === ds);
+    // Anniversaires : comparer MM-DD
+    const mmdd = ds.slice(5);
+    const bdayT = tasks.filter(t => {
+      if (!t.bday) return false;
+      const mx = t.date.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+      return mx && `${mx[2]}-${mx[3]}` === mmdd;
+    });
+
+    const pastStyle = isPast ? 'opacity:.4' : '';
+    const numHtml = isToday
+      ? `<span class="week-day-num today-num">${day.getDate()}</span>`
+      : `<span class="week-day-num" style="${pastStyle}">${day.getDate()}</span>`;
+    const nameHtml = `<span class="week-day-name${isToday?' today-name':''}">${DAYS[day.getDay()]}</span>`;
+
+    html += `<div class="week-day"><div class="week-day-hdr">${numHtml}${nameHtml}</div>`;
+
+    // Anniversaires passés en grisé
+    bdayT.forEach(t => {
+      const pastBday = isPast && !isToday;
+      html += `<div class="week-task${pastBday?' done-wt':''}">
+        <div class="week-task-dot bday-wt"></div>
+        <span class="week-task-name">${esc(t.name)}</span>
+      </div>`;
+    });
+    dayTasks.forEach(t => {
+      const late = isPast && !isToday && !t.done;
+      html += `<div class="week-task${t.done?' done-wt':''}">
+        <div class="week-task-dot${late?' late-wt':''}"></div>
+        <span class="week-task-name">${esc(t.name)}</span>
+      </div>`;
+    });
+    if (!dayTasks.length && !bdayT.length) {
+      html += `<div class="week-empty">—</div>`;
+    }
+    html += `</div>`;
+  }
+
+  // Section tâches du mois (format YYYY-MM)
+  if (monthTasks.length) {
+    html += `<div class="week-col-title" style="margin-top:14px">Ce mois</div>`;
+    monthTasks.forEach(t => {
+      html += `<div class="week-task${t.done?' done-wt':''}">
+        <div class="week-task-dot${t.done?'':' late-wt'}" style="background:var(--muted)"></div>
+        <span class="week-task-name">${esc(t.name)}</span>
+      </div>`;
+    });
+  }
+
+  el.innerHTML = html;
+}
+
+function renderProjetCol() {
+  const el = document.getElementById('bujoProjetCol');
+  if (!el) return;
+  const projets = tasks.filter(t => t.projet && !t.bday)
+    .sort((a, b) => (a.done === b.done) ? a.date.localeCompare(b.date) : (a.done ? 1 : -1));
+
+  let html = `<div class="proj-col-title">Projets</div>`;
+  html += `<button class="proj-add-btn" onclick="openBmodProjet()">
+    <svg width="9" height="9" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 1v10M1 6h10"/></svg>
+    Nouveau projet
+  </button>`;
+
+  if (!projets.length) {
+    html += `<div class="proj-empty">Aucun projet</div>`;
+  } else {
+    projets.forEach(t => {
+      const idx = tasks.indexOf(t);
+      const dateHtml = t.date ? `
+        <div class="proj-date">
+          <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+          ${fmtProjDate(t.date)}
+        </div>` : '';
+      html += `<div class="proj-card${t.done ? ' done-card' : ''}">
+        <div class="proj-card-top">
+          <div class="proj-chk${t.done ? ' done' : ''}" onclick="toggleT(${idx})"></div>
+          <div class="proj-name${t.done ? ' done' : ''}">${esc(t.name)}</div>
+          <button class="proj-edit" onclick="openBmod(${idx})">&#9998;</button>
+        </div>
+        ${dateHtml}
+      </div>`;
+    });
+  }
+  el.innerHTML = html;
+}
+
+function fmtProjDate(d) {
+  if (/^\d{4}-\d{2}-\d{2}$/.test(d)) {
+    const [y,m,da] = d.split('-').map(Number);
+    return `${da} ${MSH[m-1]} ${y}`;
+  }
+  if (/^\d{4}-\d{2}$/.test(d)) return fmtM(d);
+  if (/^\d{4}$/.test(d)) return d;
+  return d;
+}
+
+function openBmodProjet() {
+  openBmod(); // ouvre la modale normale…
+  // …puis active automatiquement le toggle Projet
+  isProjet = true;
+  refreshProjetUI();
+}
+
+// ══════════════════════════════════════════════════════
+//  BUJO — NAVIGATION & RENDU
+//  setView : change la vue et re-rend TOUJOURS
+// ══════════════════════════════════════════════════════
+function setView(v) {
+  currentView = v;
+  // Mettre à jour les boutons nav (y compris ceux générés dynamiquement)
+  document.querySelectorAll('.nitem').forEach(el => el.classList.remove('active'));
+  const fixed = document.getElementById('n-'+v);
+  if (fixed) fixed.classList.add('active');
+  else {
+    const dyn = document.querySelector(`.nitem[data-v="${CSS.escape(v)}"]`);
+    if (dyn) dyn.classList.add('active');
+  }
+  renderMain();
+}
+
+function renderSidebar() {
+  // Badges
+  const late  = tasks.filter(isLate);
+  const todayT = tasks.filter(t=>!t.bday&&t.date===todayStr&&!t.done);
+  const todayB = tasks.filter(t=>t.bday&&bdayNext(t)?.ds===todayStr);
+  const weekT  = tasks.filter(t=>isWeek(t)&&!t.done);
+  document.getElementById('b-today').textContent = (todayT.length+todayB.length)||'';
+  document.getElementById('b-week').textContent  = weekT.length||'';
+  document.getElementById('b-bdays').textContent = tasks.filter(t=>t.bday).length||'';
+  const nl=document.getElementById('n-late');
+  document.getElementById('b-late').textContent = late.length||'';
+  nl.style.display = late.length?'flex':'none';
+
+  // Future logs
+  const mKeys=[...new Set(tasks.filter(t=>classify(t)==='monthly').map(t=>t.date))].sort();
+  const yKeys=[...new Set(tasks.filter(t=>classify(t)==='yearly').map(t=>t.date))].sort();
+  let html='';
+  if(mKeys.length||yKeys.length){
+    html+=`<div class="nav-sec-title" style="font-size:9px;font-weight:500;letter-spacing:.09em;text-transform:uppercase;color:var(--light);margin-bottom:3px;padding:0 6px">Future logs</div>`;
+    mKeys.forEach(k=>{
+      const c=tasks.filter(t=>t.date===k&&!t.done).length;
+      const a=currentView===`month:${k}`?' active':'';
+      // data-v sert à retrouver le bon bouton dans setView
+      html+=`<button class="nitem${a}" data-v="month:${k}" onclick="setView('month:${k}')">
+        <span class="nitem-inner"><span class="nitem-label">${fmtM(k)}</span></span>
+        <span class="nbadge">${c||''}</span></button>`;
+    });
+    yKeys.forEach(k=>{
+      const c=tasks.filter(t=>t.date===k&&!t.done).length;
+      const a=currentView===`year:${k}`?' active':'';
+      html+=`<button class="nitem${a}" data-v="year:${k}" onclick="setView('year:${k}')">
+        <span class="nitem-inner"><span class="nitem-label">${k}</span></span>
+        <span class="nbadge">${c||''}</span></button>`;
+    });
+  }
+  document.getElementById('futureLogs').innerHTML=html;
+}
+
+function renderMain() {
+  renderCal();
+  renderSidebar();
+  renderWeekCol();
+  renderProjetCol();
+  const el=document.getElementById('bujoMain');
+  const v=currentView;
+  let html='';
+  const tm=new Date(today); tm.setDate(today.getDate()+1);
+  const nw=new Date(today); nw.setDate(today.getDate()+8);
+
+  if(v==='today'){
+    const late  = tasks.filter(t => isLate(t) && !t.projet).sort((a,b)=>a.date.localeCompare(b.date));
+    const todayT = tasks.filter(t=>!t.bday&&!t.projet&&t.date===todayStr);
+    const todayB=tasks.filter(t=>t.bday&&bdayNext(t)?.ds===todayStr);
+    if(late.length){
+      const lg={};late.forEach(t=>{if(!lg[t.date])lg[t.date]=[];lg[t.date].push(t);});
+      const isOpen = lateOpen !== false; // ouvert par défaut
+      html+=`<div class="section">
+        <div class="sec-label s-late" style="cursor:pointer;display:flex;align-items:center;justify-content:space-between" onclick="toggleLate()">
+          <span>En retard (${late.length})</span>
+          <span style="font-size:11px;opacity:.7">${isOpen ? '▲' : '▼'}</span>
+        </div>`;
+      if(isOpen){
+        Object.keys(lg).sort().forEach(k=>{
+          html+=`<div class="day-group"><div class="day-hdr dh-late">${dayLabel(k).lbl}</div>`;
+          html+=lg[k].map(t=>tHTML(t,tasks.indexOf(t))).join('');
+          html+=`</div>`;
+        });
+      }
+      html+=`</div>`;
+    }
+    if(todayT.length||todayB.length){
+      html+=`<div class="section"><div class="sec-label">Aujourd'hui</div>`;
+      todayB.forEach(t=>{const o=bdayNext(t);html+=tHTML(t,tasks.indexOf(t),o?.age);});
+      html+=todayT.map(t=>tHTML(t,tasks.indexOf(t))).join('');
+      html+=`</div>`;
+    }
+    if(!late.length&&!todayT.length&&!todayB.length) html=`<div class="empty-bujo">Aucune tâche pour aujourd'hui</div>`;
+
+  } else if(v==='late'){
+    const late = tasks.filter(t => isLate(t) && !t.projet).sort((a,b)=>a.date.localeCompare(b.date));
+    if(late.length){
+      const lg={};late.forEach(t=>{if(!lg[t.date])lg[t.date]=[];lg[t.date].push(t);});
+      const isOpen = lateOpen !== false;
+      html+=`<div class="section">
+        <div class="sec-label s-late" style="cursor:pointer;display:flex;align-items:center;justify-content:space-between" onclick="toggleLate()">
+          <span>En retard (${late.length})</span>
+          <span style="font-size:11px;opacity:.7">${isOpen ? '▲' : '▼'}</span>
+        </div>`;
+      if(isOpen){
+        Object.keys(lg).sort().forEach(k=>{
+          html+=`<div class="day-group"><div class="day-hdr dh-late">${dayLabel(k).lbl}</div>`;
+          html+=lg[k].map(t=>tHTML(t,tasks.indexOf(t))).join('');
+          html+=`</div>`;
+        });
+      }
+      html+=`</div>`;
+    } else html=`<div class="empty-bujo">Aucune tâche en retard</div>`;
+
+  } else if(v==='week'){
+    const wg={};
+    tasks.filter(t=>isWeek(t)&&!t.projet).sort((a,b)=>a.date.localeCompare(b.date)).forEach(t=>{
+      if(!wg[t.date])wg[t.date]=[]; wg[t.date].push(t);
+    });
+    tasks.forEach((t,i)=>{
+  if(!t.bday) return;
+  const o=bdayNext(t); if(!o)return;
+  const dt=new Date(o.ds+'T00:00:00');
+  if(dt>=tm&&dt<nw){if(!wg[o.ds])wg[o.ds]=[];wg[o.ds].push({...t,_age:o.age,_idx:i});}
+});
+    const wk=Object.keys(wg).sort();
+    if(wk.length){
+      html+=`<div class="section"><div class="sec-label">Cette semaine</div>`;
+      wk.forEach(k=>{
+        const {lbl,isT}=dayLabel(k);
+        html+=`<div class="day-group"><div class="day-hdr${isT?' dh-today':''}">${lbl}</div>`;
+        html+=wg[k].map(t=>tHTML(t,t._idx!==undefined?t._idx:tasks.indexOf(t),t._age)).join('');
+        html+=`</div>`;
+      });
+      html+=`</div>`;
+    } else html=`<div class="empty-bujo">Aucune tâche cette semaine</div>`;
+
+  } else if(v==='bdays'){
+    const bd=tasks.reduce((acc,t,i)=>{
+  if(!t.bday) return acc;
+  const o=bdayNext(t)||{ds:'9999-12-31',age:0};
+  acc.push({...t,_nd:o.ds,_age:o.age,_idx:i});
+  return acc;
+},[]).sort((a,b)=>a._nd.localeCompare(b._nd));
+    if(bd.length){
+      const mg={};bd.forEach(t=>{const mk=t._nd.substring(0,7);if(!mg[mk])mg[mk]=[];mg[mk].push(t);});
+      html+=`<div class="section"><div class="sec-label">Anniversaires à venir</div>`;
+      Object.keys(mg).sort().forEach(mk=>{
+        html+=`<div class="day-group"><div class="day-hdr">${fmtM(mk)}</div>`;
+        html+=mg[mk].map(t=>tHTML(t,t._idx,t._age)).join('');
+        html+=`</div>`;
+      });
+      html+=`</div>`;
+    } else html=`<div class="empty-bujo">Aucun anniversaire enregistré</div>`;
+
+  } else if(v.startsWith('month:')){
+    const k=v.slice(6);
+    const ts=tasks.filter(t=>t.date===k&&!t.bday);
+    html+=`<div class="section"><div class="sec-label">${fmtM(k)}</div>`;
+    html+=ts.length?ts.map(t=>tHTML(t,tasks.indexOf(t))).join(''):`<div class="empty-bujo" style="text-align:left;font-size:11px;padding:8px 0">Aucune tâche</div>`;
+    html+=`</div>`;
+
+  } else if(v.startsWith('year:')){
+    const k=v.slice(5);
+    const ts=tasks.filter(t=>t.date===k&&!t.bday);
+    html+=`<div class="section"><div class="sec-label">${k}</div>`;
+    html+=ts.length?ts.map(t=>tHTML(t,tasks.indexOf(t))).join(''):`<div class="empty-bujo" style="text-align:left;font-size:11px;padding:8px 0">Aucune tâche</div>`;
+    html+=`</div>`;
+  }
+
+  el.innerHTML=html;
+}
+
+// ══════════════════════════════════════════════════════
+//  BUJO — ACTIONS
+// ══════════════════════════════════════════════════════
+function toggleT(i){
+  tasks[i].done=!tasks[i].done;
+  gBujoUpdate(tasks[i]);
+  renderMain();
+}
+
+function openBmodBday() {
+  openBmod(); // openBmod cache le toggle par défaut
+  isBday = true;
+  refreshBdayUI();
+  document.getElementById('bdayTogWrap').style.display = 'block'; // on le réaffiche ici
+}
+
+function openBmod(i){
+  editIdx=i!==undefined?i:null;
+  const t=editIdx!==null?tasks[editIdx]:null;
+  isBday=t?!!t.bday:false;
+  isProjet = t ? !!t.projet : false;
+  document.getElementById('bmodTitle').textContent=t?(t.bday?'Modifier l\'anniversaire':'Modifier la tâche'):'Nouvelle tâche';
+  document.getElementById('bmodName').value=t?t.name:'';
+  document.getElementById('btnBdel').style.display=t?'block':'none';
+  refreshBdayUI();
+  refreshProjetUI();
+  // Masquer le toggle anniversaire APRES refreshBdayUI pour ne pas être écrasé
+  const showBdayToggle = t && t.bday;
+document.getElementById('bdayTogWrap').style.display = showBdayToggle ? 'block' : 'none';
+  document.getElementById('bmodDate').value=t?formatDateForInput(t.date):'';
+  document.getElementById('bmodOv').classList.add('open');
+  setTimeout(()=>document.getElementById('bmodName').focus(),60);
+}
+function closeBmod(){document.getElementById('bmodOv').classList.remove('open');editIdx=null;isBday=false;}
+function handleBmodClick(e){if(e.target===document.getElementById('bmodOv'))closeBmod();}
+
+function toggleBday(){
+  isBday=!isBday; refreshBdayUI();
+}
+function refreshBdayUI(){
+  document.getElementById('bdayTog').classList.toggle('on',isBday);
+  document.getElementById('bdayHint').classList.toggle('vis',isBday);
+  document.getElementById('bmodDateLbl').textContent=isBday?'Date de naissance':'Date';
+  document.getElementById('bmodDateHint').textContent=isBday?'Format JJ/MM/AAAA — ex : 14/07/1990':'Date complète · mois · année seulement';
+  document.getElementById('bmodPresets').style.display=isBday?'none':'flex';
+  document.getElementById('bmodDate').placeholder=isBday?'14/07/1990':'11/04/2025 · 04/2025 · 2025';
+}
+
+function toggleProjet() {
+  isProjet = !isProjet;
+  refreshProjetUI();
+}
+function refreshProjetUI() {
+  document.getElementById('projetTog').classList.toggle('on', isProjet);
+}
+
+
+function setPreset(p){
+  const x=new Date(today);let v='';
+  if(p==='today')v=todayStr;
+  if(p==='tomorrow'){x.setDate(x.getDate()+1);v=`${x.getFullYear()}-${pad(x.getMonth()+1)}-${pad(x.getDate())}`;}
+  if(p==='thisweek'){// La semaine courante → on place à cette semaine (format mois pour le future log est inutile, on met la date du lundi)
+    const mon=new Date(today);mon.setDate(today.getDate()-((today.getDay()+6)%7));v=`${mon.getFullYear()}-${pad(mon.getMonth()+1)}-${pad(mon.getDate())}`;
+  }
+  if(p==='thismonth')v=`${today.getFullYear()}-${pad(today.getMonth()+1)}`;
+  if(p==='nextmonth'){const nm=new Date(today.getFullYear(),today.getMonth()+1,1);v=`${nm.getFullYear()}-${pad(nm.getMonth()+1)}`;}
+  if(p==='thisyear')v=`${today.getFullYear()}`;
+  if(p==='nextyear')v=`${today.getFullYear()+1}`;
+  document.getElementById('bmodDate').value=formatDateForInput(v);
+}
+
+function formatDateForInput(s) {
+  if (!s) return '';
+  // aaaa-mm-jj → jj/mm/aaaa
+  let m = s.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (m) return `${m[3]}/${m[2]}/${m[1]}`;
+  // aaaa-mm → mm/aaaa
+  m = s.match(/^(\d{4})-(\d{2})$/);
+  if (m) return `${m[2]}/${m[1]}`;
+  // aaaa → aaaa
+  return s;
+}
+
+function parseInputDate(s) {
+  s = s.trim();
+  if (!s) return '';
+  // jj/mm/aaaa → aaaa-mm-jj
+  let m = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+  if (m) return `${m[3]}-${pad(m[2])}-${pad(m[1])}`;
+  // mm/aaaa → aaaa-mm
+  m = s.match(/^(\d{1,2})\/(\d{4})$/);
+  if (m) return `${m[2]}-${pad(m[1])}`;
+  // aaaa seul
+  m = s.match(/^(\d{4})$/);
+  if (m) return m[1];
+  // déjà au format interne aaaa-mm-jj / aaaa-mm / aaaa → on laisse tel quel
+  return s;
+}
+
+function saveBTask(){
+  const name=document.getElementById('bmodName').value.trim();
+  // Si aucune date saisie et pas un anniversaire → date du jour par défaut
+  let date=parseInputDate(document.getElementById('bmodDate').value);
+  if(!date && !isBday) date=todayStr;
+  if(!name){document.getElementById('bmodName').focus();return;}
+  if(editIdx!==null){
+    tasks[editIdx].name=name; tasks[editIdx].date=date; tasks[editIdx].bday=isBday; tasks[editIdx].projet=isProjet;
+    gBujoUpdate(tasks[editIdx]);
+  } else {
+    const nt = {name, date, done:false, bday:isBday, projet:isProjet};
+    tasks.push(nt); gBujoAdd(nt);
+  }
+  closeBmod(); renderMain();
+}
+function deleteBTask(){
+  if(editIdx===null)return;
+  gBujoDelete(tasks[editIdx]); tasks.splice(editIdx,1);
+  closeBmod(); renderMain();
+}
+
+function toggleLate(){
+  lateOpen = !lateOpen;
+  renderMain();
+}
+
+// ══════════════════════════════════════════════════════
+//  GRIST — Bujo
+// ══════════════════════════════════════════════════════
+function gBujoUpdate(t){
+  if(typeof grist==='undefined'||!t.id)return;
+  grist.docApi.applyUserActions([['UpdateRecord','Bujo',t.id,{tache:t.name,date:t.date,termine:t.done,anniversaire:!!t.bday,projet:!!t.projet}]]).catch(console.error);
+}
+function gBujoAdd(t){
+  if(typeof grist==='undefined')return;
+  grist.docApi.applyUserActions([['AddRecord','Bujo',null,{tache:t.name,date:t.date,termine:false,anniversaire:!!t.bday,projet:!!t.projet}]]).catch(console.error);
+}
+function gBujoDelete(t){
+  if(typeof grist==='undefined'||!t.id)return;
+  grist.docApi.applyUserActions([['RemoveRecord','Bujo',t.id]]).catch(console.error);
+}
+
+// ══════════════════════════════════════════════════════
+//  LECTURES — HELPERS dates
+// ══════════════════════════════════════════════════════
+function parseDt(ts){
+  if(ts===null||ts===undefined||ts===false)return null;
+  const s=String(ts).trim(); if(!s||s==='null')return null;
+  if(s.includes('-')||isNaN(parseFloat(s))){const mx=s.match(/^(\d{4})(-(\d{2})(-(\d{2}))?)?/);if(!mx)return null;return new Date(Date.UTC(+mx[1],mx[3]?+mx[3]-1:0,mx[5]?+mx[5]:1));}
+  return new Date(parseFloat(s)*1000);
+}
+function dtYear(ts){const d=parseDt(ts);if(!d)return '—';const y=d.getUTCFullYear();return(y>=1&&y<=2200)?String(y):'—';}
+function dtLabel(ts){
+  const d=parseDt(ts);if(!d)return '—';
+  const y=d.getUTCFullYear(),mo=d.getUTCMonth()+1,da=d.getUTCDate();
+  if(da===1&&mo===1)return String(y);
+  if(da===1)return MFR[mo-1].slice(0,3)+' '+y;
+  return String(da).padStart(2,'0')+'/'+String(mo).padStart(2,'0')+'/'+y;
+}
+function sCls(s){if(s==='Lu')return 's-lu';if(s==='En cours')return 's-cours';return 's-lire';}
+
+// ══════════════════════════════════════════════════════
+//  LECTURES — TABLE
+// ══════════════════════════════════════════════════════
+function lecFilter2(){
+  lecFiltered=lecRecs.filter(r=>{
+    const mf=lecFilter==='all'||r.statut===lecFilter;
+    const ms=!lecSearch||(r.titre||'').toLowerCase().includes(lecSearch)||(r.auteur||'').toLowerCase().includes(lecSearch);
+    return mf&&ms;
+  });
+  lecRenderTable();
+  // Badges sidebar
+  document.getElementById('lf-badge-all').textContent    = lecRecs.length || '';
+  document.getElementById('lf-badge-alire').textContent  = lecRecs.filter(r=>r.statut==='À lire').length || '';
+  document.getElementById('lf-badge-encours').textContent= lecRecs.filter(r=>r.statut==='En cours').length || '';
+  document.getElementById('lf-badge-lu').textContent     = lecRecs.filter(r=>r.statut==='Lu').length || '';
+}
+
+function setLecFilter(f) {
+  lecFilter = f;
+  document.querySelectorAll('.lec-sidebar .nitem').forEach(el => el.classList.remove('active'));
+  const map = {'all':'lf-all','À lire':'lf-alire','En cours':'lf-encours','Lu':'lf-lu'};
+  const btn = document.getElementById(map[f]);
+  if (btn) btn.classList.add('active');
+  lecFilter2();
+}
+
+function lecRenderTable(){
+  const tb=document.getElementById('lecBody'); tb.innerHTML='';
+  let rows=lecFiltered.filter(r=>{
+    if(lCF.titre&&!(r.titre||'').toLowerCase().includes(lCF.titre))return false;
+    if(lCF.auteur&&!(r.auteur||'').toLowerCase().includes(lCF.auteur))return false;
+    if(lCF.statut&&r.statut!==lCF.statut)return false;
+    if(lCF.date_edition){const y=dtYear(r.date_edition);if(y==='—'||!y.includes(lCF.date_edition))return false;}
+    return true;
+  }).slice().sort((a,b)=>{const va=a[lSortC]||'',vb=b[lSortC]||'';return va<vb?-lSortD:va>vb?lSortD:0;});
+  if(!rows.length){tb.innerHTML='<tr><td colspan="5" style="text-align:center;color:var(--muted);padding:22px">Aucun résultat</td></tr>';return;}
+  rows.forEach(r=>{
+    const tr=document.createElement('tr'); tr.dataset.rid=r.id;
+    if(r.id===lecSelId)tr.classList.add('sel');
+    const badge=r.statut?`<span class="sbadge ${sCls(r.statut)}">${r.statut}</span>`:'<span style="color:var(--light);font-size:12px">—</span>';
+    const cu=r.cover&&String(r.cover).startsWith('http');
+    const cov=cu?`<img class="td-cov-img" src="${r.cover}" alt="" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"><div class="td-cov-ph" style="display:none">📗</div>`:`<div class="td-cov-ph">📗</div>`;
+    tr.innerHTML=`<td class="td-cov">${cov}</td><td class="td-titre">${r.titre||'<em style="color:var(--light)">Sans titre</em>'}</td><td class="td-auteur">${r.auteur||'<span style="color:var(--light)">—</span>'}</td><td>${badge}</td><td class="td-date">${dtYear(r.date_edition)}</td>`;
+    tr.addEventListener('click',()=>lecOpenPanel(r.id));
+    tb.appendChild(tr);
+  });
+}
+
+// Filtres & tri lectures
+document.getElementById('lecTable').addEventListener('input',e=>{const i=e.target.closest('.cfilt');if(!i)return;lCF[i.dataset.lc]=i.dataset.lc==='statut'?i.value:i.value.toLowerCase();lecRenderTable();});
+document.getElementById('lecTable').addEventListener('change',e=>{const i=e.target.closest('.cfilt');if(!i)return;lCF[i.dataset.lc]=i.dataset.lc==='statut'?i.value:i.value.toLowerCase();lecRenderTable();});
+document.getElementById('lecHead').addEventListener('click',e=>{
+  const th=e.target.closest('th[data-lc]');if(!th)return;
+  lSortD=th.classList.contains('sorted')?-lSortD:1; lSortC=th.dataset.lc;
+  document.querySelectorAll('#lecHead th').forEach(h=>{h.classList.remove('sorted');const ic=h.querySelector('.sort-ic');if(ic)ic.textContent='↕';});
+  th.classList.add('sorted'); th.querySelector('.sort-ic').textContent=lSortD===1?'↑':'↓';
+  lecRenderTable();
+});
+
+document.getElementById('lecSearch').addEventListener('input',e=>{lecSearch=e.target.value.toLowerCase();lecFilter2();});
+
+// ══════════════════════════════════════════════════════
+//  LECTURES — PANEL
+// ══════════════════════════════════════════════════════
+function lecOpenPanel(id){
+  lecSelId=id;
+  document.querySelectorAll('#lecBody tr').forEach(tr=>tr.classList.toggle('sel',parseInt(tr.dataset.rid)===id));
+  const r=lecRecs.find(r=>r.id===id);if(!r)return;
+  lecMode='read';
+  document.getElementById('popTitle').textContent=r.titre||'Sans titre';
+  document.getElementById('btnLecEdit').style.display='';
+  document.getElementById('btnLecSave').style.display='none';
+  document.getElementById('btnLecDel').style.display='';
+  document.getElementById('saveInd').classList.remove('vis');
+  lecRenderRead(r);
+  document.getElementById('popOv').classList.add('open');
+}
+function lecClosePanel(){document.getElementById('popOv').classList.remove('open');lecMode=null;lecSelId=null;document.querySelectorAll('#lecBody tr').forEach(t=>t.classList.remove('sel'));}
+document.getElementById('btnPopClose').addEventListener('click',lecClosePanel);
+document.getElementById('popOv').addEventListener('click',e=>{if(e.target===document.getElementById('popOv'))lecClosePanel();});
+
+function lecRenderRead(r){
+  const cu=r.cover&&String(r.cover).startsWith('http');
+  const cov=cu?`<img class="rcov" src="${r.cover}" alt="" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"><div class="rcov-ph" style="display:none">📗</div>`:`<div class="rcov-ph">📗</div>`;
+  const badge=r.statut?`<span class="sbadge ${sCls(r.statut)}">${r.statut}</span>`:'—';
+  const sec=(lbl,val)=>{if(!val)return '';const h=/<[a-z]/i.test(val)?val:val.replace(/\n/g,'<br>');return `<div class="rsec"><div class="rsec-t">${lbl}</div><div class="rsec-b">${h}</div></div>`;};
+  document.getElementById('popBody').innerHTML=`
+    <div class="rh">${cov}<div class="rmeta"><div class="rtitle">${r.titre||'<em>Sans titre</em>'}</div><div class="rauteur">${r.auteur||''}</div></div></div>
+    <div class="rprops">
+      <div class="rprop"><span class="rprop-l">Statut</span><span>${badge}</span></div>
+      <div class="rprop"><span class="rprop-l">Édition</span><span>${dtLabel(r.date_edition)}</span></div>
+      <div class="rprop"><span class="rprop-l">Lecture</span><span>${dtLabel(r.date_lecture)}</span></div>
+    </div>
+    ${sec('📝 Résumé',r.resume)}${sec('✦ Incipit',r.incipit)}${sec('👥 Personnages',r.personnages)}${sec('💬 Citations',r.citations)}`;
+}
+
+document.getElementById('btnLecEdit').addEventListener('click',()=>{
+  const r=lecRecs.find(r=>r.id===lecSelId);if(!r)return;
+  lecMode='edit'; document.getElementById('btnLecEdit').style.display='none'; document.getElementById('btnLecSave').style.display='';
+  lecRenderEdit(r);
+});
+
+function lTb(cmds){return '<div class="rich-tb">'+cmds.map(c=>{if(c==='|')return '<div class="tb-s"></div>';const[cmd,val,lbl]=c;const v=val?`'${val}'`:'null';return `<button class="tb-b" onmousedown="event.preventDefault();document.execCommand('${cmd}',false,${v})">${lbl}</button>`;}).join('')+'</div>';}
+
+function lFuzz(fid,ts){
+  const d=parseDt(ts);let prec='year',y='',mo='',da='';
+  if(d){y=d.getUTCFullYear();mo=d.getUTCMonth()+1;da=d.getUTCDate();if(da===1&&mo===1)prec='year';else if(da===1)prec='month';else prec='day';}
+  return lBFuzz(fid,prec,y,mo,da);
+}
+function lBFuzz(fid,prec,y,mo,da){
+  const moO=MFR.map((m,i)=>`<option value="${i+1}" ${mo==i+1?'selected':''}>${m}</option>`).join('');
+  const dF=prec==='day'?`<input type="number" class="fd-d" min="1" max="31" placeholder="JJ" value="${da||''}" data-fz="${fid}-d"><span class="fd-sep">/</span>`:'';
+  const mF=(prec==='day'||prec==='month')?`<select class="fd-m" data-fz="${fid}-m"><option value="">Mois…</option>${moO}</select><span class="fd-sep">/</span>`:'';
+  const cl=(y||mo||da)?`<button class="fd-cl" type="button" onclick="lCF2('${fid}')">✕</button>`:'';
+  return `<div class="fd" id="fz-${fid}">
+    <div class="fd-prec">
+      <button class="fd-pb${prec==='year'?' active':''}" type="button" onclick="lFP('${fid}','year')">A</button>
+      <button class="fd-pb${prec==='month'?' active':''}" type="button" onclick="lFP('${fid}','month')">M</button>
+      <button class="fd-pb${prec==='day'?' active':''}" type="button" onclick="lFP('${fid}','day')">J</button>
+    </div>
+    ${dF}${mF}<input type="number" class="fd-y" min="1" max="2200" placeholder="AAAA" value="${y||''}" data-fz="${fid}-y">
+    ${cl}</div>`;
+}
+function lFP(fid,prec){const c=document.getElementById('fz-'+fid);if(!c)return;const yr=c.querySelector('[data-fz$="-y"]')?.value||'';const mo=c.querySelector('[data-fz$="-m"]')?.value||'';const da=c.querySelector('[data-fz$="-d"]')?.value||'';c.outerHTML=lBFuzz(fid,prec,yr,mo,da);}
+function lCF2(fid){const c=document.getElementById('fz-'+fid);if(!c)return;c.outerHTML=lBFuzz(fid,'year','','','');}
+function lGFV(fid){const c=document.getElementById('fz-'+fid);if(!c)return null;const yr=parseInt(c.querySelector('[data-fz$="-y"]')?.value||'');if(!yr)return null;const act=c.querySelector('.fd-pb.active')?.textContent;const mo=act!=='A'?parseInt(c.querySelector('[data-fz$="-m"]')?.value||1)||1:1;const da=act==='J'?parseInt(c.querySelector('[data-fz$="-d"]')?.value||1)||1:1;return Math.floor(Date.UTC(yr,mo-1,da)/1000);}
+
+function lecRenderEdit(r){
+  const e2=v=>(v||'').replace(/&/g,'&amp;').replace(/"/g,'&quot;');
+  document.getElementById('popBody').innerHTML=`
+    <div class="eg"><div class="el">Titre</div><input class="ei" id="eT" value="${e2(r.titre)}" placeholder="Titre…"></div>
+    <div class="eg"><div class="el">Auteur</div><input class="ei" id="eA" value="${e2(r.auteur)}" placeholder="Auteur…"></div>
+    <div class="eg"><div class="el">Statut</div>
+      <select class="es" id="eSt">
+        <option value="" ${!r.statut?'selected':''}>— Aucun —</option>
+        <option value="À lire" ${r.statut==='À lire'?'selected':''}>À lire</option>
+        <option value="En cours" ${r.statut==='En cours'?'selected':''}>En cours</option>
+        <option value="Lu" ${r.statut==='Lu'?'selected':''}>Lu</option>
+      </select></div>
+    <div class="eg"><div class="el">Date d'édition</div>${lFuzz('ed',r.date_edition)}</div>
+    <div class="eg"><div class="el">Date de lecture</div>${lFuzz('lec',r.date_lecture)}</div>
+    <div class="eg"><div class="el">URL couverture</div><input class="ei" id="eCov" value="${e2(r.cover)}" placeholder="https://…"></div>
+    <div class="eg"><div class="el">📝 Résumé</div>${lTb([['bold',null,'<b>B</b>'],['italic',null,'<i>I</i>'],['underline',null,'<u>U</u>'],'|',['insertUnorderedList',null,'≡'],['formatBlock','blockquote','❞'],'|',['removeFormat',null,'✕']])}
+      <div class="rich-ed" id="eRes" contenteditable="true" data-ph="Résumé…"></div></div>
+    <div class="eg"><div class="el">✦ Incipit</div>${lTb([['bold',null,'<b>B</b>'],['italic',null,'<i>I</i>'],'|',['formatBlock','blockquote','❞'],['removeFormat',null,'✕']])}
+      <div class="rich-ed" id="eInc" contenteditable="true" data-ph="Incipit…"></div></div>
+    <div class="eg"><div class="el">👥 Personnages</div>${lTb([['bold',null,'<b>B</b>'],['italic',null,'<i>I</i>'],'|',['insertUnorderedList',null,'≡'],['removeFormat',null,'✕']])}
+      <div class="rich-ed" id="ePer" contenteditable="true" data-ph="Personnages…"></div></div>
+    <div class="eg" style="margin-bottom:32px"><div class="el">💬 Citations</div>${lTb([['bold',null,'<b>B</b>'],['italic',null,'<i>I</i>'],'|',['formatBlock','blockquote','❞'],['insertUnorderedList',null,'≡'],['removeFormat',null,'✕']])}
+      <div class="rich-ed" id="eCit" contenteditable="true" data-ph="Citations…"></div></div>`;
+  const sr=(id,v)=>{const el=document.getElementById(id);if(!el)return;el.innerHTML=(v&&/<[a-z]/i.test(v))?v:(v||'');};
+  sr('eRes',r.resume);sr('eInc',r.incipit);sr('ePer',r.personnages);sr('eCit',r.citations);
+}
+
+// Save
+document.getElementById('btnLecSave').addEventListener('click',async()=>{
+  const fields={titre:document.getElementById('eT')?.value||'',auteur:document.getElementById('eA')?.value||'',statut:document.getElementById('eSt')?.value||'',cover:document.getElementById('eCov')?.value||'',date_edition:lGFV('ed'),date_lecture:lGFV('lec'),resume:document.getElementById('eRes')?.innerHTML||'',incipit:document.getElementById('eInc')?.innerHTML||'',personnages:document.getElementById('ePer')?.innerHTML||'',citations:document.getElementById('eCit')?.innerHTML||''};
+  try{
+    if(lecMode==='create'){
+      const res=await grist.docApi.applyUserActions([['AddRecord','Lectures',null,fields]]);
+      lecSelId=res.retValues?.[0]??null;
+      await loadLectures();
+    } else {
+      await grist.docApi.applyUserActions([['UpdateRecord','Lectures',lecSelId,fields]]);
+      const ri=lecRecs.findIndex(r=>r.id===lecSelId);
+      if(ri>=0)lecRecs[ri]={...lecRecs[ri],...fields};
+    }
+    lecMode='read';
+    document.getElementById('btnLecEdit').style.display='';
+    document.getElementById('btnLecDel').style.display='';
+    document.getElementById('btnLecSave').style.display='none';
+    document.getElementById('popTitle').textContent=fields.titre||'Sans titre';
+    lecRenderRead({...(lecRecs.find(r=>r.id===lecSelId)||{}),...fields});
+    lecFilter2(); document.getElementById('badge-lectures').textContent=lecRecs.length||'';
+    const ind=document.getElementById('saveInd');ind.classList.add('vis');clearTimeout(saveT);saveT=setTimeout(()=>ind.classList.remove('vis'),2500);
+  }catch(e){alert('Erreur : '+e.message);}
+});
+document.getElementById('btnLecDel').addEventListener('click',()=>document.getElementById('modDel').style.display='flex');
+document.getElementById('btnDelCancel').addEventListener('click',()=>document.getElementById('modDel').style.display='none');
+document.getElementById('btnDelConfirm').addEventListener('click',async()=>{
+  document.getElementById('modDel').style.display='none';if(!lecSelId)return;
+  try{await grist.docApi.applyUserActions([['RemoveRecord','Lectures',lecSelId]]);lecRecs=lecRecs.filter(r=>r.id!==lecSelId);lecClosePanel();lecFilter2();document.getElementById('badge-lectures').textContent=lecRecs.length||'';}catch(e){alert('Erreur : '+e.message);}
+});
+document.getElementById('btnLecNew').addEventListener('click',()=>{
+  lecSelId=null;lecMode='create';
+  document.getElementById('popTitle').textContent='Nouveau livre';
+  document.getElementById('btnLecEdit').style.display='none';
+  document.getElementById('btnLecSave').style.display='';
+  document.getElementById('btnLecDel').style.display='none';
+  document.getElementById('saveInd').classList.remove('vis');
+  lecRenderEdit({titre:'',auteur:'',statut:'',cover:'',date_edition:null,date_lecture:null,resume:'',incipit:'',personnages:'',citations:''});
+  document.getElementById('popOv').classList.add('open');
+  setTimeout(()=>{const t=document.getElementById('eT');if(t)t.focus();},50);
+});
+
+// ══════════════════════════════════════════════════════
+//  LOAD LECTURES (cross-table)
+// ══════════════════════════════════════════════════════
+async function loadLectures(){
+  if(typeof grist==='undefined')return;
+  try{
+    const raw=await grist.docApi.fetchTable('Lectures');
+    lecRecs=(raw.id||[]).map((id,i)=>({
+      id,
+      titre:       String(raw.titre?.[i]       ??''),
+      auteur:      String(raw.auteur?.[i]      ??''),
+      resume:      String(raw.resume?.[i]      ??''),
+      incipit:     String(raw.incipit?.[i]     ??''),
+      personnages: String(raw.personnages?.[i] ??''),
+      citations:   String(raw.citations?.[i]   ??''),
+      date_edition:raw.date_edition?.[i]       ??null,
+      date_lecture:raw.date_lecture?.[i]       ??null,
+      cover:       String(raw.cover?.[i]       ??''),
+      statut:      String(raw.statut?.[i]      ??''),
+    }));
+    lecFilter2();
+    document.getElementById('badge-lectures').textContent=lecRecs.length||'';
+  }catch(e){console.warn('Lectures:',e);}
+}
+
+// ══════════════════════════════════════════════════════
+//  INIT GRIST / DEMO
+// ══════════════════════════════════════════════════════
+if(typeof grist!=='undefined'){
+  grist.ready({
+    requiredAccess:'full',
+    columns:[
+      {name:'tache',       title:'Tâche',       type:'Text'},
+      {name:'date',        title:'Date',        type:'Text'},
+      {name:'termine',     title:'Terminé',     type:'Bool'},
+      {name:'anniversaire',title:'Anniversaire',type:'Bool'},
+      {name:'projet',      title:'Projet',      type:'Bool'},
+    ]
+  });
+  // onRecords est appelé à chaque modification de la table Bujo
+  grist.onRecords(records=>{
+    tasks = records.map(r => ({id:r.id, name:r.tache||'', date:r.date||'', done:!!r.termine, bday:!!r.anniversaire, projet:!!r.projet}));
+    renderMain();
+  });
+  loadLectures();
+} else {
+  // Démo
+  const dO=n=>{const x=new Date(today);x.setDate(x.getDate()+n);return `${x.getFullYear()}-${pad(x.getMonth()+1)}-${pad(x.getDate())}`;};
+  const mO=n=>{const r=today.getMonth()+n;const y=today.getFullYear()+Math.floor(r/12);const m=((r%12)+12)%12;return `${y}-${pad(m+1)}`;};
+  const bd=(y,mm,dd)=>`${y}-${pad(mm)}-${pad(dd)}`;
+  tasks=[
+    {name:'Appel équipe',      date:todayStr,          done:false,bday:false},
+    {name:'Revue de sprint',   date:todayStr,          done:true, bday:false},
+    {name:'Rapport non rendu', date:dO(-3),            done:false,bday:false},
+    {name:'Rédiger rapport',   date:dO(2),             done:false,bday:false},
+    {name:'Démo client',       date:dO(5),             done:false,bday:false},
+    {name:'Planifier vacances',date:dO(20),            done:false,bday:false},
+    {name:'Réunion mensuelle', date:mO(1),             done:false,bday:false},
+    {name:'Formation',         date:mO(3),             done:false,bday:false},
+    {name:'Bilan annuel',      date:`${thisYear}`,     done:false,bday:false},
+    {name:'Refonte site',      date:`${thisYear+1}`,   done:false,bday:false},
+    {name:'Marie',  date:bd(1988,today.getMonth()+1,today.getDate()),          done:false,bday:true},
+    {name:'Papa',   date:bd(1955,today.getMonth()+1,Math.min(today.getDate()+3,28)), done:false,bday:true},
+    {name:'Lucas',  date:bd(1992,(today.getMonth()+2)%12+1,14),                done:false,bday:true},
+  ];
+  const y2t=(y,m,d)=>Math.floor(Date.UTC(y,m-1,d)/1000);
+  lecRecs=[
+    {id:1,titre:'La Montagne Magique',auteur:'Thomas Mann',  statut:'Lu',      date_edition:y2t(1924,1,1),date_lecture:y2t(2023,3,1),cover:'',resume:'Un jeune ingénieur dans un sanatorium alpin.',incipit:'',personnages:'',citations:''},
+    {id:2,titre:'Les Misérables',     auteur:'Victor Hugo',  statut:'Lu',      date_edition:y2t(1862,1,1),date_lecture:y2t(2022,6,1),cover:'',resume:'',incipit:'',personnages:'',citations:''},
+    {id:3,titre:'Middlemarch',        auteur:'George Eliot', statut:'En cours',date_edition:y2t(1872,1,1),date_lecture:null,          cover:'',resume:'',incipit:'',personnages:'',citations:''},
+    {id:4,titre:'La Recherche',       auteur:'Marcel Proust',statut:'À lire',  date_edition:y2t(1913,1,1),date_lecture:null,          cover:'',resume:'',incipit:'',personnages:'',citations:''},
+  ];
+  lecFilter2();
+  document.getElementById('badge-lectures').textContent=lecRecs.length;
+  renderMain();
+}
+
+
+// ══════════════════════════════════════════════════════
+//  COLLECTIONS
+// ══════════════════════════════════════════════════════
+
+// ── Constantes ──
+// couleurs chargées depuis Grist
+let gristCouleurs = []; // [{nom, hex, type}]
+const THEME_LABELS = {listes:'Listes',liens:'Liens',fiches:'Fiches',couleurs:'Couleurs'};
+
+// ── État ──
+let cols = [];    // [{id,nom,theme,icone,couleur}]
+let items = [];   // [{id,col_id,titre,texte,url,tag,fait}]
+let selColId = null;
+let lateOpen = false; // replié par défaut
+let editColIdx = null;
+let editItemIdx = null;
+let ficheModalIdx = null;   // remplace ficheDrawerIdx
+let ficheDrawerIdx = null;  // alias pour compatibilité
+let colTheme = 'listes';
+let colIconSel = '';
+let colColorSel = '';
+let activeTagFilter = '';   // tag sélectionné pour filtrer
+let colSearchQuery = '';    // recherche globale collections
+
+// ── Rendu icône SVG — icône blanche sur fond coloré ──
+function renderColIcon(svgCode, size) {
+  if (svgCode && svgCode.trim().startsWith('<svg')) {
+    const isFilled = svgCode.includes('fill="currentColor"');
+    const sized = svgCode
+      .replace(/<svg([^>]*)>/i, (m, attrs) => {
+        let clean = attrs
+          .replace(/width="[^"]*"/g,'')
+          .replace(/height="[^"]*"/g,'')
+          .replace(/stroke="[^"]*"/g,'')
+          .replace(/stroke-width="[^"]*"/g,'')
+          .replace(/fill="[^"]*"/g,'')
+          .replace(/class="[^"]*"/g,'');
+        if (isFilled) {
+          return `<svg${clean} width="${size}" height="${size}" fill="#fff">`;
+        } else {
+          return `<svg${clean} width="${size}" height="${size}" stroke="#fff" stroke-width="2" fill="none">`;
+        }
+      });
+    // Pour les icônes filled, forcer fill="#fff" sur les éléments enfants aussi
+    if (isFilled) {
+      return sized.replace(/fill="currentColor"/g, 'fill="#fff"');
+    }
+    return sized;
+  }
+  const h = size / 2;
+  return `<svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}" fill="none"><rect x="${size*.1}" y="${size*.1}" width="${size*.8}" height="${size*.8}" rx="2" stroke="#fff" stroke-width="1.5" opacity=".7"/></svg>`;
+}
+
+
+// ── Filtre tags ──
+function buildTagBar(colItems) {
+  const tags = [...new Set(colItems.map(it => it.tag).filter(Boolean))].sort();
+  if (!tags.length) return '';
+  const allActive = !activeTagFilter ? ' active' : '';
+  let html = '<div class="col-tag-filter"><span class="col-tag-label">Tags' + ' ' + ':</span>';
+  html += '<span class="col-tag-pill' + allActive + '" data-tag="">Tous</span>';
+  tags.forEach(t => {
+    const active = (activeTagFilter === t) ? ' active' : '';
+    html += '<span class="col-tag-pill' + active + '" data-tag="' + esc(t) + '">' + esc(t) + '</span>';
+  });
+  html += '</div>';
+  return html;
+}
+
+function setTagFilter(tag) {
+  activeTagFilter = tag;
+  const col = cols.find(c2 => c2.id === selColId); if (!col) return;
+  const colItems = items.filter(it => it.col_id === selColId);
+  const tb = document.getElementById('colTagBar');
+  const ct = document.getElementById('colItemsContainer');
+  if (tb) {
+    tb.innerHTML = buildTagBar(colItems);
+    tb.querySelectorAll('.col-tag-pill').forEach(pill => {
+      pill.addEventListener('click', () => setTagFilter(pill.dataset.tag));
+    });
+  }
+  if (ct) ct.innerHTML = renderItems(filteredByTag(colItems), col.theme);
+}
+
+function filteredByTag(colItems) {
+  if (!activeTagFilter) return colItems;
+  return colItems.filter(it => it.tag === activeTagFilter);
+}
+
+// ── Rendu liste sidebar ──
+function renderColSidebar() {
+  const list = document.getElementById('colList');
+  if (!list) return;
+  list.innerHTML = cols.map((col,i) => {
+    const count = items.filter(it => it.col_id === col.id).length;
+    const active = selColId === col.id ? ' active' : '';
+    const bg = col.couleur || 'var(--bg-soft)';
+    const iconH = renderColIcon(col.icone, 16);
+    return `<button class="col-item${active}" onclick="selectCol('${col.id}')">
+      <div class="col-item-icon" style="background:${bg}">${iconH}</div>
+      <span class="col-item-label">${esc(col.nom)}</span>
+      <span class="col-item-count">${count||''}</span>
+    </button>`;
+  }).join('');
+  document.getElementById('badge-cols').textContent = cols.length || '';
+}
+
+// ── Sélectionner une collection ──
+function selectCol(id) {
+  selColId = id;
+  activeTagFilter = ''; // réinitialiser filtre
+  closeFicheModal();
+  renderColSidebar();
+  renderColMain();
+}
+
+// ── Rendu contenu principal ──
+function renderColMain() {
+  const main = document.getElementById('colMain');
+  const empty = document.getElementById('colEmpty');
+  if (!selColId) { if(empty) empty.style.display='block'; return; }
+  if(empty) empty.style.display = 'none';
+
+  const col = cols.find(c => c.id === selColId);
+  if (!col) return;
+  const colItems = items.filter(it => it.col_id === selColId);
+
+  // Retirer l'ancien contenu (sauf drawer et empty)
+  const existing = main.querySelector('.col-content');
+  if (existing) existing.remove();
+
+  const wrap = document.createElement('div');
+  wrap.className = 'col-content';
+  wrap.style.cssText = 'display:flex;flex-direction:column;flex:1;overflow:hidden;';
+
+  const bg = col.couleur || 'var(--bg-soft)';
+  const iconHTML = renderColIcon(col.icone, 22);
+
+  // Header
+  wrap.innerHTML = `
+    <div class="col-main-header">
+      <div class="col-main-icon" style="background:${bg}">${iconHTML}</div>
+      <div class="col-main-name">${esc(col.nom)}</div>
+      <span class="col-main-type">${THEME_LABELS[col.theme]||col.theme}</span>
+      <button class="item-act-btn" onclick="openColMod(${cols.indexOf(col)})" title="Modifier">&#9998;</button>
+    </div>
+    <div class="col-main-body" id="colMainBody">
+      <button class="col-add-item-btn" onclick="openItemMod(null,'${col.theme}')">
+        <svg width="10" height="10" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 1v10M1 6h10"/></svg>
+        Ajouter ${col.theme === 'listes' ? 'un élément' : col.theme === 'liens' ? 'un lien' : col.theme === 'couleurs' ? 'une couleur' : 'une fiche'}
+      </button>
+      <div id="colTagBar">${buildTagBar(colItems)}</div>
+      <div id="colItemsContainer">${renderItems(filteredByTag(colItems), col.theme)}</div>
+    </div>`;
+  main.insertBefore(wrap, main.querySelector('.fiche-drawer'));
+  // Délégation d'événements sur les tag pills (après insertion dans le DOM)
+  const tagBar = main.querySelector('#colTagBar');
+  if (tagBar) {
+    tagBar.querySelectorAll('.col-tag-pill').forEach(pill => {
+      pill.addEventListener('click', () => setTagFilter(pill.dataset.tag));
+    });
+  }
+}
+
+// ── Rendu items selon thème ──
+function renderItems(colItems, theme) {
+  if (!colItems.length) return `<div class="col-empty" style="padding:24px 0"><div class="col-empty-icon" style="font-size:22px;opacity:.3">${theme==='listes'?'☑':theme==='liens'?'🔗':'📄'}</div>Aucun élément pour l'instant</div>`;
+
+  if (theme === 'listes') {
+    return colItems.map((it,i) => {
+      const idx = items.indexOf(it);
+      const tagHtml = it.tag ? `<span class="item-tag">${esc(it.tag)}</span>` : '';
+      return `<div class="item-liste">
+        <div class="item-chk${it.fait?' done':''}" onclick="toggleItem(${idx})"></div>
+        <div class="item-body">
+          <div class="item-titre${it.fait?' done':''}">${esc(it.titre)}</div>
+          ${tagHtml}
+        </div>
+        <div class="item-actions">
+          <button class="item-act-btn" onclick="openItemMod(${idx},'listes')" title="Modifier">&#9998;</button>
+        </div>
+      </div>`;
+    }).join('');
+  }
+
+  if (theme === 'liens') {
+    return colItems.map((it,i) => {
+      const idx = items.indexOf(it);
+      const tagHtml = it.tag ? `<span class="item-tag">${esc(it.tag)}</span>` : '';
+      const urlDisplay = it.url ? it.url.replace(/^https?:\/\//,'').split('/')[0] : '';
+      return `<div class="item-lien">
+        <div class="item-lien-ico"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg></div>
+        <div class="item-body">
+          <div class="item-lien-title">${esc(it.titre||it.url||'Sans titre')}</div>
+          <div class="item-lien-url">${it.url ? `<a href="${esc(it.url)}" target="_blank">${esc(urlDisplay)}</a>` : ''}</div>
+          ${tagHtml}
+        </div>
+        <div class="item-actions">
+          <button class="item-act-btn" onclick="openItemMod(${idx},'liens')" title="Modifier">&#9998;</button>
+        </div>
+      </div>`;
+    }).join('');
+  }
+
+  if (theme === 'fiches') {
+    const cards = colItems.map((it,i) => {
+      const idx = items.indexOf(it);
+      const preview = (it.texte||'').replace(/<[^>]+>/g,'').substring(0,120);
+      const tagHtml = it.tag ? `<span class="item-tag">${esc(it.tag)}</span>` : '';
+      const urlHtml = it.url ? `<span class="item-fiche-url"><a href="${esc(it.url)}" target="_blank">${esc(it.url.replace(/^https?:\/\//,'').split('/')[0])}</a></span>` : '';
+      return `<div class="item-fiche" onclick="openFicheDrawer(${idx})">
+        <div class="item-fiche-title">${esc(it.titre||'Sans titre')}</div>
+        ${preview ? `<div class="item-fiche-preview">${esc(preview)}</div>` : ''}
+        <div class="item-fiche-meta">${tagHtml}${urlHtml}
+          <div style="flex:1"></div>
+          <button class="item-act-btn" onclick="event.stopPropagation();openItemMod(${idx},'fiches')" title="Modifier">&#9998;</button>
+        </div>
+      </div>`;
+    }).join('');
+    return `<div class="fiches-grid">${cards}</div>`;
+  }
+  if (theme === 'couleurs') {
+    return colItems.map((it) => {
+      const idx = items.indexOf(it);
+      const hex = (it.url || '').trim(); // on stocke le hex dans le champ url
+      const swatchStyle = hex
+        ? `background:${hex};border-color:${hex}55`
+        : 'background:var(--bg-soft)';
+      return `<div class="item-couleur">
+        <div class="item-couleur-swatch" style="${swatchStyle}"></div>
+        <div class="item-body">
+          <div class="item-couleur-name">${esc(it.titre||'Sans nom')}</div>
+          ${hex ? `<div class="item-couleur-hex">${esc(hex)}</div>` : ''}
+        </div>
+        <div class="item-actions">
+          <button class="item-act-btn" onclick="openItemMod(${idx},'couleurs')" title="Modifier">&#9998;</button>
+        </div>
+      </div>`;
+    }).join('');
+  }
+
+  return '';
+}
+
+// ── Drawer fiche ──
+// ── Modale fiche consultation ──
+function openFicheModal(idx) {
+  ficheModalIdx = idx;
+  ficheDrawerIdx = idx;
+  const it = items[idx]; if (!it) return;
+  document.getElementById('ficheModalTitle').textContent = it.titre || 'Sans titre';
+  const urlHtml = it.url
+    ? `<a class="fiche-url-link" href="${esc(it.url)}" target="_blank">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+        ${esc(it.url.replace(/^https?:\/\//, '').split('/')[0])}</a>` : '';
+  const tagHtml = it.tag ? `<div class="fiche-modal-tag">${esc(it.tag)}</div>` : '';
+  const content = it.texte
+    ? (/<[a-z]/i.test(it.texte) ? it.texte : esc(it.texte).replace(/\n/g,'<br>'))
+    : '<span style="color:var(--light);font-style:italic">Aucun contenu</span>';
+  document.getElementById('ficheModalBody').innerHTML =
+    `${tagHtml}<div class="fiche-modal-content">${content}</div>${urlHtml}`;
+  document.getElementById('ficheModalOv').classList.add('open');
+}
+function openFicheDrawer(idx) { openFicheModal(idx); }
+function closeFicheModal() {
+  document.getElementById('ficheModalOv').classList.remove('open');
+  ficheModalIdx = null; ficheDrawerIdx = null;
+}
+function closeFicheDrawer() { closeFicheModal(); }
+function handleFicheModalClick(e) {
+  if (e.target === document.getElementById('ficheModalOv')) closeFicheModal();
+}
+function ficheModalEdit() {
+  if (ficheModalIdx === null) return;
+  const idx = ficheModalIdx;
+  closeFicheModal();
+  openItemMod(idx, 'fiches');
+}
+
+// ── Toggle item liste ──
+function toggleItem(idx) {
+  items[idx].fait = !items[idx].fait;
+  gItemUpdate(items[idx]);
+  renderColMain();
+}
+
+// ── Modale collection ──
+function openColMod(idx) {
+  editColIdx = idx !== undefined ? idx : null;
+  const col = editColIdx !== null ? cols[editColIdx] : null;
+  colTheme = col ? col.theme : 'listes';
+  colIconSel = col ? (col.icone||'') : '';
+  colColorSel = col ? (col.couleur||'') : '';
+  document.getElementById('colModTitle').textContent = col ? 'Modifier la collection' : 'Nouvelle collection';
+  document.getElementById('colNom').value = col ? col.nom : '';
+  document.getElementById('colBtnDel').style.display = col ? 'block' : 'none';
+  renderThemePicker();
+  // SVG
+  const svgTa = document.getElementById('colIconSvg');
+  if (svgTa) svgTa.value = colIconSel;
+  updateSvgPreview();
+  // Couleur
+  renderColorSelect(colColorSel);
+  document.getElementById('colModOv').classList.add('open');
+  setTimeout(()=>document.getElementById('colNom').focus(),60);
+}
+function closeColMod() { document.getElementById('colModOv').classList.remove('open'); editColIdx=null; }
+function handleCmodClick(e) { if(e.target===document.getElementById('colModOv'))closeColMod(); }
+
+function selTheme(t) {
+  colTheme = t;
+  document.querySelectorAll('.theme-opt').forEach(el => el.classList.toggle('sel', el.dataset.theme===t));
+}
+function renderThemePicker() {
+  document.querySelectorAll('.theme-opt').forEach(el => el.classList.toggle('sel', el.dataset.theme===colTheme));
+}
+function updateSvgPreview() {
+  const val = (document.getElementById('colIconSvg')?.value || '').trim();
+  colIconSel = val;
+  const iconEl = document.getElementById('svgPreviewIcon');
+  const labelEl = document.getElementById('svgPreviewLabel');
+  const previewWrap = document.getElementById('svgPreview');
+  // Fond de l'aperçu = couleur choisie (pour voir le blanc)
+  const bg = colColorSel || '#888';
+  if (previewWrap) previewWrap.style.background = bg;
+  if (iconEl) {
+    // Fond de l'icône = même couleur
+    iconEl.style.background = bg;
+    iconEl.style.borderRadius = '8px';
+    if (val && val.startsWith('<svg')) {
+      iconEl.innerHTML = renderColIcon(val, 20);
+      if (labelEl) labelEl.textContent = 'Aperçu sur fond coloré';
+    } else {
+      iconEl.innerHTML = '';
+      if (labelEl) labelEl.textContent = val ? 'Code SVG invalide' : 'Collez ici un code SVG';
+    }
+  }
+}
+function renderColorSelect(currentHex) {
+  const sel = document.getElementById('colColorSel');
+  if (!sel) return;
+  sel.innerHTML = '<option value="">— Aucune couleur —</option>';
+  // Grouper par type si disponible
+  const byType = {};
+  gristCouleurs.forEach(c => {
+    const t = c.type || 'Autres';
+    if (!byType[t]) byType[t] = [];
+    byType[t].push(c);
+  });
+  if (gristCouleurs.length === 0) {
+    // Fallback : palette par défaut si table vide ou non chargée
+    const defaults = [
+      {nom:'Beige',hex:'#e8e7e3'},{nom:'Vert doux',hex:'#d3e8d3'},
+      {nom:'Pêche',hex:'#fde8c8'},{nom:'Lavande',hex:'#e8e8f0'},
+      {nom:'Rose',hex:'#faeef4'},{nom:'Bleu ciel',hex:'#deeaf5'},
+    ];
+    defaults.forEach(d => {
+      const opt = document.createElement('option');
+      opt.value = d.hex; opt.textContent = d.nom;
+      if (d.hex === currentHex) opt.selected = true;
+      sel.appendChild(opt);
+    });
+  } else {
+    Object.entries(byType).forEach(([type, couleurs]) => {
+      const grp = document.createElement('optgroup');
+      grp.label = type;
+      couleurs.forEach(co => {
+        const opt = document.createElement('option');
+        opt.value = co.hex; opt.textContent = co.nom + (co.hex ? ' (' + co.hex + ')' : '');
+        if (co.hex === currentHex) opt.selected = true;
+        grp.appendChild(opt);
+      });
+      sel.appendChild(grp);
+    });
+  }
+  colColorSel = currentHex || '';
+  updateColorPreview(colColorSel);
+}
+function onColorSelChange() {
+  const sel = document.getElementById('colColorSel');
+  colColorSel = sel ? sel.value : '';
+  updateColorPreview(colColorSel);
+  // Rafraîchir aussi l'aperçu SVG avec la nouvelle couleur
+  updateSvgPreview();
+}
+function updateColorPreview(hex) {
+  const prev = document.getElementById('colorPreview');
+  if (!prev) return;
+  if (hex) { prev.style.background = hex; prev.style.opacity = '1'; }
+  else { prev.style.background = 'var(--bg-soft)'; }
+}
+
+function saveCol() {
+  const nom = document.getElementById('colNom').value.trim();
+  if (!nom) { document.getElementById('colNom').focus(); return; }
+  // Lire les valeurs finales
+  const svgTa = document.getElementById('colIconSvg');
+  const icone = (svgTa ? svgTa.value.trim() : colIconSel) || '';
+  const couleur = colColorSel || '';
+  if (editColIdx !== null) {
+    cols[editColIdx] = {...cols[editColIdx], nom, theme:colTheme, icone, couleur};
+    gColUpdate(cols[editColIdx]);
+  } else {
+    const nc = {id: 'c'+Date.now(), nom, theme:colTheme, icone, couleur};
+    cols.push(nc);
+    gColAdd(nc);
+    selColId = nc.id;
+  }
+  closeColMod();
+  renderColSidebar();
+  renderColMain();
+}
+function deleteCol() {
+  if (editColIdx === null) return;
+  const col = cols[editColIdx];
+  items = items.filter(it => it.col_id !== col.id);
+  gColDelete(col);
+  cols.splice(editColIdx, 1);
+  if (selColId === col.id) selColId = cols.length ? cols[0].id : null;
+  closeColMod();
+  renderColSidebar();
+  renderColMain();
+}
+
+// ── Modale item ──
+function openItemMod(idx, theme) {
+  editItemIdx = idx !== null && idx !== undefined ? idx : null;
+  const it = editItemIdx !== null ? items[editItemIdx] : null;
+  const col = cols.find(c => c.id === selColId);
+  const th = theme || (col ? col.theme : 'listes');
+  document.getElementById('itemModTitle').textContent = it ? 'Modifier' : 'Nouvel élément';
+  document.getElementById('itemBtnDel').style.display = it ? 'block' : 'none';
+  renderItemModFields(th, it);
+  document.getElementById('itemModOv').classList.add('open');
+  setTimeout(()=>{ const f=document.getElementById('imoTitre'); if(f)f.focus(); },60);
+}
+function closeItemMod() { document.getElementById('itemModOv').classList.remove('open'); editItemIdx=null; }
+function handleItemModClick(e) { if(e.target===document.getElementById('itemModOv'))closeItemMod(); }
+
+function renderItemModFields(theme, it) {
+  const v = f => it ? (it[f]||'') : '';
+  let html = '';
+  if (theme === 'listes') {
+    html = `<div class="cf"><label>Élément</label><input type="text" id="imoTitre" value="${esc(v('titre'))}" placeholder="Nom de l'élément…"></div>
+    <div class="cf"><label>Tag</label><input type="text" id="imoTag" value="${esc(v('tag'))}" placeholder="tag optionnel…"></div>`;
+  } else if (theme === 'liens') {
+    html = `<div class="cf"><label>Titre</label><input type="text" id="imoTitre" value="${esc(v('titre'))}" placeholder="Nom du lien…"></div>
+    <div class="cf"><label>URL</label><input type="url" id="imoUrl" value="${esc(v('url'))}" placeholder="https://…"></div>
+    <div class="cf"><label>Tag</label><input type="text" id="imoTag" value="${esc(v('tag'))}" placeholder="tag optionnel…"></div>`;
+  } else if (theme === 'fiches') {
+    const texteVal = (it&&it.texte) ? it.texte : '';
+    const toolbar = `<div class="item-rich-tb">
+      <button class="item-tb-b" type="button" onmousedown="event.preventDefault();document.execCommand('bold',false,null)" title="Gras"><b>B</b></button>
+      <button class="item-tb-b" type="button" onmousedown="event.preventDefault();document.execCommand('italic',false,null)" title="Italique"><i>I</i></button>
+      <button class="item-tb-b" type="button" onmousedown="event.preventDefault();document.execCommand('underline',false,null)" title="Souligné"><u>U</u></button>
+      <div class="item-tb-sep"></div>
+      <button class="item-tb-b" type="button" onmousedown="event.preventDefault();document.execCommand('insertUnorderedList',false,null)" title="Liste">≡</button>
+      <button class="item-tb-b" type="button" onmousedown="event.preventDefault();document.execCommand('insertOrderedList',false,null)" title="Liste numérotée">①</button>
+      <div class="item-tb-sep"></div>
+      <button class="item-tb-b" type="button" onmousedown="event.preventDefault();document.execCommand('formatBlock',false,'blockquote')" title="Citation">❝</button>
+      <button class="item-tb-b" type="button" onmousedown="event.preventDefault();document.execCommand('removeFormat',false,null)" title="Effacer format">✕</button>
+    </div>`;
+    html = `<div class="cf"><label>Titre</label><input type="text" id="imoTitre" value="${esc(v('titre'))}" placeholder="Titre de la fiche…"></div>
+    <div class="cf"><label>Contenu</label>${toolbar}<div class="item-rich-ed" id="imoTexte" contenteditable="true" data-ph="Rédigez le contenu de la fiche…"></div></div>
+    <div class="cf"><label>URL</label><input type="url" id="imoUrl" value="${esc(v('url'))}" placeholder="https://… (optionnel)"></div>
+    <div class="cf"><label>Tag</label><input type="text" id="imoTag" value="${esc(v('tag'))}" placeholder="tag optionnel…"></div>`;
+    // Contenu chargé après insertion dans le DOM (via setTimeout)
+    window._ficheTexteToLoad = texteVal;
+  } else if (theme === 'couleurs') {
+    html = `<div class="cf"><label>Nom de la couleur</label>
+      <input type="text" id="imoTitre" value="${esc(v('titre'))}" placeholder="ex : Rouge cardinal…"></div>
+    <div class="cf">
+      <label>Code hexadécimal</label>
+      <div style="display:flex;align-items:center;gap:8px">
+        <input type="text" id="imoUrl" value="${esc(v('url'))}" placeholder="#c0392b" oninput="updateSwatchPreview()" style="flex:1;font-family:monospace">
+        <div id="swatchPreview" style="width:28px;height:28px;border-radius:50%;border:.5px solid rgba(0,0,0,.15);flex-shrink:0;background:${v('url')||'var(--bg-soft)'}"></div>
+      </div>
+      <div class="bhint">Format #RRGGBB ou #RGB</div>
+    </div>
+    <div class="cf"><label>Tag</label>
+      <input type="text" id="imoTag" value="${esc(v('tag'))}" placeholder="tag optionnel…"></div>`;
+  }
+  const colOptions = cols.map(c =>
+    `<option value="${esc(c.id)}" ${c.id === (it ? it.col_id : selColId) ? 'selected' : ''}>${esc(c.nom)}</option>`
+  ).join('');
+  html += `<div class="cf"><label>Collection</label>
+    <select id="imoColId">${colOptions}</select>
+  </div>`;
+  document.getElementById('itemModFields').innerHTML = html;
+  // Attacher updateSwatchPreview si nécessaire
+  if (theme === 'couleurs') {
+    window.updateSwatchPreview = function() {
+      const val = document.getElementById('imoUrl')?.value.trim() || '';
+      const sw = document.getElementById('swatchPreview');
+      if (sw) sw.style.background = val || 'var(--bg-soft)';
+    };
+  }
+  // Charger le contenu riche de la fiche après le rendu DOM
+  if (theme === 'fiches' && window._ficheTexteToLoad !== undefined) {
+    const ed = document.getElementById('imoTexte');
+    if (ed) ed.innerHTML = window._ficheTexteToLoad || '';
+    window._ficheTexteToLoad = undefined;
+  }
+}
+
+function saveItem() {
+  const titre   = document.getElementById('imoTitre')?.value.trim()||'';
+  const url     = document.getElementById('imoUrl')?.value.trim()||'';
+  const tag     = document.getElementById('imoTag')?.value.trim()||'';
+  const colId   = document.getElementById('imoColId')?.value || selColId;
+  const texteEl = document.getElementById('imoTexte');
+  const texte   = texteEl ? (texteEl.tagName==='TEXTAREA' ? texteEl.value : texteEl.innerHTML) : '';
+  if (!titre && !url) { const f=document.getElementById('imoTitre'); if(f)f.focus(); return; }
+  if (editItemIdx !== null) {
+    items[editItemIdx] = {...items[editItemIdx], titre, url, tag, texte, col_id: colId};
+    gItemUpdate(items[editItemIdx]);
+  } else {
+    const ni = {id:'i'+Date.now(), col_id: colId, titre, url, tag, texte, fait:false};
+    items.push(ni);
+    gItemAdd(ni);
+  }
+  closeItemMod();
+  renderColMain();
+}
+
+function deleteItem() {
+  if (editItemIdx === null) return;
+  gItemDelete(items[editItemIdx]);
+  items.splice(editItemIdx, 1);
+  closeItemMod();
+  closeFicheDrawer();
+  renderColMain();
+}
+
+// ── Grist API Collections ──
+function gColAdd(col) {
+  if(typeof grist==='undefined')return;
+  grist.docApi.applyUserActions([['AddRecord','Collections',null,{nom:col.nom,theme:col.theme,icone:col.icone,couleur:col.couleur}]])
+    .then(res => {
+      // Stocker le vrai id Grist dans col.gid pour que gItemAdd puisse l'utiliser
+      const gid = res?.retValues?.[0];
+      if (gid) {
+        const existing = cols.find(co => co.id === col.id);
+        if (existing) existing.gid = gid;
+      }
+    })
+    .catch(console.error);
+}
+function gColUpdate(col) {
+  if(typeof grist==='undefined'||!col.gid)return;
+  grist.docApi.applyUserActions([['UpdateRecord','Collections',col.gid,{nom:col.nom,theme:col.theme,icone:col.icone,couleur:col.couleur}]]).catch(console.error);
+}
+function gColDelete(col) {
+  if(typeof grist==='undefined'||!col.gid)return;
+  grist.docApi.applyUserActions([['RemoveRecord','Collections',col.gid]]).catch(console.error);
+}
+function gItemAdd(it) {
+  if(typeof grist==='undefined')return;
+  const col = cols.find(c=>c.id===it.col_id);
+  grist.docApi.applyUserActions([['AddRecord','Items',null,{collection:col?.gid||0,titre:it.titre,texte:it.texte,url:it.url,tag:it.tag,fait:!!it.fait,type:col?.theme||''}]]).catch(console.error);
+}
+function gItemUpdate(it) {
+  if(typeof grist==='undefined'||!it.gid)return;
+  const col = cols.find(c => c.id === it.col_id);
+  grist.docApi.applyUserActions([['UpdateRecord','Items',it.gid,{collection:col?.gid||0,titre:it.titre,texte:it.texte,url:it.url,tag:it.tag,fait:!!it.fait}]]).catch(console.error);
+}
+function gItemDelete(it) {
+  if(typeof grist==='undefined'||!it.gid)return;
+  grist.docApi.applyUserActions([['RemoveRecord','Items',it.gid]]).catch(console.error);
+}
+
+
+// ══════════════════════════════════════════════════════
+//  RECHERCHE GLOBALE COLLECTIONS
+// ══════════════════════════════════════════════════════
+function onColSearch(q) {
+  colSearchQuery = q.trim();
+  const clr = document.getElementById('colSearchClear');
+  if (clr) clr.style.display = colSearchQuery ? 'block' : 'none';
+  if (colSearchQuery) {
+    renderColSearchResults();
+  } else {
+    const main = document.getElementById('colMain');
+    main.querySelectorAll('.col-content, .col-search-results-wrap').forEach(el => el.remove());
+    if (selColId) {
+      renderColMain();
+    } else {
+      document.getElementById('colEmpty').style.display = 'block';
+    }
+  }
+}
+
+function clearColSearch() {
+  colSearchQuery = '';
+  const inp = document.getElementById('colSearchInput');
+  if (inp) inp.value = '';
+  const clr = document.getElementById('colSearchClear');
+  if (clr) clr.style.display = 'none';
+  const main = document.getElementById('colMain');
+  main.querySelectorAll('.col-content, .col-search-results-wrap').forEach(el => el.remove());
+  if (selColId) {
+    renderColMain();
+  } else {
+    document.getElementById('colEmpty').style.display = 'block';
+  }
+}
+
+function renderColSearchResults() {
+  const main = document.getElementById('colMain');
+  const q = colSearchQuery.toLowerCase();
+
+  // Supprimer le contenu existant (sauf le drawer/empty)
+  main.querySelectorAll('.col-content, .col-search-results-wrap').forEach(el => el.remove());
+
+  const wrap = document.createElement('div');
+  wrap.className = 'col-search-results-wrap';
+  wrap.style.cssText = 'display:flex;flex-direction:column;flex:1;overflow:hidden;';
+
+  // Chercher dans tous les items de toutes les collections
+  const results = {}; // col_id → [{item, highlight}]
+  items.forEach(it => {
+    const fields = [it.titre, it.texte ? it.texte.replace(/<[^>]+>/g,'') : '', it.tag, it.url];
+    const match = fields.some(f => f && f.toLowerCase().includes(q));
+    if (match) {
+      if (!results[it.col_id]) results[it.col_id] = [];
+      results[it.col_id].push(it);
+    }
+  });
+
+  const totalResults = Object.values(results).reduce((acc, arr) => acc + arr.length, 0);
+
+  let html = `<div class="col-search-results">
+    <div style="font-size:10px;color:var(--muted);margin-bottom:12px;font-family:'DM Sans',sans-serif;">
+      ${totalResults} résultat${totalResults!==1?'s':''} pour « ${esc(colSearchQuery)} »
+    </div>`;
+
+  if (!totalResults) {
+    html += `<div class="col-search-empty">Aucun résultat</div>`;
+  } else {
+    Object.entries(results).forEach(([colId, its]) => {
+      const col = cols.find(co => co.id === colId);
+      if (!col) return;
+      const bg = col.couleur || 'var(--muted)';
+      const iconH = renderColIcon(col.icone, 10);
+      html += `<div class="col-search-group">
+        <div class="col-search-group-title">
+          <div class="col-search-group-icon" style="background:${bg}">${iconH}</div>
+          ${esc(col.nom)}
+        </div>`;
+      its.forEach(it => {
+        const idx = items.indexOf(it);
+        const nameHl = highlight(it.titre || 'Sans titre', q);
+        const tagHtml = it.tag ? `<span class="col-search-item-tag">${esc(it.tag)}</span>` : '';
+        // Pour une fiche, afficher un aperçu du texte
+        const preview = it.texte
+          ? '<span style="font-size:11px;color:var(--muted)"> — ' + esc((it.texte.replace(/<[^>]+>/g,'')).substring(0,60)) + '…</span>'
+          : '';
+        html += `<div class="col-search-item" onclick="goToItem('${colId}',${idx})">
+          <div class="col-search-item-name">${nameHl}${preview}</div>
+          ${tagHtml}
+        </div>`;
+      });
+      html += `</div>`;
+    });
+  }
+  html += '</div>';
+  wrap.innerHTML = html;
+  main.insertBefore(wrap, main.querySelector('.fiche-drawer'));
+}
+
+function highlight(text, q) {
+  if (!q) return esc(text);
+  const escaped = esc(text);
+  const qEsc = q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  return escaped.replace(new RegExp(esc(q), 'gi'), m => `<em>${m}</em>`);
+}
+
+function goToItem(colId, idx) {
+  // Naviguer vers la collection et ouvrir l'item
+  clearColSearch();
+  selectCol(colId);
+  const col = cols.find(co => co.id === colId);
+  if (!col) return;
+  if (col.theme === 'fiches') {
+    setTimeout(() => openFicheModal(idx), 50);
+  } else {
+    setTimeout(() => openItemMod(idx, col.theme), 50);
+  }
+}
+
+let gristAllTags = [];
+
+function getAllTags() {
+  const gristTags = gristAllTags || [];
+  const localTags = [...new Set(items.map(it => it.tag).filter(Boolean))];
+  const combined = [...new Set([...gristTags, ...localTags])];
+  return combined.sort((a, b) => a.localeCompare(b, 'fr', { sensitivity: 'base' }));
+}
+
+function showTagSuggestions(input) {
+  const q = input.value.trim().toLowerCase();
+  const box = document.getElementById('tagSuggestions');
+  if (!box) return;
+  if (!q) { box.style.display = 'none'; return; }
+  
+  const allTags = getAllTags();
+  const matches = allTags.filter(t => t.toLowerCase().includes(q) && t.toLowerCase() !== q);
+  if (!matches.length) { box.style.display = 'none'; return; }
+  
+  matches.sort((a, b) => {
+    const aStartsWith = a.toLowerCase().startsWith(q) ? 0 : 1;
+    const bStartsWith = b.toLowerCase().startsWith(q) ? 0 : 1;
+    if (aStartsWith !== bStartsWith) return aStartsWith - bStartsWith;
+    return a.localeCompare(b, 'fr', { sensitivity: 'base' });
+  });
+  
+  const limited = matches.slice(0, 8);
+  box.innerHTML = limited.map(t => {
+    const qEsc = q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const hl = t.replace(new RegExp(`(${qEsc})`, 'gi'), '<em>$1</em>');
+    return `<div class="tag-suggestion-item" onmousedown="event.preventDefault();pickTag('${esc(t)}')">${hl}</div>`;
+  }).join('');
+  box.style.display = 'block';
+}
+
+function pickTag(tag) {
+  const input = document.getElementById('imoTag');
+  if (input) {
+    input.value = tag;
+    input.focus();
+    input.setSelectionRange(tag.length, tag.length);
+  }
+  const box = document.getElementById('tagSuggestions');
+  if (box) box.style.display = 'none';
+}
+
+document.addEventListener('click', e => {
+  const box = document.getElementById('tagSuggestions');
+  if (box && !box.contains(e.target) && e.target.id !== 'imoTag') {
+    box.style.display = 'none';
+  }
+});
+
+async function loadGristTags() {
+  if (typeof grist === 'undefined') return;
+  try {
+    const ri = await grist.docApi.fetchTable('Items');
+    const tagsArray = (ri.tag || []).filter(Boolean).map(t => String(t).trim()).filter(t => t.length > 0);
+    gristAllTags = [...new Set(tagsArray)].sort((a, b) => a.localeCompare(b, 'fr', { sensitivity: 'base' }));
+    console.log(`✓ Chargé ${gristAllTags.length} tags uniques depuis Grist`);
+  } catch (e) {
+    console.warn('⚠ Erreur:', e);
+    gristAllTags = [];
+  }
+}
+
+
+// ── Chargement depuis Grist ──
+async function loadCollections() {
+  if(typeof grist==='undefined')return;
+  await loadGristTags();
+  // Charger la table Couleurs
+  try {
+    const rco = await grist.docApi.fetchTable('Couleurs');
+    gristCouleurs = (rco.id||[]).map((id,i)=>({
+      nom:  String(rco.nom?.[i]  ||''),
+      hex:  String(rco.hex?.[i]  ||''),
+      type: String(rco.type?.[i] ||''),
+    }));
+  } catch(e){ console.warn('Couleurs:',e); gristCouleurs = []; }
+  try {
+    const rc = await grist.docApi.fetchTable('Collections');
+    cols = (rc.id||[]).map((id,i)=>({
+      id: 'g'+id, gid: id,
+      nom:    String(rc.nom?.[i]    ||''),
+      theme:  String(rc.theme?.[i]  ||'listes'),
+      icone:  String(rc.icone?.[i]  ||''),
+      couleur:String(rc.couleur?.[i]||''),
+    }));
+  } catch(e){ console.warn('Collections:',e); }
+  try {
+    const ri = await grist.docApi.fetchTable('Items');
+    items = (ri.id||[]).map((id,i)=>({
+      id: 'g'+id, gid: id,
+      col_id: 'g'+(ri.collection?.[i]||0),
+      titre:  String(ri.titre?.[i] ||''),
+      texte:  String(ri.texte?.[i] ||''),
+      url:    String(ri.url?.[i]   ||''),
+      tag:    String(ri.tag?.[i]   ||''),
+      fait:   !!ri.fait?.[i],
+    }));
+  } catch(e){ console.warn('Items:',e); }
+  renderColSidebar();
+  if (selColId) renderColMain();
+}
+
+// ── Démo collections ──
+function initColDemo() {
+  cols = [
+    {id:'c1',nom:'Courses',       theme:'listes', icone:'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="21" r="1"/><circle cx="19" cy="21" r="1"/><path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12"/></svg>', couleur:'#d3e8d3'},
+    {id:'c4',nom:'Palette',       theme:'couleurs',icone:'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="13.5" cy="6.5" r=".5"/><circle cx="17.5" cy="10.5" r=".5"/><circle cx="8.5" cy="7.5" r=".5"/><circle cx="6.5" cy="12.5" r=".5"/><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.555-2.503 5.555-5.554C21.965 6.012 17.461 2 12 2z"/></svg>', couleur:'#f5e8f5'},
+    {id:'c2',nom:'Ressources web',theme:'liens',  icone:'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>', couleur:'#deeaf5'},
+    {id:'c3',nom:'Notes',         theme:'fiches',  icone:'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>', couleur:'#fde8c8'},
+  ];
+  items = [
+    {id:'i1',col_id:'c1',titre:'Lait',        tag:'',       texte:'',url:'',fait:true},
+    {id:'i2',col_id:'c1',titre:'Café',         tag:'',       texte:'',url:'',fait:false},
+    {id:'i3',col_id:'c1',titre:'Pain',         tag:'boulangerie',texte:'',url:'',fait:false},
+    {id:'i8',col_id:'c4',titre:'Bleu marine',   tag:'primaire',texte:'',url:'#0c447c',fait:false},
+    {id:'i9',col_id:'c4',titre:'Vert sauge',    tag:'neutre',  texte:'',url:'#5a8a6a',fait:false},
+    {id:'i10',col_id:'c4',titre:'Terre cuite',  tag:'chaud',   texte:'',url:'#c17a5a',fait:false},
+    {id:'i4',col_id:'c2',titre:'MDN Web Docs', tag:'dev',    texte:'',url:'https://developer.mozilla.org',fait:false},
+    {id:'i5',col_id:'c2',titre:'Grist Docs',   tag:'grist',  texte:'',url:'https://support.getgrist.com',fait:false},
+    {id:'i6',col_id:'c3',titre:'Idées projet', tag:'perso',  texte:'Un espace pour noter les id\u00e9es au fil de l\u2019eau, sans contrainte de structure.\n\nPeut \u00eatre utilis\u00e9 pour les projets personnels ou professionnels.',url:'',fait:false},
+    {id:'i7',col_id:'c3',titre:'Recette carbonara',tag:'cuisine',texte:'Spaghetti, lardons, oeufs, pecorino. Pas de cr\u00e8me !',url:'',fait:false},
+  ];
+  renderColSidebar();
+}
+// Keyboard
+document.addEventListener('keydown',e=>{
+  if(e.key==='Escape'){lecClosePanel();closeBmod();closeColMod();closeItemMod();closeFicheModal();document.getElementById('modDel').style.display='none';}
+  if(e.key==='Enter'&&document.getElementById('bmodOv').classList.contains('open')){const a=document.activeElement;if(!a||a.tagName!=='BUTTON')saveBTask();}
+});
+</script>
+<div id="calPop" class="cal-pop" style="display:none"></div>
+</body>
+</html>
