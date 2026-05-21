@@ -839,11 +839,10 @@ function buildUrl() {
   if (!state.cols.colweek)     params.set('colweek', 'off');
   if (!state.cols.colprojets)  params.set('colprojets', 'off');
   if (!state.cols.colcal)      params.set('colcal', 'off');
-  if (!state.cols.colcal)      params.set('colcal', 'off');
 if (!state.cols.colfuture)   params.set('colfuture', 'off');
-if (!state.cols.bday)        params.set('bday', 'off');
+  if (!state.cols.bday)        params.set('bday', 'off');
 
-const paramStr = params.toString();
+  const paramStr = params.toString();
   const count = [...params.keys()].length;
   const countEl = document.getElementById('paramCount');
   countEl.textContent = count === 0 ? '0 paramètre' : count + ' paramètre' + (count > 1 ? 's' : '');
@@ -932,7 +931,7 @@ function resetAll() {
     state.tabs[k] = true;
     document.getElementById('tog-'+k).classList.add('active');
   });
-  ['colweek','colprojets','colcal','colfuture'].forEach(k => {
+  ['colweek','colprojets','colcal','colfuture','bday'].forEach(k => {
     state.cols[k] = true;
     document.getElementById('tog-'+k).classList.add('active');
   });
