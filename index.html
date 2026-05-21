@@ -1425,6 +1425,13 @@ select.cfilt { cursor: pointer; }
       if (nav && nav.classList.contains('nav-div')) nav.style.display = 'none';
     });
   }
+
+  if (p.get('bday') === 'off') {
+  document.addEventListener('DOMContentLoaded', () => {
+    const bdayBtn = document.getElementById('n-bdays');
+    if (bdayBtn) bdayBtn.style.display = 'none';
+  });
+}
 })();
 
 // ══════════════════════════════════════════════════════
