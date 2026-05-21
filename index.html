@@ -1367,30 +1367,63 @@ select.cfilt { cursor: pointer; }
 // ══════════════════════════════════════════════
 (function applyConfig() {
   const p = new URLSearchParams(location.search);
-
-  // Couleur maître
+  
+  // Couleur accent
   const accent = p.get('accent');
   if (accent) {
     const hex = accent.startsWith('#') ? accent : '#' + accent;
     document.documentElement.style.setProperty('--accent', hex);
-    // Générer une version soft (20% opacité)
     document.documentElement.style.setProperty('--accent-soft', hex + '33');
   }
-
-  // Masquer onglets
+  
+  // Onglets à masquer
   if (p.get('lectures') === 'off') {
     document.querySelector('[data-tab="lectures"]')?.remove();
   }
   if (p.get('collections') === 'off') {
     document.querySelector('[data-tab="collections"]')?.remove();
   }
-
+  
   // Titre personnalisé
   const titre = p.get('titre');
   if (titre) {
     document.title = titre;
     const bujoTab = document.querySelector('[data-tab="bujo"] .tab-label');
     if (bujoTab) bujoTab.textContent = titre;
+  }
+  
+  // Onglet par défaut
+  const tabParam = p.get('tab');
+  if (tabParam && ['bujo','lectures','collections'].includes(tabParam)) {
+    document.addEventListener('DOMContentLoaded', () => switchTab(tabParam));
+  }
+  
+  // Colonnes Bujo
+  if (p.get('colweek') === 'off') {
+    document.addEventListener('DOMContentLoaded', () => {
+      const el = document.getElementById('bujoWeekCol');
+      if (el) el.style.display = 'none';
+    });
+  }
+  if (p.get('colprojets') === 'off') {
+    document.addEventListener('DOMContentLoaded', () => {
+      const el = document.getElementById('bujoProjetCol');
+      if (el) el.style.display = 'none';
+    });
+  }
+  if (p.get('colcal') === 'off') {
+    document.addEventListener('DOMContentLoaded', () => {
+      const el = document.querySelector('.cal-wrap');
+      if (el) el.style.display = 'none';
+    });
+  }
+  if (p.get('colfuture') === 'off') {
+    document.addEventListener('DOMContentLoaded', () => {
+      const el = document.getElementById('futureLogs');
+      if (el) el.style.display = 'none';
+      const nav = el ? el.previousElementSibling : null;
+      if (nav && nav.classList.contains('nav-div')) nav.style.display = 'none';
+    });
   }
 })();
 
