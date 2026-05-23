@@ -2614,10 +2614,8 @@ function renderItems(colItems, theme) {
         <div style="flex:1;min-width:0">
           <div class="item-fiche-title">${esc(it.titre||'Sans nom')}</div>
           ${hex ? `<div style="font-size:11px;color:var(--muted);font-family:monospace;margin-top:4px">${esc(hex)}</div>` : ''}
-          <div class="item-fiche-meta" style="margin-top:8px">
-            <button class="item-act-btn" onclick="event.stopPropagation();openItemMod(${idx},'couleurs')" title="Modifier">&#9998;</button>
-          </div>
         </div>
+        <button class="item-act-btn" onclick="event.stopPropagation();openItemMod(${idx},'couleurs')" title="Modifier" style="flex-shrink:0">&#9998;</button>
       </div>`;
     }).join('');
     return `<div class="fiches-grid">${cards}</div>`;
