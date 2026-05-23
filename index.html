@@ -2618,7 +2618,7 @@ function renderItems(colItems, theme) {
         <button class="item-act-btn" onclick="event.stopPropagation();openItemMod(${idx},'couleurs')" title="Modifier" style="flex-shrink:0">&#9998;</button>
       </div>`;
     }).join('');
-    return `<div class="fiches-grid">${cards}</div>`;
+    return `<div class="fiches-grid" style="grid-template-columns:repeat(auto-fill,minmax(180px,1fr))">${cards}</div>`;
   }
 
   return '';
