@@ -2605,23 +2605,21 @@ function renderItems(colItems, theme) {
     return `<div class="fiches-grid">${cards}</div>`;
   }
   if (theme === 'couleurs') {
-    return colItems.map((it) => {
+    const cards = colItems.map((it) => {
       const idx = items.indexOf(it);
-      const hex = (it.url || '').trim(); // on stocke le hex dans le champ url
-      const swatchStyle = hex
-        ? `background:${hex};border-color:${hex}55`
-        : 'background:var(--bg-soft)';
-      return `<div class="item-couleur">
-        <div class="item-couleur-swatch" style="${swatchStyle}"></div>
-        <div class="item-body">
-          <div class="item-couleur-name">${esc(it.titre||'Sans nom')}</div>
-          ${hex ? `<div class="item-couleur-hex">${esc(hex)}</div>` : ''}
-        </div>
-        <div class="item-actions">
-          <button class="item-act-btn" onclick="openItemMod(${idx},'couleurs')" title="Modifier">&#9998;</button>
+      const hex = (it.url || '').trim();
+      const swatchStyle = hex ? `background:${hex}` : 'background:var(--bg-soft)';
+      return `<div class="item-fiche">
+        <div style="height:60px;border-radius:6px;margin-bottom:10px;${swatchStyle};border:1px solid var(--border)"></div>
+        <div class="item-fiche-title">${esc(it.titre||'Sans nom')}</div>
+        ${hex ? `<div style="font-size:11px;color:var(--muted);font-family:monospace;margin-top:4px">${esc(hex)}</div>` : ''}
+        <div class="item-fiche-meta" style="margin-top:8px">
+          <div style="flex:1"></div>
+          <button class="item-act-btn" onclick="event.stopPropagation();openItemMod(${idx},'couleurs')" title="Modifier">&#9998;</button>
         </div>
       </div>`;
     }).join('');
+    return `<div class="fiches-grid">${cards}</div>`;
   }
 
   return '';
