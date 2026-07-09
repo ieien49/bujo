@@ -254,6 +254,7 @@ body {
 .tage { font-size: 10px; color: var(--bday-muted); margin-left: 3px; }
 .tedit { opacity: 0; background: none; border: none; cursor: pointer; color: var(--light); font-size: 13px; padding: 0 2px; flex-shrink: 0; transition: color .12s, opacity .12s; font-family: inherit; }
 .tedit:hover { color: var(--accent); }
+.tdate-right { font-size: 10.5px; color: var(--accent); flex-shrink: 0; white-space: nowrap; margin-left: 4px; }
 .empty-bujo { font-size: 12px; color: var(--light); padding: 24px 0; text-align: center; }
 
 /* ══════════════════════════════════════════
@@ -1629,7 +1630,7 @@ function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').repl
 // ══════════════════════════════════════════════════════
 //  BUJO — HTML tâche
 // ══════════════════════════════════════════════════════
-function tHTML(t,i,age){
+function tHTML(t,i,age,dateRight){
   if(t.bday){
     const a = age !== undefined ? `<span class="tage">${age} ans</span>` : '';
     return `<div class="titem bday-item">
@@ -1640,9 +1641,11 @@ function tHTML(t,i,age){
       <button class="tedit" onclick="openBmod(${i})">&#9998;</button>
     </div>`;
   }
+  const dr = dateRight ? `<span class="tdate-right">${dateRight}</span>` : '';
   return `<div class="titem${t.done?' done':''}">
     <div class="tchk${t.done?' checked':''}" onclick="toggleT(${i})"></div>
     <div class="tname">${esc(t.name)}</div>
+    ${dr}
     <button class="tedit" onclick="openBmod(${i})">&#9998;</button>
   </div>`;
 }
@@ -1847,22 +1850,18 @@ function renderMain() {
     const todayT = tasks.filter(t=>!t.bday&&!t.projet&&t.date===todayStr);
     const todayB=tasks.filter(t=>t.bday&&bdayNext(t)?.ds===todayStr);
     if(late.length){
-      const lg={};late.forEach(t=>{if(!lg[t.date])lg[t.date]=[];lg[t.date].push(t);});
-      const isOpen = lateOpen !== false; // ouvert par défaut
+      const isOpen = lateOpen !== false;
       html+=`<div class="section">
         <div class="sec-label s-late" style="cursor:pointer;display:flex;align-items:center;justify-content:space-between" onclick="toggleLate()">
           <span>En retard (${late.length})</span>
           <span style="font-size:11px;opacity:.7">${isOpen ? '▲' : '▼'}</span>
         </div>`;
       if(isOpen){
-        Object.keys(lg).sort().forEach(k=>{
-          html+=`<div class="day-group"><div class="day-hdr dh-late">${dayLabel(k).lbl}</div>`;
-          html+=lg[k].map(t=>tHTML(t,tasks.indexOf(t))).join('');
-          html+=`</div>`;
-        });
+        html+=late.map(t=>tHTML(t,tasks.indexOf(t),undefined,dayLabel(t.date).lbl)).join('');
       }
       html+=`</div>`;
-    }
+    }    
+    
     if(todayT.length||todayB.length){
       html+=`<div class="section"><div class="sec-label">Aujourd'hui</div>`;
       todayB.forEach(t=>{const o=bdayNext(t);html+=tHTML(t,tasks.indexOf(t),o?.age);});
@@ -1874,7 +1873,6 @@ function renderMain() {
   } else if(v==='late'){
     const late = tasks.filter(t => isLate(t) && !t.projet).sort((a,b)=>a.date.localeCompare(b.date));
     if(late.length){
-      const lg={};late.forEach(t=>{if(!lg[t.date])lg[t.date]=[];lg[t.date].push(t);});
       const isOpen = lateOpen !== false;
       html+=`<div class="section">
         <div class="sec-label s-late" style="cursor:pointer;display:flex;align-items:center;justify-content:space-between" onclick="toggleLate()">
@@ -1882,13 +1880,10 @@ function renderMain() {
           <span style="font-size:11px;opacity:.7">${isOpen ? '▲' : '▼'}</span>
         </div>`;
       if(isOpen){
-        Object.keys(lg).sort().forEach(k=>{
-          html+=`<div class="day-group"><div class="day-hdr dh-late">${dayLabel(k).lbl}</div>`;
-          html+=lg[k].map(t=>tHTML(t,tasks.indexOf(t))).join('');
-          html+=`</div>`;
-        });
+        html+=late.map(t=>tHTML(t,tasks.indexOf(t),undefined,dayLabel(t.date).lbl)).join('');
       }
       html+=`</div>`;
+    }
     } else html=`<div class="empty-bujo">Aucune tâche en retard</div>`;
 
   } else if(v==='week'){
@@ -2396,7 +2391,7 @@ const THEME_LABELS = {listes:'Listes',liens:'Liens',fiches:'Fiches',couleurs:'Co
 let cols = [];    // [{id,nom,theme,icone,couleur}]
 let items = [];   // [{id,col_id,titre,texte,url,tag,fait}]
 let selColId = null;
-let lateOpen = false; // replié par défaut
+let lateOpen = true; // ouvert par défaut
 let editColIdx = null;
 let editItemIdx = null;
 let ficheModalIdx = null;   // remplace ficheDrawerIdx
