@@ -373,6 +373,15 @@ select.cfilt { cursor: pointer; }
 .ei { width: 100%; padding: 6px 9px; font-size: 12.5px; font-family: inherit; border: 1px solid var(--border); border-radius: var(--radius); background: var(--bg); color: var(--text); outline: none; transition: border-color .15s; }
 .ei:focus { border-color: var(--accent); }
 .ei::placeholder { color: var(--light); }
+  .qadd-wrap { margin-bottom: 14px; }
+.qadd-input {
+  width: 100%; padding: 9px 12px; font-size: 13px; font-family: inherit;
+  border: 1px solid var(--border); border-radius: var(--radius);
+  background: var(--bg); color: var(--text); outline: none;
+  transition: border-color .15s;
+}
+.qadd-input:focus { border-color: var(--accent); }
+.qadd-input::placeholder { color: var(--light); }
 .es { width: 100%; padding: 6px 9px; font-size: 12.5px; font-family: inherit; border: 1px solid var(--border); border-radius: var(--radius); background: var(--bg); color: var(--text); outline: none; cursor: pointer; }
 .es:focus { border-color: var(--accent); }
 .rich-tb { display: flex; align-items: center; gap: 2px; padding: 4px 6px; background: var(--bg-soft); border: 1px solid var(--border); border-bottom: none; border-radius: var(--radius) var(--radius) 0 0; }
@@ -1943,7 +1952,8 @@ function renderMain() {
     html+=`</div>`;
   }
 
-  el.innerHTML=html;
+  const quickAddHTML = `<div class="qadd-wrap"><input type="text" id="quickAddInput" class="qadd-input" placeholder="Nouvelle tâche pour aujourd'hui…" onkeydown="if(event.key==='Enter')quickAddTask(this)"></div>`;
+  el.innerHTML = quickAddHTML + html;
 }
 
 // ══════════════════════════════════════════════════════
@@ -1953,6 +1963,17 @@ function toggleT(i){
   tasks[i].done=!tasks[i].done;
   gBujoUpdate(tasks[i]);
   renderMain();
+}
+
+  function quickAddTask(inputEl){
+  const name = inputEl.value.trim();
+  if(!name) return;
+  const nt = {name, date: todayStr, done:false, bday:false, projet:false};
+  tasks.push(nt);
+  gBujoAdd(nt);
+  renderMain();
+  const qi = document.getElementById('quickAddInput');
+  if(qi) qi.focus();
 }
 
 function openBmodBday() {
