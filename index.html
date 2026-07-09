@@ -232,7 +232,7 @@ body {
   box-shadow: 0 1px 4px rgba(0,0,0,.05);
 }
 .titem:hover { background: var(--bg-soft); }
-.titem:hover .tedit { opacity: 1; }
+.titem:hover .tedit, .titem:hover .tmove { opacity: 1; }
 .titem.done { opacity: .4; }
 .tchk {
   width: 16px; height: 16px; border-radius: 50%;
@@ -254,6 +254,8 @@ body {
 .tage { font-size: 10px; color: var(--bday-muted); margin-left: 3px; }
 .tedit { opacity: 0; background: none; border: none; cursor: pointer; color: var(--light); font-size: 13px; padding: 0 2px; flex-shrink: 0; transition: color .12s, opacity .12s; font-family: inherit; }
 .tedit:hover { color: var(--accent); }
+  .tmove { opacity: 0; background: none; border: none; cursor: pointer; color: var(--light); font-size: 13px; padding: 0 2px; flex-shrink: 0; transition: color .12s, opacity .12s; font-family: inherit; }
+.tmove:hover { color: var(--accent); }
 .tdate-right { font-size: 10.5px; color: var(--accent); flex-shrink: 0; white-space: nowrap; margin-left: 4px; }
 .empty-bujo { font-size: 12px; color: var(--light); padding: 24px 0; text-align: center; }
 
@@ -1640,7 +1642,7 @@ function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').repl
 // ══════════════════════════════════════════════════════
 //  BUJO — HTML tâche
 // ══════════════════════════════════════════════════════
-function tHTML(t,i,age,dateRight){
+function tHTML(t,i,age,dateRight,late){
   if(t.bday){
     const a = age !== undefined ? `<span class="tage">${age} ans</span>` : '';
     return `<div class="titem bday-item">
@@ -1652,10 +1654,12 @@ function tHTML(t,i,age,dateRight){
     </div>`;
   }
   const dr = dateRight ? `<span class="tdate-right">${dateRight}</span>` : '';
+  const mv = late ? `<button class="tmove" onclick="moveToToday(${i})" title="Déplacer à aujourd'hui">&#8635;</button>` : '';
   return `<div class="titem${t.done?' done':''}">
     <div class="tchk${t.done?' checked':''}" onclick="toggleT(${i})"></div>
     <div class="tname">${esc(t.name)}</div>
     ${dr}
+    ${mv}
     <button class="tedit" onclick="openBmod(${i})">&#9998;</button>
   </div>`;
 }
@@ -1867,7 +1871,7 @@ function renderMain() {
           <span style="font-size:11px;opacity:.7">${isOpen ? '▲' : '▼'}</span>
         </div>`;
       if(isOpen){
-        html+=late.map(t=>tHTML(t,tasks.indexOf(t),undefined,dayLabel(t.date).lbl)).join('');
+        html+=late.map(t=>tHTML(t,tasks.indexOf(t),undefined,dayLabel(t.date).lbl,true)).join('');
       }
       html+=`</div>`;
     }    
@@ -1890,7 +1894,7 @@ function renderMain() {
           <span style="font-size:11px;opacity:.7">${isOpen ? '▲' : '▼'}</span>
         </div>`;
       if(isOpen){
-        html+=late.map(t=>tHTML(t,tasks.indexOf(t),undefined,dayLabel(t.date).lbl)).join('');
+        html+=late.map(t=>tHTML(t,tasks.indexOf(t),undefined,dayLabel(t.date).lbl,true)).join('');
       }
       html+=`</div>`;
     
@@ -1961,6 +1965,12 @@ function renderMain() {
 // ══════════════════════════════════════════════════════
 function toggleT(i){
   tasks[i].done=!tasks[i].done;
+  gBujoUpdate(tasks[i]);
+  renderMain();
+}
+
+  function moveToToday(i){
+  tasks[i].date = todayStr;
   gBujoUpdate(tasks[i]);
   renderMain();
 }
