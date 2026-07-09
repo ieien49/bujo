@@ -2126,7 +2126,6 @@ function gBujoUpdate(t){
 function gBujoAdd(t){
   if(typeof grist==='undefined')return;
   grist.docApi.applyUserActions([['AddRecord','Bujo',null,{tache:t.name,date:t.date,termine:false,anniversaire:!!t.bday,projet:!!t.projet,archive:!!t.archive}]]).catch(console.error);
-}rist.docApi.applyUserActions([['AddRecord','Bujo',null,{tache:t.name,date:t.date,termine:false,anniversaire:!!t.bday,projet:!!t.projet}]]).catch(console.error);
 }
 function gBujoDelete(t){
   if(typeof grist==='undefined'||!t.id)return;
