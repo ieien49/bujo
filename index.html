@@ -1450,6 +1450,7 @@ const DFR = ['Dimanche','Lundi','Mardi','Mercredi','Jeudi','Vendredi','Samedi'];
 //  ÉTAT
 // ══════════════════════════════════════════════════════
 let isProjet = false;
+let lateOpen = true; // ouvert par défaut
 let tasks       = [];   // données bujo
 let lecRecs     = [];   // données lectures
 let lecFiltered = [];
@@ -2391,7 +2392,6 @@ const THEME_LABELS = {listes:'Listes',liens:'Liens',fiches:'Fiches',couleurs:'Co
 let cols = [];    // [{id,nom,theme,icone,couleur}]
 let items = [];   // [{id,col_id,titre,texte,url,tag,fait}]
 let selColId = null;
-let lateOpen = true; // ouvert par défaut
 let editColIdx = null;
 let editItemIdx = null;
 let ficheModalIdx = null;   // remplace ficheDrawerIdx
