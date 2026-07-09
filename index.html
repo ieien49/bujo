@@ -567,6 +567,14 @@ select.cfilt { cursor: pointer; }
   line-height: 1;
 }
 .proj-edit:hover { color: var(--accent); }
+  .proj-archive {
+  opacity: 0; background: none; border: none; cursor: pointer;
+  color: var(--light); font-size: 12px; padding: 0 2px;
+  transition: color .1s, opacity .12s; font-family: inherit; flex-shrink: 0;
+  line-height: 1;
+}
+.proj-archive:hover { color: var(--accent); }
+.proj-card.done-card:hover .proj-archive { opacity: 1; }
 .proj-date {
   display: inline-flex; align-items: center; gap: 4px;
   font-size: 10px; color: var(--muted);
@@ -1744,7 +1752,7 @@ function renderWeekCol() {
 function renderProjetCol() {
   const el = document.getElementById('bujoProjetCol');
   if (!el) return;
-  const projets = tasks.filter(t => t.projet && !t.bday)
+  const projets = tasks.filter(t => t.projet && !t.bday && !t.archive)
     .sort((a, b) => (a.done === b.done) ? a.date.localeCompare(b.date) : (a.done ? 1 : -1));
 
   let html = `<div class="proj-col-title">Projets</div>`;
@@ -1764,14 +1772,14 @@ function renderProjetCol() {
           ${fmtProjDate(t.date)}
         </div>` : '';
       html += `<div class="proj-card${t.done ? ' done-card' : ''}">
-        <div class="proj-card-top">
-          <div class="proj-chk${t.done ? ' done' : ''}" onclick="toggleT(${idx})"></div>
-          <div class="proj-name${t.done ? ' done' : ''}">${esc(t.name)}</div>
-          <button class="proj-edit" onclick="openBmod(${idx})">&#9998;</button>
-        </div>
-        ${dateHtml}
-      </div>`;
-    });
+  <div class="proj-card-top">
+    <div class="proj-chk${t.done ? ' done' : ''}" onclick="toggleT(${idx})"></div>
+    <div class="proj-name${t.done ? ' done' : ''}">${esc(t.name)}</div>
+    ${t.done ? `<button class="proj-archive" onclick="archiveProjet(${idx})" title="Masquer">&#10005;</button>` : ''}
+    <button class="proj-edit" onclick="openBmod(${idx})">&#9998;</button>
+  </div>
+  ${dateHtml}
+</div>`;    });
   }
   el.innerHTML = html;
 }
@@ -1791,6 +1799,12 @@ function openBmodProjet() {
   // …puis active automatiquement le toggle Projet
   isProjet = true;
   refreshProjetUI();
+}
+
+  function archiveProjet(i){
+  tasks[i].archive = true;
+  gBujoUpdate(tasks[i]);
+  renderMain();
 }
 
 // ══════════════════════════════════════════════════════
@@ -2107,11 +2121,12 @@ function toggleLate(){
 // ══════════════════════════════════════════════════════
 function gBujoUpdate(t){
   if(typeof grist==='undefined'||!t.id)return;
-  grist.docApi.applyUserActions([['UpdateRecord','Bujo',t.id,{tache:t.name,date:t.date,termine:t.done,anniversaire:!!t.bday,projet:!!t.projet}]]).catch(console.error);
+  grist.docApi.applyUserActions([['UpdateRecord','Bujo',t.id,{tache:t.name,date:t.date,termine:t.done,anniversaire:!!t.bday,projet:!!t.projet,archive:!!t.archive}]]).catch(console.error);
 }
 function gBujoAdd(t){
   if(typeof grist==='undefined')return;
-  grist.docApi.applyUserActions([['AddRecord','Bujo',null,{tache:t.name,date:t.date,termine:false,anniversaire:!!t.bday,projet:!!t.projet}]]).catch(console.error);
+  grist.docApi.applyUserActions([['AddRecord','Bujo',null,{tache:t.name,date:t.date,termine:false,anniversaire:!!t.bday,projet:!!t.projet,archive:!!t.archive}]]).catch(console.error);
+}rist.docApi.applyUserActions([['AddRecord','Bujo',null,{tache:t.name,date:t.date,termine:false,anniversaire:!!t.bday,projet:!!t.projet}]]).catch(console.error);
 }
 function gBujoDelete(t){
   if(typeof grist==='undefined'||!t.id)return;
@@ -2369,11 +2384,12 @@ if(typeof grist!=='undefined'){
       {name:'termine',     title:'Terminé',     type:'Bool'},
       {name:'anniversaire',title:'Anniversaire',type:'Bool'},
       {name:'projet',      title:'Projet',      type:'Bool'},
+      {name:'archive',     title:'Archivé',     type:'Bool'},
     ]
   });
   // onRecords est appelé à chaque modification de la table Bujo
   grist.onRecords(records=>{
-    tasks = records.map(r => ({id:r.id, name:r.tache||'', date:r.date||'', done:!!r.termine, bday:!!r.anniversaire, projet:!!r.projet}));
+    tasks = records.map(r => ({id:r.id, name:r.tache||'', date:r.date||'', done:!!r.termine, bday:!!r.anniversaire, projet:!!r.projet, archive:!!r.archive}));
     renderMain();
   });
   loadLectures();
