@@ -1884,7 +1884,7 @@ function renderMain() {
         html+=late.map(t=>tHTML(t,tasks.indexOf(t),undefined,dayLabel(t.date).lbl)).join('');
       }
       html+=`</div>`;
-    }
+    
     } else html=`<div class="empty-bujo">Aucune tâche en retard</div>`;
 
   } else if(v==='week'){
