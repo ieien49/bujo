@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Journal</title>
 <script src="https://docs.getgrist.com/grist-plugin-api.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,500;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
 <style>
@@ -27,7 +28,7 @@
   --tag-cours:   #fde8c8; --tag-cours-t: #7a4a00;
   --tag-lire:    #e8e8f0; --tag-lire-t:  #3d3d6b;
   --bday-border: var(--accent); --bday-text:   var(--accent);
---bday-muted:  color-mix(in srgb, var(--accent) 60%, #999); --bday-bg:     color-mix(in srgb, var(--accent) 10%, #fff);
+  --bday-muted:  color-mix(in srgb, var(--accent) 60%, #999); --bday-bg:     color-mix(in srgb, var(--accent) 10%, #fff);
 }
 
 body {
@@ -47,6 +48,17 @@ body {
   flex-shrink: 0; height: var(--tab-h);
   padding: 0 16px; gap: 4px;
 }
+.app-title {
+  display: none;
+  padding: 14px 16px 0;
+  font-family: 'Lora', serif;
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--text);
+  flex-shrink: 0;
+  background: var(--bg);
+}
+.app-title.vis { display: block; }
 .app-tab {
   display: flex; align-items: center; gap: 7px;
   padding: 0 18px; height: var(--tab-h);
@@ -250,11 +262,11 @@ body {
   text-transform: none; letter-spacing: 0; font-weight: 500;
 }
 .titem.done .tname { text-decoration: line-through; color: var(--muted); }
-.titem.bday-item .tname { color: var(--accent); }
+.titem.bday-item .tname { color: var(--bday-text); }
 .tage { font-size: 10px; color: var(--bday-muted); margin-left: 3px; }
 .tedit { opacity: 0; background: none; border: none; cursor: pointer; color: var(--light); font-size: 13px; padding: 0 2px; flex-shrink: 0; transition: color .12s, opacity .12s; font-family: inherit; }
 .tedit:hover { color: var(--accent); }
-  .tmove { opacity: 0; background: none; border: none; cursor: pointer; color: var(--light); font-size: 13px; padding: 0 2px; flex-shrink: 0; transition: color .12s, opacity .12s; font-family: inherit; }
+.tmove { opacity: 0; background: none; border: none; cursor: pointer; color: var(--light); font-size: 13px; padding: 0 2px; flex-shrink: 0; transition: color .12s, opacity .12s; font-family: inherit; }
 .tmove:hover { color: var(--accent); }
 .tdate-right { font-size: 10.5px; color: var(--accent); flex-shrink: 0; white-space: nowrap; margin-left: 4px; }
 .empty-bujo { font-size: 12px; color: var(--light); padding: 24px 0; text-align: center; }
@@ -375,7 +387,7 @@ select.cfilt { cursor: pointer; }
 .ei { width: 100%; padding: 6px 9px; font-size: 12.5px; font-family: inherit; border: 1px solid var(--border); border-radius: var(--radius); background: var(--bg); color: var(--text); outline: none; transition: border-color .15s; }
 .ei:focus { border-color: var(--accent); }
 .ei::placeholder { color: var(--light); }
-  .qadd-wrap { margin-bottom: 14px; }
+.qadd-wrap { margin-bottom: 14px; }
 .qadd-input {
   width: 100%; padding: 9px 12px; font-size: 13px; font-family: inherit;
   border: 1px solid var(--border); border-radius: var(--radius);
@@ -422,6 +434,16 @@ select.cfilt { cursor: pointer; }
 .bf input[type=text] { width: 100%; padding: 6px 9px; border: 1px solid var(--border); border-radius: var(--radius); font-size: 12.5px; color: var(--text); background: var(--bg); outline: none; font-family: inherit; transition: border-color .12s; }
 .bf input[type=text]:focus { border-color: var(--accent); }
 .bf .bhint { font-size: 10px; color: var(--light); margin-top: 3px; }
+.tag-suggestions-box {
+  display: none; position: absolute; top: 100%; left: 0; right: 0; z-index: 10;
+  background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius);
+  box-shadow: 0 4px 14px rgba(0,0,0,.1); margin-top: 3px; max-height: 160px; overflow-y: auto;
+}
+.tag-suggestion-item {
+  padding: 6px 10px; font-size: 12px; color: var(--text); cursor: pointer; font-family: 'DM Sans', sans-serif;
+}
+.tag-suggestion-item:hover { background: var(--bg-soft); }
+.tag-suggestion-item em { font-style: normal; font-weight: 700; color: var(--accent); }
 .presets { display: flex; flex-wrap: wrap; gap: 3px; margin-top: 5px; }
 .preset { font-size: 10px; padding: 2px 7px; border: 1px solid var(--border); border-radius: 20px; background: var(--bg-soft); color: var(--muted); cursor: pointer; font-family: inherit; transition: background .1s; }
 .preset:hover { background: var(--bg-hover); border-color: var(--accent); }
@@ -567,7 +589,7 @@ select.cfilt { cursor: pointer; }
   line-height: 1;
 }
 .proj-edit:hover { color: var(--accent); }
-  .proj-archive {
+.proj-archive {
   opacity: 0; background: none; border: none; cursor: pointer;
   color: var(--light); font-size: 12px; padding: 0 2px;
   transition: color .1s, opacity .12s; font-family: inherit; flex-shrink: 0;
@@ -638,6 +660,38 @@ select.cfilt { cursor: pointer; }
 }
 .item-couleur-name { font-size: 12.5px; font-weight: 500; color: var(--text); font-family: 'DM Sans', sans-serif; }
 .item-couleur-hex { font-size: 11px; color: var(--muted); font-family: monospace; margin-top: 1px; }
+.swatch-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(64px, 1fr));
+  gap: 10px;
+}
+.swatch-item {
+  position: relative;
+  aspect-ratio: 1;
+  border-radius: 10px;
+  cursor: pointer;
+  border: 1px solid rgba(0,0,0,.08);
+  overflow: hidden;
+  transition: transform .12s;
+}
+.swatch-item:hover { transform: scale(1.06); }
+.swatch-item-overlay {
+  position: absolute; inset: 0;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  background: rgba(0,0,0,.55);
+  opacity: 0; transition: opacity .12s;
+  color: #fff; text-align: center; padding: 4px;
+}
+.swatch-item:hover .swatch-item-overlay { opacity: 1; }
+.swatch-item-name { font-size: 10px; font-weight: 600; font-family:'DM Sans',sans-serif; line-height:1.3; }
+.swatch-item-hex { font-size: 9px; font-family: monospace; opacity: .85; margin-top:2px; }
+.swatch-item-edit {
+  position:absolute; top:4px; right:4px;
+  background: rgba(255,255,255,.9); border:none; border-radius:4px;
+  width:18px; height:18px; display:flex; align-items:center; justify-content:center;
+  font-size:10px; cursor:pointer; opacity:0; transition:opacity .12s;
+}
+.swatch-item:hover .swatch-item-edit { opacity:1; }
 
 /* Recherche globale collections */
 .col-search-bar {
@@ -678,7 +732,7 @@ select.cfilt { cursor: pointer; }
   width: 18px; height: 18px; border-radius: 5px;
   display: flex; align-items: center; justify-content: center; flex-shrink: 0;
 }
-.col-search-group-icon svg { width: 10px; height: 10px; stroke: #fff; }
+.col-search-group-icon svg { width: 10px; height: 10px; stroke: #1a1a1a; color: #1a1a1a; }
 .col-search-item {
   display: flex; align-items: flex-start; gap: 8px;
   padding: 7px 6px; border-radius: var(--radius);
@@ -707,6 +761,17 @@ select.cfilt { cursor: pointer; }
   overflow-y: auto;
 }
 
+.col-add-btn {
+  display: flex; align-items: center; gap: 6px;
+  width: 100%; padding: 6px 8px; border-radius: 6px;
+  border: none; background: none;
+  color: var(--muted); font-size: 12px; cursor: pointer;
+  font-family: inherit; transition: background .12s, color .12s;
+  margin-bottom: 10px;
+}
+.col-add-btn:hover { background: var(--bg-hover); color: var(--text); }
+.col-add-btn svg { flex-shrink: 0; opacity: .7; }
+
 .fiches-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
@@ -717,13 +782,30 @@ select.cfilt { cursor: pointer; }
 }
 
 /* ── Item sidebar ── */
+.col-item-wrap { position: relative; display: flex; align-items: center; margin-bottom: 2px; }
 .col-item {
   display: flex; align-items: center; gap: 9px;
-  width: 100%; padding: 7px 8px; border-radius: var(--radius); border: none;
+  flex: 1; min-width: 0; padding: 7px 24px 7px 4px; border-radius: var(--radius); border: none;
   background: transparent; color: var(--muted); font-size: 12px;
   cursor: pointer; font-family: 'DM Sans', inherit; text-align: left;
-  transition: background .12s, color .12s; margin-bottom: 2px;
+  transition: background .12s, color .12s;
 }
+.col-item-drag {
+  opacity: 0; width: 12px; flex-shrink: 0; cursor: grab;
+  color: var(--light); font-size: 11px; text-align: center; line-height: 1;
+  transition: opacity .12s;
+}
+.col-item-wrap:hover .col-item-drag { opacity: 1; }
+.col-item-drag:active { cursor: grabbing; }
+.col-item-more {
+  position: absolute; right: 4px; top: 50%; transform: translateY(-50%);
+  opacity: 0; background: none; border: none; cursor: pointer;
+  color: var(--light); font-size: 14px; padding: 2px 5px; border-radius: 4px;
+  transition: opacity .12s, background .12s, color .12s;
+}
+.col-item-wrap:hover .col-item-more { opacity: 1; }
+.col-item-more:hover { background: var(--bg-hover); color: var(--text); }
+.sortable-ghost { opacity: .4; }
 .col-item:hover { background: var(--bg-soft); color: var(--text); }
 .col-item.active { background: var(--bg-soft); color: var(--text); font-weight: 500; }
 .col-item.active .col-item-label { color: var(--text); }
@@ -735,7 +817,7 @@ select.cfilt { cursor: pointer; }
   flex-shrink: 0; overflow: hidden;
   /* La couleur vient du style inline ; l'icône SVG hérite stroke=white */
 }
-.col-item-icon svg { width: 14px; height: 14px; stroke: #fff; color: #fff; flex-shrink: 0; }
+.col-item-icon svg { width: 14px; height: 14px; stroke: #1a1a1a; color: #1a1a1a; flex-shrink: 0; }
 .col-item-label { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .col-item-count {
   font-size: 10px; color: var(--light); background: var(--bg-soft);
@@ -770,7 +852,7 @@ select.cfilt { cursor: pointer; }
   display: flex; align-items: center; justify-content: center;
   flex-shrink: 0; overflow: hidden;
 }
-.col-main-icon svg { width: 22px; height: 22px; stroke: #fff; color: #fff; }
+.col-main-icon svg { width: 22px; height: 22px; stroke: #1a1a1a; color: #1a1a1a; }
 .col-main-name {
   font-family: 'Lora', Georgia, serif;
   font-size: 15px; font-weight: 600; flex: 1; color: var(--text);
@@ -825,6 +907,12 @@ select.cfilt { cursor: pointer; }
   background: var(--bg-soft); color: var(--muted); margin-top: 4px;
   border: .5px solid var(--border); font-family: 'DM Sans', sans-serif;
 }
+.item-body-row {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 10px; min-width: 0;
+}
+.item-body-row .item-titre { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.item-body-row .item-tag { margin-top: 0; flex-shrink: 0; }
 
 /* ── Items liens ── */
 .item-lien {
@@ -861,6 +949,16 @@ select.cfilt { cursor: pointer; }
 }
 .item-fiche-preview { font-size: 12px; color: var(--muted); line-height: 1.55; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; font-family: 'DM Sans', sans-serif; }
 .item-fiche-meta { display: flex; align-items: center; gap: 8px; margin-top: 8px; }
+.item-fiche { position: relative; }
+.card-drag-handle {
+  position: absolute; top: 8px; right: 8px;
+  opacity: 0; cursor: grab; color: var(--light);
+  font-size: 12px; line-height: 1; padding: 2px 4px;
+  transition: opacity .12s, color .12s;
+}
+.item-fiche:hover .card-drag-handle,
+.swatch-item:hover .card-drag-handle { opacity: 1; }
+.card-drag-handle:hover { color: var(--accent); }
 .item-fiche-url { font-size: 10.5px; color: var(--muted); }
 .item-fiche-url a { color: inherit; text-decoration: none; }
 .item-fiche-url a:hover { color: var(--accent); text-decoration: underline; }
@@ -914,7 +1012,9 @@ select.cfilt { cursor: pointer; }
 }
 .theme-opt:hover { border-color: var(--accent); background: var(--bg-hover); }
 .theme-opt.sel { border-color: var(--text); background: var(--bg); box-shadow: 0 1px 4px rgba(0,0,0,.08); }
-.theme-opt-icon { font-size: 18px; margin-bottom: 4px; }
+.theme-opt-icon { display: flex; align-items: center; justify-content: center; margin-bottom: 4px; color: var(--muted); }
+.theme-opt-icon svg { width: 18px; height: 18px; stroke: currentColor; }
+.theme-opt.sel .theme-opt-icon { color: var(--text); }
 .theme-opt-label { font-size: 9px; color: var(--muted); font-weight: 600; letter-spacing: .06em; text-transform: uppercase; font-family: 'DM Sans', sans-serif; }
 .theme-opt.sel .theme-opt-label { color: var(--text); }
 /* Saisie SVG icône */
@@ -934,7 +1034,7 @@ select.cfilt { cursor: pointer; }
   background: var(--bg-soft);
 }
 .svg-preview-icon { width: 30px; height: 30px; border-radius: 7px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
-.svg-preview-icon svg { width: 20px; height: 20px; stroke: #fff; color: #fff; }
+.svg-preview-icon svg { width: 20px; height: 20px; stroke: #1a1a1a; color: #1a1a1a; }
 .svg-preview-label { font-size: 11px; color: var(--muted); font-family: 'DM Sans', sans-serif; }
 /* Couleur */
 .cmod-act { display: flex; justify-content: flex-end; gap: 8px; margin-top: 18px; }
@@ -1022,6 +1122,8 @@ select.cfilt { cursor: pointer; }
 </style>
 </head>
 <body>
+
+<div class="app-title" id="appTitle"></div>  
 
 <!-- ══════════════════════════════════════════
      ONGLETS
@@ -1178,8 +1280,8 @@ select.cfilt { cursor: pointer; }
 
     <!-- Sidebar collections -->
     <div class="col-sidebar">
-      <button class="btn-new-task" onclick="openColMod()" style="margin-bottom:12px">
-        <svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 1v10M1 6h10"/></svg>
+      <button class="col-add-btn" onclick="openColMod()">
+        <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 1v10M1 6h10"/></svg>
         Nouvelle collection
       </button>
       <div class="lec-search-wrap">
@@ -1221,19 +1323,19 @@ select.cfilt { cursor: pointer; }
         <label>Thème</label>
         <div class="theme-picker" id="themePicker">
           <div class="theme-opt sel" data-theme="listes" onclick="selTheme('listes')">
-            <div class="theme-opt-icon">☑</div>
+            <div class="theme-opt-icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="m9 12 2 2 4-4"/></svg></div>
             <div class="theme-opt-label">Listes</div>
           </div>
           <div class="theme-opt" data-theme="liens" onclick="selTheme('liens')">
-            <div class="theme-opt-icon">🔗</div>
+            <div class="theme-opt-icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg></div>
             <div class="theme-opt-label">Liens</div>
           </div>
           <div class="theme-opt" data-theme="fiches" onclick="selTheme('fiches')">
-            <div class="theme-opt-icon">📄</div>
+            <div class="theme-opt-icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg></div>
             <div class="theme-opt-label">Fiches</div>
           </div>
           <div class="theme-opt" data-theme="couleurs" onclick="selTheme('couleurs')">
-            <div class="theme-opt-icon">🎨</div>
+            <div class="theme-opt-icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="13.5" cy="6.5" r=".5"/><circle cx="17.5" cy="10.5" r=".5"/><circle cx="8.5" cy="7.5" r=".5"/><circle cx="6.5" cy="12.5" r=".5"/><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.555-2.503 5.555-5.554C21.965 6.012 17.461 2 12 2z"/></svg></div>
             <div class="theme-opt-label">Couleurs</div>
           </div>
         </div>
@@ -1248,15 +1350,7 @@ select.cfilt { cursor: pointer; }
           </div>
         </div>
       </div>
-      <div class="cf">
-        <label>Couleur</label>
-        <div id="colorPickerWrap">
-          <select id="colColorSel" class="cf" style="width:100%;padding:7px 10px;border:1px solid var(--border);border-radius:var(--radius);font-size:12.5px;font-family:inherit;background:var(--bg);color:var(--text);outline:none;cursor:pointer" onchange="onColorSelChange()">
-            <option value="">— Aucune couleur —</option>
-          </select>
-          <div id="colorPreview" style="margin-top:6px;height:18px;border-radius:4px;transition:background .2s;border:1px solid var(--border)"></div>
-        </div>
-      </div>
+      
       <div class="cmod-act">
         <button class="cbtn-del" id="colBtnDel" style="display:none" onclick="deleteCol()">Supprimer</button>
         <button class="cbtn-c" onclick="closeColMod()">Annuler</button>
@@ -1383,76 +1477,66 @@ select.cfilt { cursor: pointer; }
 'use strict';
 
 // ══════════════════════════════════════════════
-//  CONFIG VIA URL PARAMS
+//  CONFIGURATION (table Grist "Config")
 // ══════════════════════════════════════════════
-(function applyConfig() {
-  const p = new URLSearchParams(location.search);
-  
-  // Couleur accent
-  const accent = p.get('accent');
-  if (accent) {
-    const hex = accent.startsWith('#') ? accent : '#' + accent;
+let CFG = {};
+
+async function loadConfig() {
+  if (typeof grist === 'undefined') { applyConfigValues(); return; }
+  try {
+    const raw = await grist.docApi.fetchTable('Config');
+    (raw.cle || []).forEach((k, i) => { CFG[k] = String(raw.valeur?.[i] ?? ''); });
+  } catch (e) {
+    console.warn('Config: table introuvable —', e);
+  }
+  applyConfigValues();
+}
+
+function cfgOn(key) { return CFG[key] !== 'false'; } // défaut = activé
+
+function applyConfigValues() {
+  if (CFG.accent) {
+    const hex = CFG.accent.startsWith('#') ? CFG.accent : '#' + CFG.accent;
     document.documentElement.style.setProperty('--accent', hex);
     document.documentElement.style.setProperty('--accent-soft', hex + '33');
   }
-  
-  // Onglets à masquer
-  if (p.get('lectures') === 'off') {
-    document.querySelector('[data-tab="lectures"]')?.remove();
-  }
-  if (p.get('collections') === 'off') {
-    document.querySelector('[data-tab="collections"]')?.remove();
-  }
-  
-  // Titre personnalisé
-  const titre = p.get('titre');
-  if (titre) {
-    document.title = titre;
-    const bujoTab = document.querySelector('[data-tab="bujo"] .tab-label');
-    if (bujoTab) bujoTab.textContent = titre;
-  }
-  
-  // Onglet par défaut
-  const tabParam = p.get('tab');
-  if (tabParam && ['bujo','lectures','collections'].includes(tabParam)) {
-    document.addEventListener('DOMContentLoaded', () => switchTab(tabParam));
-  }
-  
-  // Colonnes Bujo
-  if (p.get('colweek') === 'off') {
-    document.addEventListener('DOMContentLoaded', () => {
-      const el = document.getElementById('bujoWeekCol');
-      if (el) el.style.display = 'none';
-    });
-  }
-  if (p.get('colprojets') === 'off') {
-    document.addEventListener('DOMContentLoaded', () => {
-      const el = document.getElementById('bujoProjetCol');
-      if (el) el.style.display = 'none';
-    });
-  }
-  if (p.get('colcal') === 'off') {
-    document.addEventListener('DOMContentLoaded', () => {
-      const el = document.querySelector('.cal-wrap');
-      if (el) el.style.display = 'none';
-    });
-  }
-  if (p.get('colfuture') === 'off') {
-    document.addEventListener('DOMContentLoaded', () => {
-      const el = document.getElementById('futureLogs');
-      if (el) el.style.display = 'none';
-      const nav = el ? el.previousElementSibling : null;
-      if (nav && nav.classList.contains('nav-div')) nav.style.display = 'none';
-    });
+  if (CFG.titre) document.title = CFG.titre;
+  const titleEl = document.getElementById('appTitle');
+  if (titleEl) {
+    titleEl.textContent = CFG.titre || '';
+    titleEl.classList.toggle('vis', !!CFG.titre);
   }
 
-  if (p.get('bday') === 'off') {
-  document.addEventListener('DOMContentLoaded', () => {
-    const bdayBtn = document.getElementById('n-bdays');
-    if (bdayBtn) bdayBtn.style.display = 'none';
+  const tabVis = { bujo: cfgOn('bujo_on'), lectures: cfgOn('lectures_on'), collections: cfgOn('collections_on') };
+  Object.keys(tabVis).forEach(tab => {
+    const el = document.querySelector(`[data-tab="${tab}"]`);
+    if (el) el.style.display = tabVis[tab] ? '' : 'none';
   });
+
+  const setLabel = (tab, val, fallback) => {
+    const el = document.querySelector(`[data-tab="${tab}"] .tab-label`);
+    if (el) el.textContent = val || fallback;
+  };
+  setLabel('bujo', CFG.label_bujo, 'Bujo');
+  setLabel('lectures', CFG.label_lectures, 'Lectures');
+  setLabel('collections', CFG.label_collections, 'Collections');
+
+  document.getElementById('n-bdays').style.display = cfgOn('bday_on') ? '' : 'none';
+  document.getElementById('bujoProjetCol').style.display = cfgOn('projet_on') ? '' : 'none';
+  document.getElementById('bujoWeekCol').style.display = cfgOn('col_week_on') ? '' : 'none';
+  document.querySelector('.cal-wrap').style.display = cfgOn('col_cal_on') ? '' : 'none';
+  document.getElementById('futureLogs').style.display = cfgOn('col_futurelogs_on') ? '' : 'none';
+
+  const activeTab = document.querySelector('.app-tab.active');
+  if (activeTab && activeTab.style.display === 'none') {
+    const nextTab = ['bujo','lectures','collections'].find(t => tabVis[t]);
+    if (nextTab) switchTab(nextTab);
+  }
+
+  renderMain();
 }
-})();
+
+
 
 // ══════════════════════════════════════════════════════
 //  CONSTANTES
@@ -1495,6 +1579,7 @@ let saveT = null;
 //  NAVIGATION ONGLETS
 // ══════════════════════════════════════════════════════
 let colsLoaded = false;
+let currentTabStored = null;
 function switchTab(tab) {
   document.querySelectorAll('.app-tab').forEach(t => t.classList.toggle('active', t.dataset.tab === tab));
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
@@ -1504,6 +1589,10 @@ function switchTab(tab) {
     colsLoaded = true;
     if (typeof grist !== 'undefined') loadCollections();
     else initColDemo();
+  }
+  if (typeof grist !== 'undefined' && tab !== currentTabStored) {
+    currentTabStored = tab;
+    grist.setOption('lastTab', tab);
   }
 }
 
@@ -1528,10 +1617,12 @@ function renderCal() {
   const dim = new Date(calY,calM+1,0).getDate();
   const tds = new Set(tasks.filter(t=>!t.bday&&/^\d{4}-\d{2}-\d{2}$/.test(t.date)).map(t=>t.date));
   const bds = new Set();
-  tasks.filter(t=>t.bday).forEach(t=>{
+if (cfgOn('bday_on')) {
+tasks.filter(t=>t.bday).forEach(t=>{
     const mx = t.date.match(/^(\d{4})-(\d{2})-(\d{2})$/);
     if (mx) bds.add(`${calY}-${mx[2]}-${mx[3]}`);
   });
+  }
   for (let i=0;i<off;i++){const e=document.createElement('div');e.className='cal-day other';g.appendChild(e);}
   for (let d=1;d<=dim;d++){
     const e=document.createElement('div'); e.className='cal-day';
@@ -1556,7 +1647,7 @@ function showCalPop(ds, targetEl) {
   const dayTasks = tasks.filter(t => !t.bday && t.date === ds);
   // Anniversaires : comparer mois-jour seulement
   const mmdd = ds.slice(5); // MM-DD
-  const bdayTasks = tasks.filter(t => {
+  const bdayTasks = !cfgOn('bday_on') ? [] : tasks.filter(t => {
     if (!t.bday) return false;
     const mx = t.date.match(/^(\d{4})-(\d{2})-(\d{2})$/);
     return mx && `${mx[2]}-${mx[3]}` === mmdd;
@@ -1700,7 +1791,7 @@ function renderWeekCol() {
     const dayTasks = tasks.filter(t => !t.bday && t.date === ds);
     // Anniversaires : comparer MM-DD
     const mmdd = ds.slice(5);
-    const bdayT = tasks.filter(t => {
+    const bdayT = !cfgOn('bday_on') ? [] : tasks.filter(t => {
       if (!t.bday) return false;
       const mx = t.date.match(/^(\d{4})-(\d{2})-(\d{2})$/);
       return mx && `${mx[2]}-${mx[3]}` === mmdd;
@@ -1779,7 +1870,8 @@ function renderProjetCol() {
     <button class="proj-edit" onclick="openBmod(${idx})">&#9998;</button>
   </div>
   ${dateHtml}
-</div>`;    });
+</div>`;
+    });
   }
   el.innerHTML = html;
 }
@@ -1801,7 +1893,7 @@ function openBmodProjet() {
   refreshProjetUI();
 }
 
-  function archiveProjet(i){
+function archiveProjet(i){
   tasks[i].archive = true;
   gBujoUpdate(tasks[i]);
   renderMain();
@@ -1812,6 +1904,7 @@ function openBmodProjet() {
 //  setView : change la vue et re-rend TOUJOURS
 // ══════════════════════════════════════════════════════
 function setView(v) {
+  if (v === 'bdays' && !cfgOn('bday_on')) v = 'today';
   currentView = v;
   // Mettre à jour les boutons nav (y compris ceux générés dynamiquement)
   document.querySelectorAll('.nitem').forEach(el => el.classList.remove('active'));
@@ -1828,7 +1921,7 @@ function renderSidebar() {
   // Badges
   const late  = tasks.filter(isLate);
   const todayT = tasks.filter(t=>!t.bday&&t.date===todayStr&&!t.done);
-  const todayB = tasks.filter(t=>t.bday&&bdayNext(t)?.ds===todayStr);
+  const todayB = cfgOn('bday_on') ? tasks.filter(t=>t.bday&&bdayNext(t)?.ds===todayStr) : [];
   const weekT  = tasks.filter(t=>isWeek(t)&&!t.done);
   document.getElementById('b-today').textContent = (todayT.length+todayB.length)||'';
   document.getElementById('b-week').textContent  = weekT.length||'';
@@ -1874,9 +1967,9 @@ function renderMain() {
   const nw=new Date(today); nw.setDate(today.getDate()+8);
 
   if(v==='today'){
-    const late  = tasks.filter(t => isLate(t) && !t.projet).sort((a,b)=>a.date.localeCompare(b.date));
-    const todayT = tasks.filter(t=>!t.bday&&!t.projet&&t.date===todayStr);
-    const todayB=tasks.filter(t=>t.bday&&bdayNext(t)?.ds===todayStr);
+const late  = tasks.filter(t => isLate(t) && (!t.projet || !cfgOn('projet_on'))).sort((a,b)=>a.date.localeCompare(b.date));
+const todayT = tasks.filter(t=>!t.bday&&(!t.projet || !cfgOn('projet_on'))&&t.date===todayStr);
+const todayB = cfgOn('bday_on') ? tasks.filter(t=>t.bday&&bdayNext(t)?.ds===todayStr) : [];
     if(late.length){
       const isOpen = lateOpen !== false;
       html+=`<div class="section">
@@ -1888,8 +1981,7 @@ function renderMain() {
         html+=late.map(t=>tHTML(t,tasks.indexOf(t),undefined,dayLabel(t.date).lbl,true)).join('');
       }
       html+=`</div>`;
-    }    
-    
+    }
     if(todayT.length||todayB.length){
       html+=`<div class="section"><div class="sec-label">Aujourd'hui</div>`;
       todayB.forEach(t=>{const o=bdayNext(t);html+=tHTML(t,tasks.indexOf(t),o?.age);});
@@ -1899,7 +1991,7 @@ function renderMain() {
     if(!late.length&&!todayT.length&&!todayB.length) html=`<div class="empty-bujo">Aucune tâche pour aujourd'hui</div>`;
 
   } else if(v==='late'){
-    const late = tasks.filter(t => isLate(t) && !t.projet).sort((a,b)=>a.date.localeCompare(b.date));
+    const late = tasks.filter(t => isLate(t) && (!t.projet || !cfgOn('projet_on'))).sort((a,b)=>a.date.localeCompare(b.date));
     if(late.length){
       const isOpen = lateOpen !== false;
       html+=`<div class="section">
@@ -1911,16 +2003,17 @@ function renderMain() {
         html+=late.map(t=>tHTML(t,tasks.indexOf(t),undefined,dayLabel(t.date).lbl,true)).join('');
       }
       html+=`</div>`;
+    }
     
-    } else html=`<div class="empty-bujo">Aucune tâche en retard</div>`;
+    else html=`<div class="empty-bujo">Aucune tâche en retard</div>`;
 
   } else if(v==='week'){
     const wg={};
-    tasks.filter(t=>isWeek(t)&&!t.projet).sort((a,b)=>a.date.localeCompare(b.date)).forEach(t=>{
+    tasks.filter(t=>isWeek(t)&&(!t.projet || !cfgOn('projet_on'))).sort((a,b)=>a.date.localeCompare(b.date)).forEach(t=>{
       if(!wg[t.date])wg[t.date]=[]; wg[t.date].push(t);
     });
     tasks.forEach((t,i)=>{
-  if(!t.bday) return;
+  if(!t.bday || !cfgOn('bday_on')) return;
   const o=bdayNext(t); if(!o)return;
   const dt=new Date(o.ds+'T00:00:00');
   if(dt>=tm&&dt<nw){if(!wg[o.ds])wg[o.ds]=[];wg[o.ds].push({...t,_age:o.age,_idx:i});}
@@ -1983,13 +2076,13 @@ function toggleT(i){
   renderMain();
 }
 
-  function moveToToday(i){
+function moveToToday(i){
   tasks[i].date = todayStr;
   gBujoUpdate(tasks[i]);
   renderMain();
 }
 
-  function quickAddTask(inputEl){
+function quickAddTask(inputEl){
   const name = inputEl.value.trim();
   if(!name) return;
   const nt = {name, date: todayStr, done:false, bday:false, projet:false};
@@ -2018,7 +2111,7 @@ function openBmod(i){
   refreshBdayUI();
   refreshProjetUI();
   // Masquer le toggle anniversaire APRES refreshBdayUI pour ne pas être écrasé
-  const showBdayToggle = t && t.bday;
+  const showBdayToggle = t && t.bday && cfgOn('bday_on');
 document.getElementById('bdayTogWrap').style.display = showBdayToggle ? 'block' : 'none';
   document.getElementById('bmodDate').value=t?formatDateForInput(t.date):'';
   document.getElementById('bmodOv').classList.add('open');
@@ -2382,10 +2475,19 @@ if(typeof grist!=='undefined'){
       {name:'date',        title:'Date',        type:'Text'},
       {name:'termine',     title:'Terminé',     type:'Bool'},
       {name:'anniversaire',title:'Anniversaire',type:'Bool'},
+      
       {name:'projet',      title:'Projet',      type:'Bool'},
-      {name:'archive',     title:'Archivé',     type:'Bool'},
+      {name:'archive',     title:'Archivé',     type:'Bool'}
     ]
   });
+  loadConfig();  
+  grist.onOptions((options) => {
+  const saved = options?.lastTab;
+  if (saved && ['bujo','lectures','collections'].includes(saved) && saved !== 'bujo') {
+    currentTabStored = saved;
+    switchTab(saved);
+  }
+});
   // onRecords est appelé à chaque modification de la table Bujo
   grist.onRecords(records=>{
     tasks = records.map(r => ({id:r.id, name:r.tache||'', date:r.date||'', done:!!r.termine, bday:!!r.anniversaire, projet:!!r.projet, archive:!!r.archive}));
@@ -2431,52 +2533,45 @@ if(typeof grist!=='undefined'){
 
 // ── Constantes ──
 // couleurs chargées depuis Grist
-let gristCouleurs = []; // [{nom, hex, type}]
+
 const THEME_LABELS = {listes:'Listes',liens:'Liens',fiches:'Fiches',couleurs:'Couleurs'};
 
 // ── État ──
 let cols = [];    // [{id,nom,theme,icone,couleur}]
 let items = [];   // [{id,col_id,titre,texte,url,tag,fait}]
 let selColId = null;
+
 let editColIdx = null;
 let editItemIdx = null;
 let ficheModalIdx = null;   // remplace ficheDrawerIdx
 let ficheDrawerIdx = null;  // alias pour compatibilité
 let colTheme = 'listes';
 let colIconSel = '';
-let colColorSel = '';
 let activeTagFilter = '';   // tag sélectionné pour filtrer
 let colSearchQuery = '';    // recherche globale collections
 
 // ── Rendu icône SVG — icône blanche sur fond coloré ──
 function renderColIcon(svgCode, size) {
   if (svgCode && svgCode.trim().startsWith('<svg')) {
-    const isFilled = svgCode.includes('fill="currentColor"');
-    const sized = svgCode
-      .replace(/<svg([^>]*)>/i, (m, attrs) => {
-        let clean = attrs
-          .replace(/width="[^"]*"/g,'')
-          .replace(/height="[^"]*"/g,'')
-          .replace(/stroke="[^"]*"/g,'')
-          .replace(/stroke-width="[^"]*"/g,'')
-          .replace(/fill="[^"]*"/g,'')
-          .replace(/class="[^"]*"/g,'');
-        if (isFilled) {
-          return `<svg${clean} width="${size}" height="${size}" fill="#fff">`;
-        } else {
-          return `<svg${clean} width="${size}" height="${size}" stroke="#fff" stroke-width="2" fill="none">`;
-        }
-      });
-    // Pour les icônes filled, forcer fill="#fff" sur les éléments enfants aussi
-    if (isFilled) {
-      return sized.replace(/fill="currentColor"/g, 'fill="#fff"');
-    }
-    return sized;
+    // neutralise les couleurs codées en dur, sans toucher aux "none"
+    let out = svgCode.replace(/(fill|stroke)\s*=\s*"(#000000|#000|black|rgb\(0,\s*0,\s*0\))"/gi, '$1="currentColor"');
+    // ne touche que la balise <svg> racine, jamais les enfants
+    out = out.replace(/<svg([^>]*)>/i, (m, attrs) => {
+      let clean = attrs
+        .replace(/\swidth="[^"]*"/gi, '')
+        .replace(/\sheight="[^"]*"/gi, '')
+        .replace(/\sclass="[^"]*"/gi, '');
+      const hasFill = /\bfill\s*=/i.test(clean);
+      const hasStroke = /\bstroke\s*=/i.test(clean);
+      // si aucune couleur n'est déclarée sur la racine, on comble (cas Remix Icon)
+      const defaultColor = (!hasFill && !hasStroke) ? ' fill="currentColor"' : '';
+      return `<svg${clean} width="${size}" height="${size}"${defaultColor}>`;
+    });
+    return out;
   }
   const h = size / 2;
-  return `<svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}" fill="none"><rect x="${size*.1}" y="${size*.1}" width="${size*.8}" height="${size*.8}" rx="2" stroke="#fff" stroke-width="1.5" opacity=".7"/></svg>`;
+  return `<svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}" fill="none"><rect x="${size*.1}" y="${size*.1}" width="${size*.8}" height="${size*.8}" rx="2" stroke="#1a1a1a" stroke-width="1.5" opacity=".7"/></svg>`;
 }
-
 
 // ── Filtre tags ──
 function buildTagBar(colItems) {
@@ -2502,10 +2597,23 @@ function setTagFilter(tag) {
   if (tb) {
     tb.innerHTML = buildTagBar(colItems);
     tb.querySelectorAll('.col-tag-pill').forEach(pill => {
-      pill.addEventListener('click', () => setTagFilter(pill.dataset.tag));
+      if (col.theme === 'couleurs') {
+        pill.addEventListener('click', () => setTagFilter(pill.dataset.tag));
+      } else {
+        pill.addEventListener('click', (e) => e.shiftKey ? setTagFilter(pill.dataset.tag) : goToGlobalTag(pill.dataset.tag));
+      }
     });
   }
-  if (ct) ct.innerHTML = renderItems(filteredByTag(colItems), col.theme);
+  const vue = col.vue || ((col.theme==='listes'||col.theme==='liens')?'liste':'cards');
+  if (ct) ct.innerHTML = renderItems(filteredByTag(colItems), col.theme, vue);
+}
+
+function setColVue(vue) {
+  const col = cols.find(c => c.id === selColId);
+  if (!col) return;
+  col.vue = vue;
+  gColUpdate(col);
+  renderColMain();
 }
 
 function filteredByTag(colItems) {
@@ -2520,15 +2628,37 @@ function renderColSidebar() {
   list.innerHTML = cols.map((col,i) => {
     const count = items.filter(it => it.col_id === col.id).length;
     const active = selColId === col.id ? ' active' : '';
-    const bg = col.couleur || 'var(--bg-soft)';
+    
     const iconH = renderColIcon(col.icone, 16);
-    return `<button class="col-item${active}" onclick="selectCol('${col.id}')">
-      <div class="col-item-icon" style="background:${bg}">${iconH}</div>
-      <span class="col-item-label">${esc(col.nom)}</span>
-      <span class="col-item-count">${count||''}</span>
-    </button>`;
+    return `<div class="col-item-wrap" data-id="${col.id}">
+      <span class="col-item-drag">&#8942;&#8942;</span>
+      <button class="col-item${active}" onclick="selectCol('${col.id}')">
+        <div class="col-item-icon">${iconH}</div>
+        <span class="col-item-label">${esc(col.nom)}</span>
+        <span class="col-item-count">${count||''}</span>
+      </button>
+      <button class="col-item-more" onclick="event.stopPropagation();openColMod(${i})" title="Options">&#8942;</button>
+    </div>`;
   }).join('');
   document.getElementById('badge-cols').textContent = cols.length || '';
+  initColSortable();
+}
+
+let colSortable = null;
+function initColSortable() {
+  const list = document.getElementById('colList');
+  if (!list || colSortable) return;
+  colSortable = Sortable.create(list, {
+    handle: '.col-item-drag',
+    animation: 150,
+    onEnd: () => {
+      const ids = [...list.querySelectorAll('.col-item-wrap')].map(el => el.dataset.id);
+      cols.sort((a,b) => ids.indexOf(a.id) - ids.indexOf(b.id));
+      cols.forEach((c,i) => { c.ordre = i; });
+      gColReorderBulk(cols);
+      renderColSidebar();
+    }
+  });
 }
 
 // ── Sélectionner une collection ──
@@ -2549,7 +2679,7 @@ function renderColMain() {
 
   const col = cols.find(c => c.id === selColId);
   if (!col) return;
-  const colItems = items.filter(it => it.col_id === selColId);
+  const colItems = items.filter(it => it.col_id === selColId).sort((a,b)=>(a.ordre??0)-(b.ordre??0));
 
   // Retirer l'ancien contenu (sauf drawer et empty)
   const existing = main.querySelector('.col-content');
@@ -2559,16 +2689,21 @@ function renderColMain() {
   wrap.className = 'col-content';
   wrap.style.cssText = 'display:flex;flex-direction:column;flex:1;overflow:hidden;';
 
-  const bg = col.couleur || 'var(--bg-soft)';
+  
   const iconHTML = renderColIcon(col.icone, 22);
+  const vue = col.vue || ((col.theme==='listes'||col.theme==='liens')?'liste':'cards');
 
   // Header
   wrap.innerHTML = `
     <div class="col-main-header">
-      <div class="col-main-icon" style="background:${bg}">${iconHTML}</div>
+      <div class="col-main-icon">${iconHTML}</div>
       <div class="col-main-name">${esc(col.nom)}</div>
       <span class="col-main-type">${THEME_LABELS[col.theme]||col.theme}</span>
-      <button class="item-act-btn" onclick="openColMod(${cols.indexOf(col)})" title="Modifier">&#9998;</button>
+      <div class="fd-prec">
+        <button class="fd-pb${vue==='liste'?' active':''}" onclick="setColVue('liste')">Liste</button>
+        <button class="fd-pb${vue==='cards'?' active':''}" onclick="setColVue('cards')">Cards</button>
+        <button class="fd-pb${vue==='table'?' active':''}" onclick="setColVue('table')">Tableau</button>
+      </div>
     </div>
     <div class="col-main-body" id="colMainBody">
       <button class="col-add-item-btn" onclick="openItemMod(null,'${col.theme}')">
@@ -2576,21 +2711,151 @@ function renderColMain() {
         Ajouter ${col.theme === 'listes' ? 'un élément' : col.theme === 'liens' ? 'un lien' : col.theme === 'couleurs' ? 'une couleur' : 'une fiche'}
       </button>
       <div id="colTagBar">${buildTagBar(colItems)}</div>
-      <div id="colItemsContainer">${renderItems(filteredByTag(colItems), col.theme)}</div>
+      <div id="colItemsContainer">${renderItems(filteredByTag(colItems), col.theme, vue)}</div>
     </div>`;
   main.insertBefore(wrap, main.querySelector('.fiche-drawer'));
   // Délégation d'événements sur les tag pills (après insertion dans le DOM)
   const tagBar = main.querySelector('#colTagBar');
   if (tagBar) {
     tagBar.querySelectorAll('.col-tag-pill').forEach(pill => {
-      pill.addEventListener('click', () => setTagFilter(pill.dataset.tag));
+      if (col.theme === 'couleurs') {
+        pill.addEventListener('click', () => setTagFilter(pill.dataset.tag));
+      } else {
+        pill.addEventListener('click', (e) => e.shiftKey ? setTagFilter(pill.dataset.tag) : goToGlobalTag(pill.dataset.tag));
+      }
     });
   }
+  if (vue === 'cards') initItemsSortable();
+}
+
+let itemsSortable = null;
+function initItemsSortable() {
+  const grid = document.getElementById('cardsGrid');
+  if (!grid) return;
+  if (itemsSortable) { itemsSortable.destroy(); itemsSortable = null; }
+  itemsSortable = Sortable.create(grid, {
+    handle: '.card-drag-handle',
+    animation: 150,
+    onEnd: () => {
+      const idxs = [...grid.children].map(el => parseInt(el.dataset.itemIdx));
+      idxs.forEach((idx, i) => { if (items[idx]) items[idx].ordre = i; });
+      gItemReorderBulk(idxs.map(idx => items[idx]));
+    }
+  });
+}
+
+function renderItems(colItems, theme, vue) {
+  if (!colItems.length) return `<div class="col-empty" style="padding:24px 0"><div class="col-empty-icon" style="font-size:22px;opacity:.3">${theme==='listes'?'☑':theme==='liens'?'🔗':'📄'}</div>Aucun élément pour l'instant</div>`;
+  if (vue === 'table') return renderItemsTable(colItems, theme);
+  if (vue === 'cards') return renderItemsCards(colItems, theme);
+  return renderItemsListe(colItems, theme);
+}
+
+function renderItemsCards(colItems, theme) {
+  if (theme === 'fiches') {
+    const html = colItems.map((it) => {
+      const idx = items.indexOf(it);
+      const preview = (it.texte||'').replace(/<[^>]+>/g,'').substring(0,90);
+      const tagHtml = it.tag ? `<span class="item-tag">${esc(it.tag)}</span>` : '';
+      return `<div class="item-fiche" data-item-idx="${idx}" onclick="openFicheModal(${idx})">
+        <span class="card-drag-handle" onclick="event.stopPropagation()">&#8942;&#8942;</span>
+        <div class="item-fiche-title">${esc(it.titre||'Sans titre')}</div>
+        ${preview ? `<div class="item-fiche-preview">${esc(preview)}…</div>` : ''}
+        <div class="item-fiche-meta">${tagHtml}<div style="flex:1"></div><button class="item-act-btn" onclick="event.stopPropagation();openItemMod(${idx},'fiches')" title="Modifier">&#9998;</button></div>
+      </div>`;
+    }).join('');
+    return `<div class="fiches-grid" id="cardsGrid">${html}</div>`;
+  }
+  if (theme === 'couleurs') {
+    const html = colItems.map((it) => {
+      const idx = items.indexOf(it);
+      const hex = (it.url||'').trim() || '#ccc';
+      return `<div class="swatch-item" data-item-idx="${idx}" style="background:${hex}" onclick="openItemMod(${idx},'couleurs')">
+        <span class="card-drag-handle" style="left:4px;right:auto" onclick="event.stopPropagation()">&#8942;&#8942;</span>
+        <button class="swatch-item-edit" onclick="event.stopPropagation();openItemMod(${idx},'couleurs')">&#9998;</button>
+        <div class="swatch-item-overlay">
+          <div class="swatch-item-name">${esc(it.titre||'Sans nom')}</div>
+          <div class="swatch-item-hex">${esc(hex)}</div>
+        </div>
+      </div>`;
+    }).join('');
+    return `<div class="swatch-grid" id="cardsGrid">${html}</div>`;
+  }
+  if (theme === 'listes') {
+    const html = colItems.map((it) => {
+      const idx = items.indexOf(it);
+      const tagHtml = it.tag ? `<span class="item-tag">${esc(it.tag)}</span>` : '';
+      return `<div class="item-fiche" data-item-idx="${idx}">
+        <span class="card-drag-handle" onclick="event.stopPropagation()">&#8942;&#8942;</span>
+        <div style="display:flex;align-items:flex-start;gap:8px">
+          <div class="item-chk${it.fait?' done':''}" onclick="toggleItem(${idx})"></div>
+          <div class="item-fiche-title" style="${it.fait?'text-decoration:line-through;color:var(--muted)':''}">${esc(it.titre)}</div>
+        </div>
+        <div class="item-fiche-meta">${tagHtml}<div style="flex:1"></div><button class="item-act-btn" onclick="openItemMod(${idx},'listes')" title="Modifier">&#9998;</button></div>
+      </div>`;
+    }).join('');
+    return `<div class="fiches-grid" id="cardsGrid">${html}</div>`;
+  }
+  if (theme === 'liens') {
+    const html = colItems.map((it) => {
+      const idx = items.indexOf(it);
+      const tagHtml = it.tag ? `<span class="item-tag">${esc(it.tag)}</span>` : '';
+      const urlDisplay = it.url ? it.url.replace(/^https?:\/\//,'').split('/')[0] : '';
+      return `<div class="item-fiche" data-item-idx="${idx}">
+        <span class="card-drag-handle" onclick="event.stopPropagation()">&#8942;&#8942;</span>
+        <div class="item-fiche-title">${esc(it.titre||it.url||'Sans titre')}</div>
+        ${it.url ? `<div class="item-fiche-url"><a href="${esc(it.url)}" target="_blank">${esc(urlDisplay)}</a></div>` : ''}
+        <div class="item-fiche-meta">${tagHtml}<div style="flex:1"></div><button class="item-act-btn" onclick="openItemMod(${idx},'liens')" title="Modifier">&#9998;</button></div>
+      </div>`;
+    }).join('');
+    return `<div class="fiches-grid" id="cardsGrid">${html}</div>`;
+  }
+  return '';
+}
+
+
+function renderItemsTable(colItems, theme) {
+  let head = '';
+  if (theme === 'listes')   head = '<th style="width:30px"></th><th>Titre</th><th>Tag</th><th style="width:34px"></th>';
+  if (theme === 'liens')    head = '<th>Titre</th><th>URL</th><th>Tag</th><th style="width:34px"></th>';
+  if (theme === 'fiches')   head = '<th>Titre</th><th>Aperçu</th><th>Tag</th><th style="width:34px"></th>';
+  if (theme === 'couleurs') head = '<th style="width:40px"></th><th>Nom</th><th>Hex</th><th style="width:34px"></th>';
+
+  const rows = colItems.map((it) => {
+    const idx = items.indexOf(it);
+    const editBtn = `<button class="item-act-btn" onclick="event.stopPropagation();openItemMod(${idx},'${theme}')" title="Modifier">&#9998;</button>`;
+    if (theme === 'listes') return `<tr onclick="toggleItem(${idx})">
+      <td><div class="item-chk${it.fait?' done':''}"></div></td>
+      <td class="td-titre" style="${it.fait?'text-decoration:line-through;color:var(--muted)':''}">${esc(it.titre)}</td>
+      <td class="td-auteur">${esc(it.tag||'')}</td>
+      <td onclick="event.stopPropagation()">${editBtn}</td></tr>`;
+    if (theme === 'liens') { const url = it.url ? it.url.replace(/^https?:\/\//,'').split('/')[0] : '';
+      return `<tr onclick="openItemMod(${idx},'liens')">
+      <td class="td-titre">${esc(it.titre||url||'Sans titre')}</td>
+      <td class="td-auteur"><a href="${esc(it.url)}" target="_blank" onclick="event.stopPropagation()">${esc(url)}</a></td>
+      <td class="td-auteur">${esc(it.tag||'')}</td>
+      <td onclick="event.stopPropagation()">${editBtn}</td></tr>`; }
+    if (theme === 'fiches') { const preview = (it.texte||'').replace(/<[^>]+>/g,'').substring(0,70);
+      return `<tr onclick="openFicheModal(${idx})">
+      <td class="td-titre">${esc(it.titre||'Sans titre')}</td>
+      <td class="td-auteur">${esc(preview)}${preview?'…':''}</td>
+      <td class="td-auteur">${esc(it.tag||'')}</td>
+      <td onclick="event.stopPropagation()">${editBtn}</td></tr>`; }
+    if (theme === 'couleurs') { const hex = (it.url||'').trim();
+      return `<tr onclick="openItemMod(${idx},'couleurs')">
+      <td><div class="item-couleur-swatch" style="width:18px;height:18px;background:${hex||'var(--bg-soft)'}"></div></td>
+      <td class="td-titre">${esc(it.titre||'Sans nom')}</td>
+      <td class="td-auteur" style="font-family:monospace">${esc(hex)}</td>
+      <td onclick="event.stopPropagation()">${editBtn}</td></tr>`; }
+    return '';
+  }).join('');
+
+  return `<div style="overflow:auto"><table class="lec-workspace" style="width:100%"><thead><tr>${head}</tr></thead><tbody>${rows}</tbody></table></div>`;
 }
 
 // ── Rendu items selon thème ──
-function renderItems(colItems, theme) {
-  if (!colItems.length) return `<div class="col-empty" style="padding:24px 0"><div class="col-empty-icon" style="font-size:22px;opacity:.3">${theme==='listes'?'☑':theme==='liens'?'🔗':'📄'}</div>Aucun élément pour l'instant</div>`;
+function renderItemsListe(colItems, theme) {
+  
 
   if (theme === 'listes') {
     return colItems.map((it,i) => {
@@ -2599,8 +2864,10 @@ function renderItems(colItems, theme) {
       return `<div class="item-liste">
         <div class="item-chk${it.fait?' done':''}" onclick="toggleItem(${idx})"></div>
         <div class="item-body">
-          <div class="item-titre${it.fait?' done':''}">${esc(it.titre)}</div>
-          ${tagHtml}
+          <div class="item-body-row">
+            <div class="item-titre${it.fait?' done':''}">${esc(it.titre)}</div>
+            ${tagHtml}
+          </div>
         </div>
         <div class="item-actions">
           <button class="item-act-btn" onclick="openItemMod(${idx},'listes')" title="Modifier">&#9998;</button>
@@ -2617,9 +2884,11 @@ function renderItems(colItems, theme) {
       return `<div class="item-lien">
         <div class="item-lien-ico"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg></div>
         <div class="item-body">
-          <div class="item-lien-title">${esc(it.titre||it.url||'Sans titre')}</div>
+          <div class="item-body-row">
+            <div class="item-lien-title">${esc(it.titre||it.url||'Sans titre')}</div>
+            ${tagHtml}
+          </div>
           <div class="item-lien-url">${it.url ? `<a href="${esc(it.url)}" target="_blank">${esc(urlDisplay)}</a>` : ''}</div>
-          ${tagHtml}
         </div>
         <div class="item-actions">
           <button class="item-act-btn" onclick="openItemMod(${idx},'liens')" title="Modifier">&#9998;</button>
@@ -2629,41 +2898,41 @@ function renderItems(colItems, theme) {
   }
 
   if (theme === 'fiches') {
-    const cards = colItems.map((it,i) => {
+    return colItems.map((it) => {
       const idx = items.indexOf(it);
-      const preview = (it.texte||'').replace(/<[^>]+>/g,'').substring(0,120);
+      const preview = (it.texte||'').replace(/<[^>]+>/g,'').substring(0,90);
       const tagHtml = it.tag ? `<span class="item-tag">${esc(it.tag)}</span>` : '';
-      const urlHtml = it.url ? `<span class="item-fiche-url"><a href="${esc(it.url)}" target="_blank">${esc(it.url.replace(/^https?:\/\//,'').split('/')[0])}</a></span>` : '';
-      return `<div class="item-fiche" onclick="openFicheDrawer(${idx})">
-        <div class="item-fiche-title">${esc(it.titre||'Sans titre')}</div>
-        ${preview ? `<div class="item-fiche-preview">${esc(preview)}</div>` : ''}
-        <div class="item-fiche-meta">${tagHtml}${urlHtml}
-          <div style="flex:1"></div>
-          <button class="item-act-btn" onclick="event.stopPropagation();openItemMod(${idx},'fiches')" title="Modifier">&#9998;</button>
+      return `<div class="item-liste" onclick="openFicheModal(${idx})" style="cursor:pointer">
+        <div class="item-body">
+          <div class="item-body-row">
+            <div class="item-titre">${esc(it.titre||'Sans titre')}</div>
+            ${tagHtml}
+          </div>
+          ${preview ? `<div style="font-size:11.5px;color:var(--muted);margin-top:2px">${esc(preview)}…</div>` : ''}
         </div>
+        <div class="item-actions"><button class="item-act-btn" onclick="event.stopPropagation();openItemMod(${idx},'fiches')" title="Modifier">&#9998;</button></div>
       </div>`;
     }).join('');
-    return `<div class="fiches-grid">${cards}</div>`;
   }
   if (theme === 'couleurs') {
-    const cards = colItems.map((it) => {
+    return colItems.map((it) => {
       const idx = items.indexOf(it);
-      const hex = (it.url || '').trim();
-      const swatchStyle = hex ? `background:${hex}` : 'background:var(--bg-soft)';
-      return `<div class="item-fiche" style="display:flex;align-items:flex-start;gap:12px;padding:12px">
-        <div class="item-couleur-swatch" style="${swatchStyle};flex-shrink:0"></div>
-        <div style="flex:1;min-width:0">
-          <div class="item-fiche-title">${esc(it.titre||'Sans nom')}</div>
-          ${hex ? `<div style="font-size:11px;color:var(--muted);font-family:monospace;margin-top:4px">${esc(hex)}</div>` : ''}
+      const hex = (it.url||'').trim();
+      const tagHtml = it.tag ? `<span class="item-tag">${esc(it.tag)}</span>` : '';
+      return `<div class="item-liste">
+        <div class="item-couleur-swatch" style="width:20px;height:20px;background:${hex||'var(--bg-soft)'}"></div>
+        <div class="item-body">
+          <div class="item-body-row">
+            <div class="item-titre">${esc(it.titre||'Sans nom')}</div>
+            ${tagHtml}
+          </div>
+          ${hex ? `<div style="font-size:10.5px;color:var(--muted);font-family:monospace">${esc(hex)}</div>` : ''}
         </div>
-        <button class="item-act-btn" onclick="event.stopPropagation();openItemMod(${idx},'couleurs')" title="Modifier" style="flex-shrink:0">&#9998;</button>
+        <div class="item-actions"><button class="item-act-btn" onclick="openItemMod(${idx},'couleurs')" title="Modifier">&#9998;</button></div>
       </div>`;
     }).join('');
-    return `<div class="fiches-grid" style="grid-template-columns:repeat(auto-fill,minmax(180px,1fr))">${cards}</div>`;
   }
-
-  return '';
-}
+  }
 
 // ── Drawer fiche ──
 // ── Modale fiche consultation ──
@@ -2713,7 +2982,6 @@ function openColMod(idx) {
   const col = editColIdx !== null ? cols[editColIdx] : null;
   colTheme = col ? col.theme : 'listes';
   colIconSel = col ? (col.icone||'') : '';
-  colColorSel = col ? (col.couleur||'') : '';
   document.getElementById('colModTitle').textContent = col ? 'Modifier la collection' : 'Nouvelle collection';
   document.getElementById('colNom').value = col ? col.nom : '';
   document.getElementById('colBtnDel').style.display = col ? 'block' : 'none';
@@ -2722,8 +2990,7 @@ function openColMod(idx) {
   const svgTa = document.getElementById('colIconSvg');
   if (svgTa) svgTa.value = colIconSel;
   updateSvgPreview();
-  // Couleur
-  renderColorSelect(colColorSel);
+  
   document.getElementById('colModOv').classList.add('open');
   setTimeout(()=>document.getElementById('colNom').focus(),60);
 }
@@ -2742,76 +3009,20 @@ function updateSvgPreview() {
   colIconSel = val;
   const iconEl = document.getElementById('svgPreviewIcon');
   const labelEl = document.getElementById('svgPreviewLabel');
-  const previewWrap = document.getElementById('svgPreview');
-  // Fond de l'aperçu = couleur choisie (pour voir le blanc)
-  const bg = colColorSel || '#888';
-  if (previewWrap) previewWrap.style.background = bg;
   if (iconEl) {
-    // Fond de l'icône = même couleur
-    iconEl.style.background = bg;
-    iconEl.style.borderRadius = '8px';
     if (val && val.startsWith('<svg')) {
       iconEl.innerHTML = renderColIcon(val, 20);
-      if (labelEl) labelEl.textContent = 'Aperçu sur fond coloré';
+      if (labelEl) labelEl.textContent = "Aperçu de l'icône";
     } else {
       iconEl.innerHTML = '';
       if (labelEl) labelEl.textContent = val ? 'Code SVG invalide' : 'Collez ici un code SVG';
     }
   }
 }
-function renderColorSelect(currentHex) {
-  const sel = document.getElementById('colColorSel');
-  if (!sel) return;
-  sel.innerHTML = '<option value="">— Aucune couleur —</option>';
-  // Grouper par type si disponible
-  const byType = {};
-  gristCouleurs.forEach(c => {
-    const t = c.type || 'Autres';
-    if (!byType[t]) byType[t] = [];
-    byType[t].push(c);
-  });
-  if (gristCouleurs.length === 0) {
-    // Fallback : palette par défaut si table vide ou non chargée
-    const defaults = [
-      {nom:'Beige',hex:'#e8e7e3'},{nom:'Vert doux',hex:'#d3e8d3'},
-      {nom:'Pêche',hex:'#fde8c8'},{nom:'Lavande',hex:'#e8e8f0'},
-      {nom:'Rose',hex:'#faeef4'},{nom:'Bleu ciel',hex:'#deeaf5'},
-    ];
-    defaults.forEach(d => {
-      const opt = document.createElement('option');
-      opt.value = d.hex; opt.textContent = d.nom;
-      if (d.hex === currentHex) opt.selected = true;
-      sel.appendChild(opt);
-    });
-  } else {
-    Object.entries(byType).forEach(([type, couleurs]) => {
-      const grp = document.createElement('optgroup');
-      grp.label = type;
-      couleurs.forEach(co => {
-        const opt = document.createElement('option');
-        opt.value = co.hex; opt.textContent = co.nom + (co.hex ? ' (' + co.hex + ')' : '');
-        if (co.hex === currentHex) opt.selected = true;
-        grp.appendChild(opt);
-      });
-      sel.appendChild(grp);
-    });
-  }
-  colColorSel = currentHex || '';
-  updateColorPreview(colColorSel);
-}
-function onColorSelChange() {
-  const sel = document.getElementById('colColorSel');
-  colColorSel = sel ? sel.value : '';
-  updateColorPreview(colColorSel);
-  // Rafraîchir aussi l'aperçu SVG avec la nouvelle couleur
-  updateSvgPreview();
-}
-function updateColorPreview(hex) {
-  const prev = document.getElementById('colorPreview');
-  if (!prev) return;
-  if (hex) { prev.style.background = hex; prev.style.opacity = '1'; }
-  else { prev.style.background = 'var(--bg-soft)'; }
-}
+
+
+
+
 
 function saveCol() {
   const nom = document.getElementById('colNom').value.trim();
@@ -2819,12 +3030,11 @@ function saveCol() {
   // Lire les valeurs finales
   const svgTa = document.getElementById('colIconSvg');
   const icone = (svgTa ? svgTa.value.trim() : colIconSel) || '';
-  const couleur = colColorSel || '';
   if (editColIdx !== null) {
-    cols[editColIdx] = {...cols[editColIdx], nom, theme:colTheme, icone, couleur};
+    cols[editColIdx] = {...cols[editColIdx], nom, theme:colTheme, icone};
     gColUpdate(cols[editColIdx]);
   } else {
-    const nc = {id: 'c'+Date.now(), nom, theme:colTheme, icone, couleur};
+    const nc = {id:'c'+Date.now(), nom, theme:colTheme, icone, vue:(colTheme==='listes'||colTheme==='liens')?'liste':'cards', ordre: cols.length};
     cols.push(nc);
     gColAdd(nc);
     selColId = nc.id;
@@ -2865,11 +3075,11 @@ function renderItemModFields(theme, it) {
   let html = '';
   if (theme === 'listes') {
     html = `<div class="cf"><label>Élément</label><input type="text" id="imoTitre" value="${esc(v('titre'))}" placeholder="Nom de l'élément…"></div>
-    <div class="cf"><label>Tag</label><input type="text" id="imoTag" value="${esc(v('tag'))}" placeholder="tag optionnel…"></div>`;
+    <div class="cf" style="position:relative"><label>Tag</label><input type="text" id="imoTag" value="${esc(v('tag'))}" placeholder="tag optionnel…" oninput="showTagSuggestions(this)" onfocus="showTagSuggestions(this)" autocomplete="off"><div class="tag-suggestions-box" id="tagSuggestions"></div></div>`;
   } else if (theme === 'liens') {
     html = `<div class="cf"><label>Titre</label><input type="text" id="imoTitre" value="${esc(v('titre'))}" placeholder="Nom du lien…"></div>
     <div class="cf"><label>URL</label><input type="url" id="imoUrl" value="${esc(v('url'))}" placeholder="https://…"></div>
-    <div class="cf"><label>Tag</label><input type="text" id="imoTag" value="${esc(v('tag'))}" placeholder="tag optionnel…"></div>`;
+    <div class="cf" style="position:relative"><label>Tag</label><input type="text" id="imoTag" value="${esc(v('tag'))}" placeholder="tag optionnel…" oninput="showTagSuggestions(this)" onfocus="showTagSuggestions(this)" autocomplete="off"><div class="tag-suggestions-box" id="tagSuggestions"></div></div>`;
   } else if (theme === 'fiches') {
     const texteVal = (it&&it.texte) ? it.texte : '';
     const toolbar = `<div class="item-rich-tb">
@@ -2886,7 +3096,7 @@ function renderItemModFields(theme, it) {
     html = `<div class="cf"><label>Titre</label><input type="text" id="imoTitre" value="${esc(v('titre'))}" placeholder="Titre de la fiche…"></div>
     <div class="cf"><label>Contenu</label>${toolbar}<div class="item-rich-ed" id="imoTexte" contenteditable="true" data-ph="Rédigez le contenu de la fiche…"></div></div>
     <div class="cf"><label>URL</label><input type="url" id="imoUrl" value="${esc(v('url'))}" placeholder="https://… (optionnel)"></div>
-    <div class="cf"><label>Tag</label><input type="text" id="imoTag" value="${esc(v('tag'))}" placeholder="tag optionnel…"></div>`;
+    <div class="cf" style="position:relative"><label>Tag</label><input type="text" id="imoTag" value="${esc(v('tag'))}" placeholder="tag optionnel…" oninput="showTagSuggestions(this)" onfocus="showTagSuggestions(this)" autocomplete="off"><div class="tag-suggestions-box" id="tagSuggestions"></div></div>`;
     // Contenu chargé après insertion dans le DOM (via setTimeout)
     window._ficheTexteToLoad = texteVal;
   } else if (theme === 'couleurs') {
@@ -2900,8 +3110,8 @@ function renderItemModFields(theme, it) {
       </div>
       <div class="bhint">Format #RRGGBB ou #RGB</div>
     </div>
-    <div class="cf"><label>Tag</label>
-      <input type="text" id="imoTag" value="${esc(v('tag'))}" placeholder="tag optionnel…"></div>`;
+    <div class="cf" style="position:relative"><label>Tag</label>
+      <input type="text" id="imoTag" value="${esc(v('tag'))}" placeholder="tag optionnel…" oninput="showTagSuggestions(this)" onfocus="showTagSuggestions(this)" autocomplete="off"><div class="tag-suggestions-box" id="tagSuggestions"></div></div>`;
   }
   const colOptions = cols.map(c =>
     `<option value="${esc(c.id)}" ${c.id === (it ? it.col_id : selColId) ? 'selected' : ''}>${esc(c.nom)}</option>`
@@ -2958,7 +3168,7 @@ function deleteItem() {
 // ── Grist API Collections ──
 function gColAdd(col) {
   if(typeof grist==='undefined')return;
-  grist.docApi.applyUserActions([['AddRecord','Collections',null,{nom:col.nom,theme:col.theme,icone:col.icone,couleur:col.couleur}]])
+  grist.docApi.applyUserActions([['AddRecord','Collections',null, {nom:col.nom,theme:col.theme,icone:col.icone,vue:col.vue||'',ordre:col.ordre||0}]])
     .then(res => {
       // Stocker le vrai id Grist dans col.gid pour que gItemAdd puisse l'utiliser
       const gid = res?.retValues?.[0];
@@ -2971,21 +3181,46 @@ function gColAdd(col) {
 }
 function gColUpdate(col) {
   if(typeof grist==='undefined'||!col.gid)return;
-  grist.docApi.applyUserActions([['UpdateRecord','Collections',col.gid,{nom:col.nom,theme:col.theme,icone:col.icone,couleur:col.couleur}]]).catch(console.error);
+  grist.docApi.applyUserActions([['UpdateRecord','Collections',col.gid, {nom:col.nom,theme:col.theme,icone:col.icone,vue:col.vue||'',ordre:col.ordre||0}]]).catch(console.error);
 }
+
 function gColDelete(col) {
   if(typeof grist==='undefined'||!col.gid)return;
   grist.docApi.applyUserActions([['RemoveRecord','Collections',col.gid]]).catch(console.error);
 }
+
+function gColReorderBulk(colsArr) {
+  if (typeof grist === 'undefined') return;
+  const withGid = colsArr.filter(c => c.gid);
+  if (!withGid.length) return;
+  const ids = withGid.map(c => c.gid);
+  const ordreVals = withGid.map(c => c.ordre);
+  grist.docApi.applyUserActions([['BulkUpdateRecord', 'Collections', ids, {ordre: ordreVals}]]).catch(console.error);
+}
+
+function gItemReorderBulk(itemsArr) {
+  if (typeof grist === 'undefined') return;
+  const withGid = itemsArr.filter(it => it.gid);
+  if (!withGid.length) return;
+  const ids = withGid.map(it => it.gid);
+  const ordreVals = withGid.map(it => it.ordre);
+  grist.docApi.applyUserActions([['BulkUpdateRecord', 'Items', ids, {ordre: ordreVals}]]).catch(console.error);
+}
+
 function gItemAdd(it) {
   if(typeof grist==='undefined')return;
   const col = cols.find(c=>c.id===it.col_id);
-  grist.docApi.applyUserActions([['AddRecord','Items',null,{collection:col?.gid||0,titre:it.titre,texte:it.texte,url:it.url,tag:it.tag,fait:!!it.fait,type:col?.theme||''}]]).catch(console.error);
+  grist.docApi.applyUserActions([['AddRecord','Items',null,{collection:col?.gid||0,titre:it.titre,texte:it.texte,url:it.url,tag:it.tag,fait:!!it.fait,type:col?.theme||'',ordre:it.ordre||0}]])
+    .then(res => {
+      const gid = res?.retValues?.[0];
+      if (gid) { const existing = items.find(x=>x.id===it.id); if (existing) existing.gid = gid; }
+    })
+    .catch(console.error);
 }
 function gItemUpdate(it) {
   if(typeof grist==='undefined'||!it.gid)return;
   const col = cols.find(c => c.id === it.col_id);
-  grist.docApi.applyUserActions([['UpdateRecord','Items',it.gid,{collection:col?.gid||0,titre:it.titre,texte:it.texte,url:it.url,tag:it.tag,fait:!!it.fait}]]).catch(console.error);
+  grist.docApi.applyUserActions([['UpdateRecord','Items',it.gid,{collection:col?.gid||0,titre:it.titre,texte:it.texte,url:it.url,tag:it.tag,fait:!!it.fait,ordre:it.ordre||0}]]).catch(console.error);
 }
 function gItemDelete(it) {
   if(typeof grist==='undefined'||!it.gid)return;
@@ -3028,9 +3263,24 @@ function clearColSearch() {
   }
 }
 
+function goToGlobalTag(tag) {
+  colSearchQuery = '#' + tag;
+  const inp = document.getElementById('colSearchInput');
+  if (inp) inp.value = colSearchQuery;
+  const clr = document.getElementById('colSearchClear');
+  if (clr) clr.style.display = 'block';
+  activeTagFilter = '';
+  const main = document.getElementById('colMain');
+  main.querySelectorAll('.col-content, .col-search-results-wrap').forEach(el => el.remove());
+  document.getElementById('colEmpty').style.display = 'none';
+  renderColSearchResults();
+}
+
 function renderColSearchResults() {
   const main = document.getElementById('colMain');
   const q = colSearchQuery.toLowerCase();
+  const isTagMode = colSearchQuery.startsWith('#');
+  const tagValue = isTagMode ? colSearchQuery.slice(1).toLowerCase() : '';
 
   // Supprimer le contenu existant (sauf le drawer/empty)
   main.querySelectorAll('.col-content, .col-search-results-wrap').forEach(el => el.remove());
@@ -3043,7 +3293,9 @@ function renderColSearchResults() {
   const results = {}; // col_id → [{item, highlight}]
   items.forEach(it => {
     const fields = [it.titre, it.texte ? it.texte.replace(/<[^>]+>/g,'') : '', it.tag, it.url];
-    const match = fields.some(f => f && f.toLowerCase().includes(q));
+    const match = isTagMode
+      ? (it.tag && it.tag.toLowerCase() === tagValue)
+      : fields.some(f => f && f.toLowerCase().includes(q));
     if (match) {
       if (!results[it.col_id]) results[it.col_id] = [];
       results[it.col_id].push(it);
@@ -3054,7 +3306,7 @@ function renderColSearchResults() {
 
   let html = `<div class="col-search-results">
     <div style="font-size:10px;color:var(--muted);margin-bottom:12px;font-family:'DM Sans',sans-serif;">
-      ${totalResults} résultat${totalResults!==1?'s':''} pour « ${esc(colSearchQuery)} »
+      ${totalResults} résultat${totalResults!==1?'s':''} pour ${isTagMode ? `le tag « ${esc(tagValue)} »` : `« ${esc(colSearchQuery)} »`}
     </div>`;
 
   if (!totalResults) {
@@ -3067,7 +3319,7 @@ function renderColSearchResults() {
       const iconH = renderColIcon(col.icone, 10);
       html += `<div class="col-search-group">
         <div class="col-search-group-title">
-          <div class="col-search-group-icon" style="background:${bg}">${iconH}</div>
+          <div class="col-search-group-icon">${iconH}</div>
           ${esc(col.nom)}
         </div>`;
       its.forEach(it => {
@@ -3181,28 +3433,23 @@ async function loadGristTags() {
 // ── Chargement depuis Grist ──
 async function loadCollections() {
   if(typeof grist==='undefined')return;
-  await loadGristTags();
-  // Charger la table Couleurs
-  try {
-    const rco = await grist.docApi.fetchTable('Couleurs');
-    gristCouleurs = (rco.id||[]).map((id,i)=>({
-      nom:  String(rco.nom?.[i]  ||''),
-      hex:  String(rco.hex?.[i]  ||''),
-      type: String(rco.type?.[i] ||''),
-    }));
-  } catch(e){ console.warn('Couleurs:',e); gristCouleurs = []; }
-  try {
-    const rc = await grist.docApi.fetchTable('Collections');
-    cols = (rc.id||[]).map((id,i)=>({
-      id: 'g'+id, gid: id,
-      nom:    String(rc.nom?.[i]    ||''),
-      theme:  String(rc.theme?.[i]  ||'listes'),
-      icone:  String(rc.icone?.[i]  ||''),
-      couleur:String(rc.couleur?.[i]||''),
-    }));
-  } catch(e){ console.warn('Collections:',e); }
-  try {
-    const ri = await grist.docApi.fetchTable('Items');
+  const [_, rc, ri] = await Promise.all([
+    loadGristTags(),
+    grist.docApi.fetchTable('Collections').catch(e=>{console.warn('Collections:',e);return null;}),
+    grist.docApi.fetchTable('Items').catch(e=>{console.warn('Items:',e);return null;})
+  ]);
+  if (rc) {
+    cols = (rc.id||[]).map((id,i)=>{
+      const theme = String(rc.theme?.[i] ||'listes');
+      let vue = String(rc.vue?.[i] ||'');
+      if (!vue) vue = (theme==='listes'||theme==='liens') ? 'liste' : 'cards';
+      return { id:'g'+id, gid:id, nom:String(rc.nom?.[i]||''), theme,
+        icone:String(rc.icone?.[i]||''), vue,
+        ordre: Number(rc.ordre?.[i] ?? i) };
+    });
+    cols.sort((a,b) => a.ordre - b.ordre);
+  }
+  if (ri) {
     items = (ri.id||[]).map((id,i)=>({
       id: 'g'+id, gid: id,
       col_id: 'g'+(ri.collection?.[i]||0),
@@ -3211,8 +3458,9 @@ async function loadCollections() {
       url:    String(ri.url?.[i]   ||''),
       tag:    String(ri.tag?.[i]   ||''),
       fait:   !!ri.fait?.[i],
+      ordre:  Number(ri.ordre?.[i] ?? i),
     }));
-  } catch(e){ console.warn('Items:',e); }
+  }
   renderColSidebar();
   if (selColId) renderColMain();
 }
@@ -3220,10 +3468,10 @@ async function loadCollections() {
 // ── Démo collections ──
 function initColDemo() {
   cols = [
-    {id:'c1',nom:'Courses',       theme:'listes', icone:'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="21" r="1"/><circle cx="19" cy="21" r="1"/><path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12"/></svg>', couleur:'#d3e8d3'},
-    {id:'c4',nom:'Palette',       theme:'couleurs',icone:'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="13.5" cy="6.5" r=".5"/><circle cx="17.5" cy="10.5" r=".5"/><circle cx="8.5" cy="7.5" r=".5"/><circle cx="6.5" cy="12.5" r=".5"/><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.555-2.503 5.555-5.554C21.965 6.012 17.461 2 12 2z"/></svg>', couleur:'#f5e8f5'},
-    {id:'c2',nom:'Ressources web',theme:'liens',  icone:'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>', couleur:'#deeaf5'},
-    {id:'c3',nom:'Notes',         theme:'fiches',  icone:'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>', couleur:'#fde8c8'},
+    {id:'c1',nom:'Courses',       theme:'listes', icone:'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="21" r="1"/><circle cx="19" cy="21" r="1"/><path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12"/></svg>', vue:'liste'},
+    {id:'c4',nom:'Palette',       theme:'couleurs',icone:'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="13.5" cy="6.5" r=".5"/><circle cx="17.5" cy="10.5" r=".5"/><circle cx="8.5" cy="7.5" r=".5"/><circle cx="6.5" cy="12.5" r=".5"/><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.555-2.503 5.555-5.554C21.965 6.012 17.461 2 12 2z"/></svg>', vue:'liste'},
+    {id:'c2',nom:'Ressources web',theme:'liens',  icone:'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>', vue:'liste'},
+    {id:'c3',nom:'Notes',         theme:'fiches',  icone:'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>', vue:'liste'},
   ];
   items = [
     {id:'i1',col_id:'c1',titre:'Lait',        tag:'',       texte:'',url:'',fait:true},
