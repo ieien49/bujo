@@ -2540,6 +2540,7 @@ const THEME_LABELS = {listes:'Listes',liens:'Liens',fiches:'Fiches',couleurs:'Co
 let cols = [];    // [{id,nom,theme,icone,couleur}]
 let items = [];   // [{id,col_id,titre,texte,url,tag,fait}]
 let selColId = null;
+let colTableSort = { key: null, dir: 1 };
 
 let editColIdx = null;
 let editItemIdx = null;
@@ -2665,6 +2666,7 @@ function initColSortable() {
 function selectCol(id) {
   selColId = id;
   activeTagFilter = ''; // réinitialiser filtre
+  colTableSort = { key: null, dir: 1 };
   closeFicheModal();
   renderColSidebar();
   renderColMain();
@@ -2813,15 +2815,32 @@ function renderItemsCards(colItems, theme) {
   return '';
 }
 
+function sortColTable(key) {
+  if (colTableSort.key === key) colTableSort.dir = -colTableSort.dir;
+  else { colTableSort.key = key; colTableSort.dir = 1; }
+  renderColMain();
+}  
 
 function renderItemsTable(colItems, theme) {
-  let head = '';
-  if (theme === 'listes')   head = '<th style="width:30px"></th><th>Titre</th><th>Tag</th><th style="width:34px"></th>';
-  if (theme === 'liens')    head = '<th>Titre</th><th>URL</th><th>Tag</th><th style="width:34px"></th>';
-  if (theme === 'fiches')   head = '<th>Titre</th><th>Aperçu</th><th>Tag</th><th style="width:34px"></th>';
-  if (theme === 'couleurs') head = '<th style="width:40px"></th><th>Nom</th><th>Hex</th><th style="width:34px"></th>';
+  const sortIc = key => colTableSort.key===key ? (colTableSort.dir===1?'↑':'↓') : '↕';
+  const th = (key, label) => `<th onclick="sortColTable('${key}')" class="${colTableSort.key===key?'sorted':''}">${label} <span class="sort-ic">${sortIc(key)}</span></th>`;
 
-  const rows = colItems.map((it) => {
+  let head = '';
+  if (theme === 'listes')   head = '<th style="width:30px;cursor:default"></th>' + th('titre','Titre') + th('tag','Tag') + '<th style="width:34px;cursor:default"></th>';
+  if (theme === 'liens')    head = th('titre','Titre') + th('url','URL') + th('tag','Tag') + '<th style="width:34px;cursor:default"></th>';
+  if (theme === 'fiches')   head = th('titre','Titre') + th('texte','Aperçu') + th('tag','Tag') + '<th style="width:34px;cursor:default"></th>';
+  if (theme === 'couleurs') head = '<th style="width:40px;cursor:default"></th>' + th('titre','Nom') + th('url','Hex') + '<th style="width:34px;cursor:default"></th>';
+
+  let sortedItems = colItems;
+  if (colTableSort.key) {
+    sortedItems = [...colItems].sort((a,b) => {
+      const va = String(a[colTableSort.key]||'').replace(/<[^>]+>/g,'').toLowerCase();
+      const vb = String(b[colTableSort.key]||'').replace(/<[^>]+>/g,'').toLowerCase();
+      return va < vb ? -colTableSort.dir : va > vb ? colTableSort.dir : 0;
+    });
+  }
+
+  const rows = sortedItems.map((it) => {
     const idx = items.indexOf(it);
     const editBtn = `<button class="item-act-btn" onclick="event.stopPropagation();openItemMod(${idx},'${theme}')" title="Modifier">&#9998;</button>`;
     if (theme === 'listes') return `<tr onclick="toggleItem(${idx})">
@@ -2852,7 +2871,6 @@ function renderItemsTable(colItems, theme) {
 
   return `<div style="overflow:auto"><table class="lec-workspace" style="width:100%"><thead><tr>${head}</tr></thead><tbody>${rows}</tbody></table></div>`;
 }
-
 // ── Rendu items selon thème ──
 function renderItemsListe(colItems, theme) {
   
