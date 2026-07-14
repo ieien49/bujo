@@ -3,963 +3,305 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Journal — Configurateur</title>
+<title>Configuration Journal</title>
+<script src="https://docs.getgrist.com/grist-plugin-api.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=DM+Mono:ital,wght@0,300;0,400;1,400&family=Lora:ital,wght@0,400;0,600;1,400&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,500;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
 <style>
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 :root {
-  --bg:        #f9f8f6;
-  --surface:   #ffffff;
-  --border:    #e8e6e1;
-  --border2:   #d4d0c8;
-  --text:      #1c1a17;
-  --muted:     #7a7670;
-  --light:     #b8b4ac;
-  --accent:    #c06020;
-  --accent2:   #e8a020;
-  --tag-bg:    #f2ede8;
-  --mono:      'DM Mono', monospace;
-  --sans:      'DM Sans', sans-serif;
-  --serif:     'Lora', serif;
-  --r:         8px;
-  --r2:        12px;
+  --bg:          #ffffff;
+  --bg-soft:     #f5f5f4;
+  --bg-hover:    #efefed;
+  --border:      #e8e8e6;
+  --text:        #1a1a1a;
+  --muted:       #8a8a88;
+  --light:       #c4c4c2;
+  --accent:      #e8a020;
+  --accent-soft: #fef3dc;
+  --radius:      10px;
 }
 
 body {
-  font-family: var(--sans);
-  background: var(--bg);
-  color: var(--text);
-  font-size: 13.5px;
-  min-height: 100vh;
-  line-height: 1.5;
+  font-family: 'DM Sans', -apple-system, sans-serif;
+  background: var(--bg); color: var(--text); font-size: 13px;
+  padding: 20px 22px; max-width: 460px;
 }
 
-/* ── Layout ── */
-.page-wrap {
-  max-width: 760px;
-  margin: 0 auto;
-  padding: 48px 24px 80px;
-}
-
-/* ── Header ── */
-.page-header {
-  margin-bottom: 40px;
-}
-.page-header-kicker {
-  font-size: 10px;
-  font-weight: 600;
-  letter-spacing: .12em;
-  text-transform: uppercase;
-  color: var(--accent);
-  margin-bottom: 10px;
-}
-.page-header h1 {
-  font-family: var(--serif);
-  font-size: 28px;
-  font-weight: 600;
-  color: var(--text);
-  letter-spacing: -.01em;
-  line-height: 1.2;
-  margin-bottom: 10px;
-}
-.page-header p {
-  font-size: 13.5px;
-  color: var(--muted);
-  max-width: 500px;
-  line-height: 1.65;
-}
-
-/* ── Sections ── */
-.config-section {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--r2);
-  overflow: hidden;
-  margin-bottom: 16px;
-}
-.section-header {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 14px 18px;
-  border-bottom: 1px solid var(--border);
-  background: var(--bg);
-  cursor: pointer;
-  user-select: none;
-}
-.section-header:hover { background: #f3f1ec; }
-.section-icon {
-  width: 28px; height: 28px;
-  border-radius: 7px;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 13px;
-  flex-shrink: 0;
+h1 {
+  font-family: 'Lora', serif; font-size: 15px; font-weight: 600;
+  margin-bottom: 4px; color: var(--text);
 }
 .section-title {
-  font-size: 12.5px;
-  font-weight: 600;
-  color: var(--text);
-  flex: 1;
+  font-size: 10px; font-weight: 700; letter-spacing: .08em;
+  text-transform: uppercase; color: var(--light); margin: 20px 0 8px;
+  padding-bottom: 5px; border-bottom: 1px solid var(--border);
 }
-.section-chevron {
-  font-size: 11px;
-  color: var(--light);
-  transition: transform .2s;
-}
-.section-header.open .section-chevron { transform: rotate(180deg); }
-.section-body {
-  padding: 18px 18px 20px;
-  display: none;
-}
-.section-body.open { display: block; }
+.section-title:first-of-type { margin-top: 18px; }
 
-/* ── Champs ── */
-.field-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 14px;
+.cf { margin-bottom: 12px; }
+.cf label {
+  display: block; font-size: 9.5px; font-weight: 600; letter-spacing: .07em;
+  text-transform: uppercase; color: var(--muted); margin-bottom: 6px;
+  font-family: 'DM Sans', sans-serif;
 }
-.field-grid.cols-3 { grid-template-columns: 1fr 1fr 1fr; }
-@media (max-width: 540px) {
-  .field-grid, .field-grid.cols-3 { grid-template-columns: 1fr; }
+.cf input[type=text] {
+  width: 100%; padding: 7px 10px; border: .5px solid var(--border);
+  border-radius: var(--radius); font-size: 12.5px; color: var(--text);
+  background: var(--bg); outline: none; font-family: inherit;
+  transition: border-color .12s;
 }
-.field { display: flex; flex-direction: column; gap: 5px; }
-.field.full { grid-column: 1 / -1; }
-.field label {
-  font-size: 10px;
-  font-weight: 600;
-  letter-spacing: .07em;
-  text-transform: uppercase;
-  color: var(--muted);
-}
-.field label span {
-  font-size: 9.5px;
-  text-transform: none;
-  letter-spacing: 0;
-  font-weight: 400;
-  color: var(--light);
-  margin-left: 4px;
-}
-.field input[type=text],
-.field input[type=url],
-.field input[type=color],
-.field select {
-  padding: 7px 10px;
-  border: 1px solid var(--border2);
-  border-radius: var(--r);
-  font-size: 12.5px;
-  color: var(--text);
-  background: var(--surface);
-  font-family: var(--sans);
-  outline: none;
-  transition: border-color .15s, box-shadow .15s;
-  width: 100%;
-}
-.field input:focus,
-.field select:focus {
-  border-color: var(--accent);
-  box-shadow: 0 0 0 3px rgba(192,96,32,.1);
-}
-.field input[type=color] {
-  height: 36px;
-  padding: 3px 5px;
-  cursor: pointer;
-}
-.field .hint {
-  font-size: 10.5px;
-  color: var(--light);
-  line-height: 1.5;
-}
+.cf input[type=text]:focus { border-color: var(--accent); }
+.cf input[type=text]::placeholder { color: var(--light); }
 
-/* ── Toggle switches ── */
-.toggle-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 10px;
+.color-row { display: flex; align-items: center; gap: 8px; }
+.color-row input[type=color] {
+  width: 34px; height: 34px; border: .5px solid var(--border);
+  border-radius: 8px; padding: 2px; cursor: pointer; background: var(--bg);
+  flex-shrink: 0;
 }
-@media (max-width: 540px) { .toggle-grid { grid-template-columns: 1fr; } }
-.toggle-item {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 10px 13px;
-  border: 1px solid var(--border);
-  border-radius: var(--r);
-  cursor: pointer;
-  transition: border-color .15s, background .15s;
-  user-select: none;
-  gap: 10px;
-}
-.toggle-item:hover { border-color: var(--accent2); background: #fdf8f0; }
-.toggle-item.active { border-color: var(--accent); background: #fdf5ee; }
-.toggle-label { font-size: 12px; font-weight: 500; color: var(--text); flex: 1; }
-.toggle-sub { font-size: 10.5px; color: var(--light); margin-top: 1px; }
-.toggle-sw {
-  width: 32px; height: 18px; border-radius: 9px;
-  background: var(--border); position: relative;
-  flex-shrink: 0; transition: background .2s;
-}
-.toggle-item.active .toggle-sw { background: var(--accent); }
-.toggle-sw::after {
-  content: '';
-  position: absolute;
-  width: 14px; height: 14px; border-radius: 50%;
-  background: #fff; top: 2px; left: 2px;
-  transition: transform .2s;
-  box-shadow: 0 1px 3px rgba(0,0,0,.2);
-}
-.toggle-item.active .toggle-sw::after { transform: translateX(14px); }
+.color-row input[type=text] { font-family: monospace; }
 
-/* ── Color palette ── */
-.color-palette {
-  display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px;
-}
-.color-swatch {
-  width: 28px; height: 28px; border-radius: 50%;
-  cursor: pointer; border: 2px solid transparent;
-  transition: transform .12s, border-color .12s;
-  position: relative;
-}
-.color-swatch:hover { transform: scale(1.15); }
-.color-swatch.selected {
-  border-color: var(--text);
-  transform: scale(1.12);
-}
-.color-swatch.selected::after {
-  content: '✓';
-  position: absolute; inset: 0;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 11px; color: #fff;
-  text-shadow: 0 1px 2px rgba(0,0,0,.5);
-}
+.label-grid { display: flex; flex-direction: column; gap: 8px; }
 
-/* ── Output ── */
-.output-section {
-  position: sticky;
-  bottom: 0;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--r2);
-  padding: 16px 18px;
-  box-shadow: 0 -4px 24px rgba(0,0,0,.06), 0 0 0 1px rgba(0,0,0,.04);
-  margin-top: 24px;
-}
-.output-label {
-  font-size: 10px;
-  font-weight: 600;
-  letter-spacing: .08em;
-  text-transform: uppercase;
-  color: var(--muted);
-  margin-bottom: 8px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-}
-.output-label-left { display: flex; align-items: center; gap: 7px; }
-.live-dot {
-  width: 6px; height: 6px; border-radius: 50%;
-  background: #5ab85a;
-  animation: pulse 2s infinite;
-}
-@keyframes pulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: .4; }
-}
-.output-url {
-  font-family: var(--mono);
-  font-size: 11.5px;
-  color: var(--text);
-  background: var(--bg);
-  border: 1px solid var(--border);
-  border-radius: var(--r);
-  padding: 10px 12px;
-  word-break: break-all;
-  line-height: 1.6;
-  min-height: 42px;
-}
-.output-url .url-base { color: var(--muted); }
-.output-url .url-param-key { color: var(--accent); }
-.output-url .url-param-val { color: #2a7a4a; }
-.output-url .url-sep { color: var(--light); }
-.output-actions {
-  display: flex; gap: 8px; margin-top: 10px;
-}
-.btn {
-  display: inline-flex; align-items: center; gap: 6px;
-  padding: 7px 14px; border-radius: var(--r); border: 1px solid transparent;
-  font-size: 12px; font-weight: 600; font-family: var(--sans);
-  cursor: pointer; transition: all .15s; line-height: 1;
-}
-.btn-primary {
-  background: var(--text); color: #fff; border-color: var(--text);
-}
-.btn-primary:hover { background: #333; }
-.btn-primary:active { transform: scale(.97); }
-.btn-secondary {
-  background: var(--surface); color: var(--muted);
-  border-color: var(--border2);
-}
-.btn-secondary:hover { background: var(--bg); color: var(--text); border-color: var(--accent); }
-.btn-accent {
-  background: var(--accent); color: #fff; border-color: var(--accent);
-}
-.btn-accent:hover { opacity: .88; }
-.copy-flash {
-  font-size: 11px; color: #5ab85a;
-  opacity: 0; transition: opacity .3s;
-  align-self: center;
-}
-.copy-flash.vis { opacity: 1; }
-
-/* ── Prévisualisation ── */
-.preview-section {
-  margin-top: 24px;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--r2);
-  overflow: hidden;
-}
-.preview-header {
+.tog-row {
   display: flex; align-items: center; justify-content: space-between;
-  padding: 12px 18px;
-  border-bottom: 1px solid var(--border);
-  background: var(--bg);
+  padding: 9px 11px; border: .5px solid var(--border); border-radius: var(--radius);
+  cursor: pointer; transition: background .12s; margin-bottom: 8px;
 }
-.preview-title {
-  font-size: 11px; font-weight: 600;
-  letter-spacing: .07em; text-transform: uppercase;
-  color: var(--muted);
-  display: flex; align-items: center; gap: 7px;
+.tog-row:hover { background: var(--bg-soft); }
+.tog-label { font-size: 12px; color: var(--text); }
+.tog-sw {
+  width: 26px; height: 15px; border-radius: 8px; background: var(--border);
+  position: relative; transition: background .2s; flex-shrink: 0;
 }
-.preview-btn-wrap { display: flex; gap: 6px; }
-.preview-iframe-wrap {
-  position: relative;
-  height: 0;
-  overflow: hidden;
-  transition: height .3s ease;
+.tog-sw.on { background: var(--accent); }
+.tog-sw::after {
+  content: ''; position: absolute; width: 11px; height: 11px; border-radius: 50%;
+  background: #fff; top: 2px; left: 2px; transition: transform .2s;
 }
-.preview-iframe-wrap.open { height: 420px; }
-.preview-iframe-wrap iframe {
-  width: 100%; height: 100%;
-  border: none;
-}
-.preview-placeholder {
-  padding: 32px;
-  text-align: center;
-  color: var(--light);
-  font-size: 12.5px;
-  font-style: italic;
-}
+.tog-sw.on::after { transform: translateX(11px); }
 
-/* ── Doc rapide ── */
-.doc-table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 12px;
+.save-bar {
+  display: flex; align-items: center; gap: 10px; margin-top: 22px;
+  position: sticky; bottom: 0; background: var(--bg); padding-top: 6px;
 }
-.doc-table th {
-  text-align: left;
-  font-size: 9.5px;
-  font-weight: 600;
-  letter-spacing: .07em;
-  text-transform: uppercase;
-  color: var(--muted);
-  padding: 5px 10px 7px;
-  border-bottom: 1px solid var(--border);
+.btn-save {
+  padding: 8px 16px; border-radius: 999px; border: none;
+  background: var(--accent); color: #fff; font-size: 12.5px; font-weight: 600;
+  cursor: pointer; font-family: inherit; transition: opacity .15s;
 }
-.doc-table td {
-  padding: 7px 10px;
-  border-bottom: 1px solid var(--bg);
-  vertical-align: top;
+.btn-save:hover { opacity: .88; }
+.save-ind {
+  font-size: 11.5px; color: var(--muted); display: flex; align-items: center; gap: 5px;
+  opacity: 0; transition: opacity .3s;
 }
-.doc-table tr:last-child td { border-bottom: none; }
-.doc-table tr:hover td { background: var(--bg); }
-.doc-table code {
-  font-family: var(--mono);
-  font-size: 11px;
-  background: var(--tag-bg);
-  padding: 1px 5px;
-  border-radius: 3px;
-  color: var(--accent);
-}
-.doc-table .val-col { color: var(--muted); font-size: 11.5px; }
+.save-ind.vis { opacity: 1; }
+.save-dot { width: 6px; height: 6px; border-radius: 50%; background: #27ae60; }
 
-/* ── Divider ── */
-.divider { height: 1px; background: var(--border); margin: 14px 0; }
+.hint { font-size: 10px; color: var(--light); margin-top: 4px; }
 </style>
 </head>
 <body>
-<div class="page-wrap">
 
-  <!-- Header -->
-  <div class="page-header">
-    <div class="page-header-kicker">Widget Grist</div>
-    <h1>Configurateur — Journal</h1>
-    <p>Construisez l'URL de votre widget en quelques clics. Chaque paramètre ajuste le comportement et l'apparence du Journal directement via l'URL.</p>
-  </div>
+<h1>Configuration du Journal</h1>
 
-  <!-- ── Section 1 : Général ── -->
-  <div class="config-section">
-    <div class="section-header open" onclick="toggleSection(this)">
-      <div class="section-icon" style="background:#f2ede8">📋</div>
-      <div class="section-title">Général</div>
-      <div class="section-chevron">▼</div>
-    </div>
-    <div class="section-body open">
-      <div class="field-grid">
-        <div class="field full">
-          <label>URL de base du widget <span>L'URL brute de votre index.html hébergé</span></label>
-          <input type="url" id="baseUrl" placeholder="https://mon-compte.github.io/journal/index.html"
-            oninput="buildUrl()">
-          <div class="hint">Ex : https://votre-username.github.io/votre-repo/index.html</div>
-        </div>
-        <div class="field">
-          <label>Titre de l'onglet Bujo <span>optionnel</span></label>
-          <input type="text" id="pTitre" placeholder="Bujo" oninput="buildUrl()">
-          <div class="hint">Remplace «&nbsp;Bujo&nbsp;» dans l'onglet et le titre de page</div>
-        </div>
-        <div class="field">
-          <label>Onglet affiché par défaut</label>
-          <select id="pDefaultTab" onchange="buildUrl()">
-            <option value="">bujo (défaut)</option>
-            <option value="lectures">lectures</option>
-            <option value="collections">collections</option>
-          </select>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- ── Section 2 : Onglets visibles ── -->
-  <div class="config-section">
-    <div class="section-header open" onclick="toggleSection(this)">
-      <div class="section-icon" style="background:#eef3fa">🗂️</div>
-      <div class="section-title">Onglets visibles</div>
-      <div class="section-chevron">▼</div>
-    </div>
-    <div class="section-body open">
-      <p style="font-size:12px;color:var(--muted);margin-bottom:14px">
-        Les onglets activés sont affichés. Désactivez-en pour simplifier l'interface.
-      </p>
-      <div class="toggle-grid">
-        <div class="toggle-item active" id="tog-bujo" onclick="toggleTab('bujo')">
-          <div>
-            <div class="toggle-label">Bujo</div>
-            <div class="toggle-sub">Journal quotidien, tâches, anniversaires</div>
-          </div>
-          <div class="toggle-sw"></div>
-        </div>
-        <div class="toggle-item active" id="tog-lectures" onclick="toggleTab('lectures')">
-          <div>
-            <div class="toggle-label">Lectures</div>
-            <div class="toggle-sub">Bibliothèque de livres</div>
-          </div>
-          <div class="toggle-sw"></div>
-        </div>
-        <div class="toggle-item active" id="tog-collections" onclick="toggleTab('collections')">
-          <div>
-            <div class="toggle-label">Collections</div>
-            <div class="toggle-sub">Listes, liens, fiches, couleurs</div>
-          </div>
-          <div class="toggle-sw"></div>
-        </div>
-        <div class="toggle-item active" id="tog-bday" onclick="toggleCol('bday')">
-  <div>
-    <div class="toggle-label">Anniversaires</div>
-    <div class="toggle-sub">Gestion des dates de naissance</div>
-  </div>
-  <div class="toggle-sw"></div>
+<div class="cf">
+  <label>Titre du document</label>
+  <input type="text" id="cfgTitre" placeholder="Journal">
+  <div class="hint">Affiché dans l'onglet du navigateur.</div>
 </div>
-      </div>
-    </div>
+
+<div class="cf">
+  <label>Couleur d'accent</label>
+  <div class="color-row">
+    <input type="color" id="cfgAccentPicker" value="#e8a020">
+    <input type="text" id="cfgAccentHex" placeholder="#e8a020">
   </div>
+</div>
 
-  <!-- ── Section 3 : Colonnes Bujo ── -->
-  <div class="config-section">
-    <div class="section-header" onclick="toggleSection(this)">
-      <div class="section-icon" style="background:#f0faf0">📊</div>
-      <div class="section-title">Colonnes Bujo</div>
-      <div class="section-chevron">▼</div>
-    </div>
-    <div class="section-body">
-      <p style="font-size:12px;color:var(--muted);margin-bottom:14px">
-        La vue principale du Bujo affiche jusqu'à trois colonnes. Masquez celles dont vous n'avez pas besoin.
-      </p>
-      <div class="toggle-grid">
-        <div class="toggle-item active" id="tog-colweek" onclick="toggleCol('colweek')">
-          <div>
-            <div class="toggle-label">Agenda semaine</div>
-            <div class="toggle-sub">Colonne droite : vue 7 jours</div>
-          </div>
-          <div class="toggle-sw"></div>
-        </div>
-        <div class="toggle-item active" id="tog-colprojets" onclick="toggleCol('colprojets')">
-          <div>
-            <div class="toggle-label">Projets</div>
-            <div class="toggle-sub">Colonne latérale : projets actifs</div>
-          </div>
-          <div class="toggle-sw"></div>
-        </div>
-        <div class="toggle-item active" id="tog-colcal" onclick="toggleCol('colcal')">
-          <div>
-            <div class="toggle-label">Calendrier sidebar</div>
-            <div class="toggle-sub">Mini-calendrier dans la barre latérale</div>
-          </div>
-          <div class="toggle-sw"></div>
-        </div>
-        <div class="toggle-item active" id="tog-colfuture" onclick="toggleCol('colfuture')">
-          <div>
-            <div class="toggle-label">Future logs</div>
-            <div class="toggle-sub">Navigation mois / années dans la sidebar</div>
-          </div>
-          <div class="toggle-sw"></div>
-        </div>
-      </div>
-    </div>
+<div class="section-title">Onglets</div>
+
+<div class="tog-row" onclick="toggleField('bujo_on')">
+  <span class="tog-label">Bujo</span>
+  <div class="tog-sw" id="tog-bujo_on"></div>
+</div>
+<div class="tog-row" onclick="toggleField('lectures_on')">
+  <span class="tog-label">Lectures</span>
+  <div class="tog-sw" id="tog-lectures_on"></div>
+</div>
+<div class="tog-row" onclick="toggleField('collections_on')">
+  <span class="tog-label">Collections</span>
+  <div class="tog-sw" id="tog-collections_on"></div>
+</div>
+<div class="hint" style="margin-bottom:14px">Activé = onglet visible dans le Journal.</div>
+
+<div class="label-grid">
+  <div class="cf">
+    <label>Libellé onglet Bujo</label>
+    <input type="text" id="cfgLabelBujo" placeholder="Bujo">
   </div>
-
-  <!-- ── Section 4 : Couleur d'accentuation ── -->
-  <div class="config-section">
-    <div class="section-header" onclick="toggleSection(this)">
-      <div class="section-icon" style="background:#fff3e0">🎨</div>
-      <div class="section-title">Couleur d'accentuation</div>
-      <div class="section-chevron">▼</div>
-    </div>
-    <div class="section-body">
-      <p style="font-size:12px;color:var(--muted);margin-bottom:16px">
-        Définit la couleur principale du widget (boutons, badges, bordures actives…). Choisissez dans la palette ou entrez un code hexadécimal.
-      </p>
-      <div class="field-grid">
-        <div class="field">
-          <label>Code hexadécimal</label>
-          <input type="text" id="pAccent" placeholder="#e8a020"
-            oninput="onAccentInput(this.value)" maxlength="7">
-        </div>
-        <div class="field">
-          <label>Sélecteur couleur</label>
-          <input type="color" id="pAccentPicker" value="#e8a020" oninput="onPickerInput(this.value)">
-        </div>
-      </div>
-      <div class="color-palette" id="colorPalette"></div>
-      <div class="hint" style="margin-top:10px">
-        Laissez vide pour conserver la couleur par défaut (ambre <code style="font-family:monospace;background:var(--tag-bg);padding:1px 5px;border-radius:3px;font-size:10.5px;color:var(--accent)">#e8a020</code>).
-      </div>
-    </div>
+  <div class="cf">
+    <label>Libellé onglet Lectures</label>
+    <input type="text" id="cfgLabelLectures" placeholder="Lectures">
   </div>
-
-  <!-- ── Section 5 : Documentation rapide ── -->
-  <div class="config-section">
-    <div class="section-header" onclick="toggleSection(this)">
-      <div class="section-icon" style="background:#f0eeff">📖</div>
-      <div class="section-title">Tous les paramètres</div>
-      <div class="section-chevron">▼</div>
-    </div>
-    <div class="section-body">
-      <table class="doc-table">
-        <thead>
-          <tr>
-            <th>Paramètre</th>
-            <th>Valeurs</th>
-            <th>Effet</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr>
-            <td><code>titre</code></td>
-            <td class="val-col">texte libre</td>
-            <td>Remplace le label «&nbsp;Bujo&nbsp;» dans l'onglet et le titre de page</td>
-          </tr>
-          <tr>
-            <td><code>accent</code></td>
-            <td class="val-col">#RRGGBB ou RRGGBB</td>
-            <td>Couleur d'accentuation globale (boutons, bordures actives, badges)</td>
-          </tr>
-          <tr>
-            <td><code>lectures</code></td>
-            <td class="val-col"><code>off</code></td>
-            <td>Masque l'onglet Lectures</td>
-          </tr>
-          <tr>
-            <td><code>collections</code></td>
-            <td class="val-col"><code>off</code></td>
-            <td>Masque l'onglet Collections</td>
-          </tr>
-          <tr>
-            <td><code>tab</code></td>
-            <td class="val-col"><code>bujo</code> · <code>lectures</code> · <code>collections</code></td>
-            <td>Onglet ouvert au chargement</td>
-          </tr>
-          <tr>
-            <td><code>colweek</code></td>
-            <td class="val-col"><code>off</code></td>
-            <td>Masque la colonne «&nbsp;Agenda semaine&nbsp;» du Bujo</td>
-          </tr>
-          <tr>
-            <td><code>colprojets</code></td>
-            <td class="val-col"><code>off</code></td>
-            <td>Masque la colonne «&nbsp;Projets&nbsp;» du Bujo</td>
-          </tr>
-          <tr>
-            <td><code>colcal</code></td>
-            <td class="val-col"><code>off</code></td>
-            <td>Masque le mini-calendrier de la sidebar Bujo</td>
-          </tr>
-          <tr>
-            <td><code>colfuture</code></td>
-            <td class="val-col"><code>off</code></td>
-            <td>Masque la section «&nbsp;Future logs&nbsp;» de la sidebar</td>
-          </tr>
-          <tr>
-  <td><code>bday</code></td>
-  <td class="val-col"><code>off</code></td>
-  <td>Masque la gestion des anniversaires (bouton, onglet, affichage)</td>
-</tr>
-        </tbody>
-      </table>
-      <div class="divider"></div>
-      <p style="font-size:11.5px;color:var(--muted);line-height:1.7">
-        <strong style="color:var(--text)">Note d'implémentation :</strong>
-        Les paramètres <code style="font-family:monospace;font-size:11px;background:var(--tag-bg);padding:1px 5px;border-radius:3px;color:var(--accent)">colweek</code>,
-        <code style="font-family:monospace;font-size:11px;background:var(--tag-bg);padding:1px 5px;border-radius:3px;color:var(--accent)">colprojets</code>,
-        <code style="font-family:monospace;font-size:11px;background:var(--tag-bg);padding:1px 5px;border-radius:3px;color:var(--accent)">colcal</code>,
-        <code style="font-family:monospace;font-size:11px;background:var(--tag-bg);padding:1px 5px;border-radius:3px;color:var(--accent)">colfuture</code> et
-        <code style="font-family:monospace;font-size:11px;background:var(--tag-bg);padding:1px 5px;border-radius:3px;color:var(--accent)">tab</code>
-        nécessitent l'ajout de quelques lignes dans la fonction <code style="font-family:monospace;font-size:11px;background:var(--tag-bg);padding:1px 5px;border-radius:3px;color:var(--accent)">applyConfig()</code>
-        de votre <code style="font-family:monospace;font-size:11px;background:var(--tag-bg);padding:1px 5px;border-radius:3px;color:var(--accent)">index.html</code>.
-        Le snippet est fourni ci-dessous.
-      </p>
-      <div style="margin-top:12px">
-        <div style="font-size:10px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);margin-bottom:6px">Snippet à ajouter dans applyConfig()</div>
-        <pre id="snippetCode" style="background:var(--bg);border:1px solid var(--border);border-radius:var(--r);padding:13px 14px;font-family:var(--mono);font-size:11px;line-height:1.7;color:var(--text);overflow-x:auto;white-space:pre-wrap;word-break:break-word">  // Onglet par défaut
-  const tabParam = p.get('tab');
-  if (tabParam && ['bujo','lectures','collections'].includes(tabParam)) {
-    document.addEventListener('DOMContentLoaded', () => switchTab(tabParam));
-  }
-
-  // Colonnes Bujo
-  if (p.get('colweek') === 'off') {
-    document.addEventListener('DOMContentLoaded', () => {
-      const el = document.getElementById('bujoWeekCol');
-      if (el) el.style.display = 'none';
-    });
-  }
-  if (p.get('colprojets') === 'off') {
-    document.addEventListener('DOMContentLoaded', () => {
-      const el = document.getElementById('bujoProjetCol');
-      if (el) el.style.display = 'none';
-    });
-  }
-  if (p.get('colcal') === 'off') {
-    document.addEventListener('DOMContentLoaded', () => {
-      const el = document.querySelector('.cal-wrap');
-      if (el) el.style.display = 'none';
-    });
-  }
-  if (p.get('colfuture') === 'off') {
-    document.addEventListener('DOMContentLoaded', () => {
-      const el = document.getElementById('futureLogs');
-      if (el) el.style.display = 'none';
-      // Masquer aussi le nav-div au-dessus si futureLogs est vide
-      const nav = el ? el.previousElementSibling : null;
-      if (nav && nav.classList.contains('nav-div')) nav.style.display = 'none';
-    });
-  }</pre>
-        <div style="margin-top:8px">
-          <button class="btn btn-secondary" onclick="copySnippet()" style="font-size:11.5px;padding:5px 12px">
-            📋 Copier le snippet
-          </button>
-          <span class="copy-flash" id="snippetFlash">Copié !</span>
-        </div>
-      </div>
-    </div>
+  <div class="cf">
+    <label>Libellé onglet Collections</label>
+    <input type="text" id="cfgLabelCollections" placeholder="Collections">
   </div>
+</div>
 
-  <!-- ── Output URL ── -->
-  <div class="output-section">
-    <div class="output-label">
-      <div class="output-label-left">
-        <div class="live-dot"></div>
-        URL générée en temps réel
-      </div>
-      <span id="paramCount" style="font-size:10px;color:var(--light)">0 paramètre</span>
-    </div>
-    <div class="output-url" id="outputUrl">
-      <span style="color:var(--light);font-style:italic">Entrez d'abord l'URL de base de votre widget…</span>
-    </div>
-    <div class="output-actions">
-      <button class="btn btn-primary" onclick="copyUrl()">
-        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
-        Copier l'URL
-      </button>
-      <button class="btn btn-secondary" onclick="openPreview()">
-        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
-        Ouvrir
-      </button>
-      <button class="btn btn-secondary" onclick="resetAll()">
-        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
-        Réinitialiser
-      </button>
-      <span class="copy-flash" id="copyFlash">✓ Copié !</span>
-    </div>
-  </div>
+<div class="section-title">Modules Bujo</div>
 
-  <!-- ── Prévisualisation ── -->
-  <div class="preview-section" id="previewSection" style="display:none">
-    <div class="preview-header">
-      <div class="preview-title">
-        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-        Prévisualisation
-      </div>
-      <div class="preview-btn-wrap">
-        <button class="btn btn-secondary" onclick="refreshPreview()" style="font-size:11.5px;padding:4px 10px">↻ Rafraîchir</button>
-        <button class="btn btn-secondary" onclick="closePreview()" style="font-size:11.5px;padding:4px 10px">✕ Fermer</button>
-      </div>
-    </div>
-    <div class="preview-iframe-wrap" id="previewWrap">
-      <iframe id="previewFrame" title="Prévisualisation du widget"></iframe>
-    </div>
-    <div class="preview-placeholder" id="previewPlaceholder">
-      Cliquez sur «&nbsp;Ouvrir&nbsp;» pour prévisualiser le widget avec vos paramètres.
-    </div>
-  </div>
+<div class="tog-row" onclick="toggleField('bday_on')">
+  <span class="tog-label">Anniversaires</span>
+  <div class="tog-sw" id="tog-bday_on"></div>
+</div>
+<div class="tog-row" onclick="toggleField('projet_on')">
+  <span class="tog-label">Projets</span>
+  <div class="tog-sw" id="tog-projet_on"></div>
+</div>
 
+<div class="section-title">Colonnes Bujo</div>
+
+<div class="tog-row" onclick="toggleField('col_cal_on')">
+  <span class="tog-label">Mini calendrier (sidebar)</span>
+  <div class="tog-sw" id="tog-col_cal_on"></div>
+</div>
+<div class="tog-row" onclick="toggleField('col_futurelogs_on')">
+  <span class="tog-label">Future logs (navigation mois/année)</span>
+  <div class="tog-sw" id="tog-col_futurelogs_on"></div>
+</div>
+<div class="tog-row" onclick="toggleField('col_week_on')">
+  <span class="tog-label">Agenda semaine (colonne droite)</span>
+  <div class="tog-sw" id="tog-col_week_on"></div>
+</div>
+
+<div class="save-bar">
+  <button class="btn-save" onclick="saveConfig()">Enregistrer</button>
+  <div class="save-ind" id="saveInd"><div class="save-dot"></div> Sauvegardé</div>
 </div>
 
 <script>
-// ── État ──
-const state = {
-  baseUrl: '',
+'use strict';
+
+// État local : clé -> valeur (toutes les valeurs sont des chaînes)
+let config = {
   titre: '',
-  defaultTab: '',
-  tabs: { bujo: true, lectures: true, collections: true },
-  cols: { colweek: true, colprojets: true, colcal: true, colfuture: true, bday: true },
-  accent: '',
+  accent: '#e8a020',
+  bujo_on: 'true',
+  lectures_on: 'true',
+  collections_on: 'true',
+  label_bujo: '',
+  label_lectures: '',
+  label_collections: '',
+  bday_on: 'true',
+  projet_on: 'true',
+  col_cal_on: 'true',
+  col_futurelogs_on: 'true',
+  col_week_on: 'true'
 };
+// clé -> id de ligne Grist existante (pour update vs add)
+let rowIds = {};
+let saveT = null;
 
-// ── Palette de couleurs prédéfinies ──
-const PALETTE = [
-  { hex: '#e8a020', label: 'Ambre (défaut)' },
-  { hex: '#c06020', label: 'Terracotta' },
-  { hex: '#d94f3a', label: 'Vermillon' },
-  { hex: '#3a7bbf', label: 'Bleu saphir' },
-  { hex: '#2e8b6e', label: 'Vert jade' },
-  { hex: '#8a5cbf', label: 'Violet prune' },
-  { hex: '#c4507a', label: 'Rose fuchsia' },
-  { hex: '#5a8a5a', label: 'Vert forêt' },
-  { hex: '#c07840', label: 'Ocre' },
-  { hex: '#5a7a9a', label: 'Bleu ardoise' },
-  { hex: '#7a5040', label: 'Brun cacao' },
-  { hex: '#4a8a8a', label: 'Teal' },
-];
+const TOGGLE_KEYS = ['bujo_on','lectures_on','collections_on','bday_on','projet_on','col_cal_on','col_futurelogs_on','col_week_on'];
 
-function buildPalette() {
-  const wrap = document.getElementById('colorPalette');
-  wrap.innerHTML = PALETTE.map(c =>
-    `<div class="color-swatch" style="background:${c.hex}" title="${c.label}"
-      data-hex="${c.hex}" onclick="pickColor('${c.hex}')"></div>`
-  ).join('');
-  updateSwatchSelection();
+function toggleField(key) {
+  config[key] = (config[key] === 'false') ? 'true' : 'false';
+  refreshToggles();
 }
 
-function pickColor(hex) {
-  state.accent = hex;
-  document.getElementById('pAccent').value = hex;
-  document.getElementById('pAccentPicker').value = hex;
-  updateSwatchSelection();
-  buildUrl();
-}
-
-function onAccentInput(val) {
-  const hex = val.trim();
-  if (/^#[0-9a-fA-F]{6}$/.test(hex) || /^[0-9a-fA-F]{6}$/.test(hex)) {
-    const normalized = hex.startsWith('#') ? hex : '#' + hex;
-    state.accent = normalized;
-    document.getElementById('pAccentPicker').value = normalized;
-    updateSwatchSelection();
-  } else {
-    state.accent = hex; // laisser tel quel même si invalide
-  }
-  buildUrl();
-}
-
-function onPickerInput(val) {
-  state.accent = val;
-  document.getElementById('pAccent').value = val;
-  updateSwatchSelection();
-  buildUrl();
-}
-
-function updateSwatchSelection() {
-  document.querySelectorAll('.color-swatch').forEach(sw => {
-    sw.classList.toggle('selected', sw.dataset.hex === state.accent);
+function refreshToggles() {
+  TOGGLE_KEYS.forEach(key => {
+    const el = document.getElementById('tog-' + key);
+    if (el) el.classList.toggle('on', config[key] !== 'false');
   });
 }
 
-// ── Toggles ──
-function toggleTab(key) {
-  state.tabs[key] = !state.tabs[key];
-  const el = document.getElementById('tog-' + key);
-  el.classList.toggle('active', state.tabs[key]);
-  buildUrl();
+function refreshFields() {
+  document.getElementById('cfgTitre').value = config.titre || '';
+  document.getElementById('cfgLabelBujo').value = config.label_bujo || '';
+  document.getElementById('cfgLabelLectures').value = config.label_lectures || '';
+  document.getElementById('cfgLabelCollections').value = config.label_collections || '';
+  const hex = config.accent || '#e8a020';
+  document.getElementById('cfgAccentHex').value = hex;
+  document.getElementById('cfgAccentPicker').value = /^#[0-9a-fA-F]{6}$/.test(hex) ? hex : '#e8a020';
+  refreshToggles();
 }
 
-function toggleCol(key) {
-  state.cols[key] = !state.cols[key];
-  const el = document.getElementById('tog-' + key);
-  el.classList.toggle('active', state.cols[key]);
-  buildUrl();
-}
+document.getElementById('cfgAccentPicker').addEventListener('input', e => {
+  config.accent = e.target.value;
+  document.getElementById('cfgAccentHex').value = e.target.value;
+});
+document.getElementById('cfgAccentHex').addEventListener('input', e => {
+  let v = e.target.value.trim();
+  if (v && !v.startsWith('#')) v = '#' + v;
+  config.accent = v;
+  if (/^#[0-9a-fA-F]{6}$/.test(v)) document.getElementById('cfgAccentPicker').value = v;
+});
+document.getElementById('cfgTitre').addEventListener('input', e => { config.titre = e.target.value; });
+document.getElementById('cfgLabelBujo').addEventListener('input', e => { config.label_bujo = e.target.value; });
+document.getElementById('cfgLabelLectures').addEventListener('input', e => { config.label_lectures = e.target.value; });
+document.getElementById('cfgLabelCollections').addEventListener('input', e => { config.label_collections = e.target.value; });
 
-// ── Sections accordéon ──
-function toggleSection(header) {
-  header.classList.toggle('open');
-  const body = header.nextElementSibling;
-  body.classList.toggle('open');
-}
-
-// ── Construit l'URL ──
-function buildUrl() {
-  state.baseUrl = document.getElementById('baseUrl').value.trim();
-  state.titre = document.getElementById('pTitre').value.trim();
-  state.defaultTab = document.getElementById('pDefaultTab').value;
-
-  const params = new URLSearchParams();
-
-  if (state.titre) params.set('titre', state.titre);
-  if (state.accent && state.accent !== '#e8a020') {
-    // Retirer le # pour l'URL
-    params.set('accent', state.accent.replace('#', ''));
-  }
-  if (state.defaultTab) params.set('tab', state.defaultTab);
-  if (!state.tabs.lectures)    params.set('lectures', 'off');
-  if (!state.tabs.collections) params.set('collections', 'off');
-  if (!state.cols.colweek)     params.set('colweek', 'off');
-  if (!state.cols.colprojets)  params.set('colprojets', 'off');
-  if (!state.cols.colcal)      params.set('colcal', 'off');
-if (!state.cols.colfuture)   params.set('colfuture', 'off');
-  if (!state.cols.bday)        params.set('bday', 'off');
-
-  const paramStr = params.toString();
-  const count = [...params.keys()].length;
-  const countEl = document.getElementById('paramCount');
-  countEl.textContent = count === 0 ? '0 paramètre' : count + ' paramètre' + (count > 1 ? 's' : '');
-
-  const outEl = document.getElementById('outputUrl');
-  if (!state.baseUrl) {
-    outEl.innerHTML = '<span style="color:var(--light);font-style:italic">Entrez d\'abord l\'URL de base de votre widget…</span>';
-    return;
-  }
-
-  const fullUrl = state.baseUrl + (paramStr ? '?' + paramStr : '');
-
-  // Coloration syntaxique
-  if (!paramStr) {
-    outEl.innerHTML = `<span class="url-base">${escHtml(state.baseUrl)}</span>`;
-  } else {
-    const pairs = paramStr.split('&').map(pair => {
-      const [k, v] = pair.split('=');
-      return `<span class="url-param-key">${decodeURIComponent(k)}</span><span class="url-sep">=</span><span class="url-param-val">${decodeURIComponent(v || '')}</span>`;
+async function loadConfig() {
+  if (typeof grist === 'undefined') { refreshFields(); return; }
+  try {
+    const raw = await grist.docApi.fetchTable('Config');
+    rowIds = {};
+    (raw.id || []).forEach((id, i) => {
+      const cle = String(raw.cle?.[i] || '');
+      if (!cle) return;
+      config[cle] = String(raw.valeur?.[i] ?? '');
+      rowIds[cle] = id;
     });
-    outEl.innerHTML = `<span class="url-base">${escHtml(state.baseUrl)}</span><span class="url-sep">?</span>` + pairs.join('<span class="url-sep">&amp;</span>');
+  } catch (e) {
+    console.warn('Config: table introuvable ou vide —', e);
+  }
+  refreshFields();
+}
+
+async function saveConfig() {
+  if (typeof grist === 'undefined') { flashSaved(); return; }
+  const actions = [];
+  Object.keys(config).forEach(cle => {
+    const valeur = String(config[cle] ?? '');
+    if (rowIds[cle] !== undefined) {
+      actions.push(['UpdateRecord', 'Config', rowIds[cle], { cle, valeur }]);
+    } else {
+      actions.push(['AddRecord', 'Config', null, { cle, valeur }]);
+    }
+  });
+  try {
+    await grist.docApi.applyUserActions(actions);
+    await loadConfig(); // recharge les ids pour les nouvelles lignes
+    flashSaved();
+  } catch (e) {
+    alert('Erreur lors de l\'enregistrement : ' + e.message);
   }
 }
 
-function getCurrentUrl() {
-  const base = document.getElementById('baseUrl').value.trim();
-  if (!base) return null;
-  const params = new URLSearchParams();
-  if (state.titre) params.set('titre', state.titre);
-  if (state.accent && state.accent !== '#e8a020') params.set('accent', state.accent.replace('#', ''));
-  if (state.defaultTab) params.set('tab', state.defaultTab);
-  if (!state.tabs.lectures)    params.set('lectures', 'off');
-  if (!state.tabs.collections) params.set('collections', 'off');
-  if (!state.cols.colweek)     params.set('colweek', 'off');
-  if (!state.cols.colprojets)  params.set('colprojets', 'off');
-  if (!state.cols.colcal)      params.set('colcal', 'off');
-  if (!state.cols.colfuture)   params.set('colfuture', 'off');
-  if (!state.cols.bday)        params.set('bday', 'off');
-  const ps = params.toString();
-  return base + (ps ? '?' + ps : '');
+function flashSaved() {
+  const ind = document.getElementById('saveInd');
+  ind.classList.add('vis');
+  clearTimeout(saveT);
+  saveT = setTimeout(() => ind.classList.remove('vis'), 2200);
 }
-function copyUrl() {
-  const url = getCurrentUrl();
-  if (!url) return;
-  navigator.clipboard.writeText(url).then(() => {
-    const f = document.getElementById('copyFlash');
-    f.classList.add('vis');
-    setTimeout(() => f.classList.remove('vis'), 2200);
+
+if (typeof grist !== 'undefined') {
+  grist.ready({
+    requiredAccess: 'full',
+    columns: [
+      { name: 'cle',    title: 'Clé',    type: 'Text' },
+      { name: 'valeur', title: 'Valeur', type: 'Text' }
+    ]
   });
+  loadConfig();
+} else {
+  refreshFields();
 }
-
-function openPreview() {
-  const url = getCurrentUrl();
-  if (!url) { alert('Entrez d\'abord l\'URL de base du widget.'); return; }
-  const section = document.getElementById('previewSection');
-  const wrap = document.getElementById('previewWrap');
-  const ph = document.getElementById('previewPlaceholder');
-  section.style.display = '';
-  ph.style.display = 'none';
-  wrap.classList.add('open');
-  document.getElementById('previewFrame').src = url;
-  section.scrollIntoView({ behavior: 'smooth', block: 'start' });
-}
-
-function refreshPreview() {
-  const url = getCurrentUrl();
-  if (url) document.getElementById('previewFrame').src = url;
-}
-
-function closePreview() {
-  const wrap = document.getElementById('previewWrap');
-  const section = document.getElementById('previewSection');
-  wrap.classList.remove('open');
-  setTimeout(() => { section.style.display = 'none'; }, 300);
-  document.getElementById('previewFrame').src = '';
-}
-
-function resetAll() {
-  document.getElementById('baseUrl').value = '';
-  document.getElementById('pTitre').value = '';
-  document.getElementById('pDefaultTab').value = '';
-  document.getElementById('pAccent').value = '';
-  document.getElementById('pAccentPicker').value = '#e8a020';
-  state.accent = '';
-  ['bujo','lectures','collections'].forEach(k => {
-    state.tabs[k] = true;
-    document.getElementById('tog-'+k).classList.add('active');
-  });
-  ['colweek','colprojets','colcal','colfuture','bday'].forEach(k => {
-    state.cols[k] = true;
-    document.getElementById('tog-'+k).classList.add('active');
-  });
-  state.baseUrl = ''; state.titre = ''; state.defaultTab = '';
-  updateSwatchSelection();
-  buildUrl();
-}
-
-function copySnippet() {
-  const code = document.getElementById('snippetCode').textContent;
-  navigator.clipboard.writeText(code).then(() => {
-    const f = document.getElementById('snippetFlash');
-    f.classList.add('vis');
-    setTimeout(() => f.classList.remove('vis'), 2200);
-  });
-}
-
-function escHtml(s) {
-  return String(s)
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;');
-}
-
-// ── Init ──
-buildPalette();
-buildUrl();
 </script>
 </body>
 </html>
