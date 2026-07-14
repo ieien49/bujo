@@ -1,0 +1,1610 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Journal Mobile</title>
+<script src="https://docs.getgrist.com/grist-plugin-api.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,500;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg: #ffffff;
+  --bg-soft: #f5f5f4;
+  --bg-hover: #efefed;
+  --border: #e8e8e6;
+  --text: #1a1a1a;
+  --muted: #8a8a88;
+  --light: #c4c4c2;
+  --accent: #e8a020;
+  --accent-soft: #fef3dc;
+  --radius: 8px;
+}
+
+html, body { width: 100%; height: 100%; }
+body {
+  font-family: 'DM Sans', -apple-system, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  font-size: 13px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+}
+
+/* ══════════════════════════════════════════
+   ONGLETS (compacts, 2 rangées)
+   ══════════════════════════════════════════ */
+.app-tabs {
+  display: flex;
+  gap: 4px;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg);
+  padding: 6px 8px;
+  flex-shrink: 0;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+.app-tab {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 5px 10px;
+  font-size: 12px;
+  color: var(--muted);
+  cursor: pointer;
+  border: none;
+  background: none;
+  border-bottom: 2px solid transparent;
+  border-radius: 0;
+  margin-bottom: -1px;
+  font-weight: 700;
+  white-space: nowrap;
+  transition: color .12s;
+  font-family: 'DM Sans', inherit;
+  text-transform: uppercase;
+}
+.app-tab:hover { color: var(--text); }
+.app-tab.active {
+  color: var(--accent);
+  border-bottom-color: var(--accent);
+}
+.app-tab svg { width: 12px; height: 12px; }
+.tab-badge {
+  font-size: 9px;
+  background: var(--border);
+  color: var(--light);
+  border-radius: 8px;
+  padding: 1px 4px;
+  min-width: 14px;
+  text-align: center;
+}
+
+/* ══════════════════════════════════════════
+   CORPS
+   ══════════════════════════════════════════ */
+.app-body { flex: 1; overflow: hidden; display: flex; }
+.page { display: none; flex: 1; overflow: hidden; flex-direction: column; }
+.page.active { display: flex; }
+
+/* ══════════════════════════════════════════
+   BUJO MOBILE (layout unique colonne)
+   ══════════════════════════════════════════ */
+#page-bujo { flex-direction: column; }
+.bujo-header {
+  padding: 8px;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+.bujo-header button {
+  flex: 1;
+  padding: 7px 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg-soft);
+  color: var(--muted);
+  font-size: 11px;
+  cursor: pointer;
+  font-family: inherit;
+  font-weight: 500;
+  transition: all .12s;
+}
+.bujo-nav-btn.active {
+  background: var(--accent);
+  color: #fff;
+  border-color: var(--accent);
+}
+.bujo-header button:active:not(.active) {
+  background: var(--bg-hover);
+}
+.bujo-main { flex: 1; overflow-y: auto; padding: 8px; -webkit-overflow-scrolling: touch; }
+
+/* Sections */
+.section { margin-bottom: 12px; }
+.sec-label {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--light);
+  margin-bottom: 6px;
+  padding-bottom: 4px;
+  border-bottom: 1px solid var(--border);
+}
+.day-group { margin-bottom: 8px; }
+.day-hdr {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--muted);
+  padding-left: 0;
+  margin-bottom: 4px;
+}
+.day-hdr.dh-today { color: var(--text); }
+.day-hdr.dh-late { color: #c0622a; }
+
+/* Tâches */
+.titem {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 8px 10px;
+  border-radius: var(--radius);
+  border: none;
+  margin-bottom: 3px;
+  background: var(--bg-soft);
+  transition: background .12s;
+  -webkit-user-select: text;
+  user-select: text;
+}
+.titem:active { background: var(--bg-hover); }
+.titem.done { opacity: .35; }
+.tchk {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  border: 1.5px solid var(--light);
+  flex-shrink: 0;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all .12s;
+  margin-top: 2px;
+}
+.tchk:active { border-color: var(--accent); }
+.tchk.checked { background: var(--accent); border-color: var(--accent); }
+.tchk.checked::after {
+  content: '';
+  display: block;
+  width: 5px;
+  height: 3px;
+  border-left: 1.5px solid #fff;
+  border-bottom: 1.5px solid #fff;
+  transform: rotate(-45deg) translateY(-1px);
+}
+.tname {
+  flex: 1;
+  font-size: 12px;
+  color: var(--text);
+  line-height: 1.35;
+  font-weight: 500;
+  word-break: break-word;
+}
+.titem.done .tname { text-decoration: line-through; color: var(--muted); }
+.titem.bday-item .tname { color: #6b3a55; }
+.tage { font-size: 9px; color: #b090a0; margin-left: 2px; }
+.tedit {
+  opacity: 0;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--light);
+  font-size: 13px;
+  padding: 2px 4px;
+  flex-shrink: 0;
+  transition: opacity .12s;
+}
+.titem:active .tedit { opacity: 0.7; }
+.empty-bujo {
+  font-size: 12px;
+  color: var(--light);
+  padding: 24px 8px;
+  text-align: center;
+}
+
+/* ══════════════════════════════════════════
+   CALENDRIER MINI
+   ══════════════════════════════════════════ */
+.cal-wrap {
+  background: var(--bg-soft);
+  border-radius: var(--radius);
+  padding: 8px;
+  margin-bottom: 10px;
+}
+.cal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 6px;
+}
+.cal-title {
+  font-size: 8.5px;
+  font-weight: 500;
+  color: var(--muted);
+  letter-spacing: .07em;
+  text-transform: uppercase;
+}
+.cal-nav button {
+  border: none;
+  background: none;
+  cursor: pointer;
+  color: var(--light);
+  font-size: 12px;
+  padding: 2px 4px;
+  line-height: 1;
+  transition: color .12s;
+}
+.cal-nav button:active { color: var(--accent); }
+.cal-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 1px;
+  text-align: center;
+}
+.cal-day-name {
+  font-size: 7.5px;
+  color: var(--light);
+  padding: 1px 0 2px;
+  font-weight: 500;
+}
+.cal-day {
+  font-size: 8px;
+  color: var(--muted);
+  padding: 2px 0;
+  border-radius: 50%;
+  cursor: default;
+  line-height: 1.6;
+  aspect-ratio: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+.cal-day.has-task, .cal-day.has-bday { cursor: pointer; }
+.cal-day.has-task:active, .cal-day.has-bday:active { background: var(--bg-hover); }
+.cal-day.today { background: var(--text); color: #fff; font-weight: 600; font-size: 7.5px; }
+.cal-day.today.has-task:active { background: #333; }
+.cal-day.has-task::after {
+  content: '';
+  position: absolute;
+  bottom: 1px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 2px;
+  height: 2px;
+  border-radius: 50%;
+  background: var(--light);
+}
+.cal-day.today.has-task::after { background: rgba(255,255,255,.6); }
+.cal-day.has-bday { outline: 1px solid #d4b8c8; outline-offset: 0px; }
+.cal-day.other { color: var(--light); }
+
+/* ══════════════════════════════════════════
+   MODALE BUJO
+   ══════════════════════════════════════════ */
+.bmod-ov {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,.25);
+  z-index: 60;
+  display: none;
+  align-items: flex-end;
+  justify-content: center;
+  backdrop-filter: blur(1px);
+}
+.bmod-ov.open { display: flex; }
+.bmod {
+  background: var(--bg);
+  border-radius: var(--radius) var(--radius) 0 0;
+  padding: 16px 12px 24px;
+  width: 100%;
+  max-width: 100%;
+  box-shadow: 0 -4px 16px rgba(0,0,0,.1);
+  border: 1px solid var(--border);
+  border-bottom: none;
+  max-height: 88vh;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+.bmod-title {
+  font-size: 13px;
+  font-weight: 600;
+  margin-bottom: 12px;
+}
+.bf {
+  margin-bottom: 10px;
+}
+.bf label {
+  display: block;
+  font-size: 9px;
+  font-weight: 500;
+  letter-spacing: .07em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 4px;
+}
+.bf input[type=text] {
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  font-size: 13px;
+  color: var(--text);
+  background: var(--bg);
+  outline: none;
+  font-family: inherit;
+  transition: border-color .12s;
+  -webkit-appearance: none;
+}
+.bf input[type=text]:focus { border-color: var(--accent); }
+.bhint {
+  font-size: 9px;
+  color: var(--light);
+  margin-top: 3px;
+}
+.presets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 3px;
+  margin-top: 5px;
+}
+.preset {
+  font-size: 9px;
+  padding: 4px 6px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--bg-soft);
+  color: var(--muted);
+  cursor: pointer;
+  font-family: inherit;
+  transition: all .1s;
+  -webkit-appearance: none;
+}
+.preset:active { background: var(--bg-hover); border-color: var(--accent); }
+.tog-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: background .12s;
+}
+.tog-row:active { background: var(--bg-hover); }
+.tog-label {
+  font-size: 12px;
+  color: var(--muted);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.tog-label svg { width: 12px; height: 12px; }
+.tog-sw {
+  width: 26px;
+  height: 15px;
+  border-radius: 8px;
+  background: var(--border);
+  position: relative;
+  transition: background .2s;
+  flex-shrink: 0;
+}
+.tog-sw.on { background: #d8a0bc; }
+.tog-sw::after {
+  content: '';
+  position: absolute;
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  background: #fff;
+  top: 2px;
+  left: 2px;
+  transition: transform .2s;
+}
+.tog-sw.on::after { transform: translateX(11px); }
+.bday-hint {
+  font-size: 9px;
+  color: #b090a0;
+  margin-top: 4px;
+  display: none;
+}
+.bday-hint.vis { display: block; }
+.bmod-act {
+  display: flex;
+  justify-content: flex-end;
+  gap: 6px;
+  margin-top: 14px;
+}
+.bc, .bs, .bd {
+  padding: 8px 12px;
+  border: none;
+  border-radius: var(--radius);
+  font-size: 12px;
+  cursor: pointer;
+  font-family: inherit;
+  font-weight: 500;
+  transition: all .12s;
+}
+.bc {
+  background: var(--bg-soft);
+  color: var(--muted);
+  border: 1px solid var(--border);
+}
+.bc:active { background: var(--bg-hover); }
+.bs {
+  background: var(--text);
+  color: #fff;
+}
+.bs:active { background: #333; }
+.bd {
+  background: var(--bg-soft);
+  color: #c06060;
+  border: 1px solid #f0d0d0;
+  margin-right: auto;
+}
+.bd:active { background: #fff5f5; }
+
+/* ══════════════════════════════════════════
+   PAGE LECTURES
+   ══════════════════════════════════════════ */
+#page-lectures {
+  flex-direction: column;
+}
+.lec-header {
+  padding: 8px;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+.lec-search-wrap {
+  flex: 1;
+  position: relative;
+}
+.lec-search-wrap input {
+  width: 100%;
+  padding: 6px 8px 6px 24px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  font-size: 12px;
+  color: var(--text);
+  background: var(--bg-soft);
+  outline: none;
+  font-family: inherit;
+  transition: border-color .12s;
+  -webkit-appearance: none;
+}
+.lec-search-wrap input:focus {
+  border-color: var(--accent);
+  background: var(--bg);
+}
+.lec-search-wrap input::placeholder { color: var(--light); }
+.lec-search-icon {
+  position: absolute;
+  left: 7px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--light);
+  pointer-events: none;
+  width: 11px;
+  height: 11px;
+}
+.lec-new-btn {
+  padding: 6px 10px;
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  border-radius: var(--radius);
+  font-size: 11px;
+  cursor: pointer;
+  font-family: inherit;
+  font-weight: 600;
+  transition: opacity .12s;
+}
+.lec-new-btn:active { opacity: .85; }
+.lec-main { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; }
+.lec-list { padding: 8px; }
+.lec-row {
+  display: flex;
+  gap: 8px;
+  padding: 8px;
+  background: var(--bg-soft);
+  border-radius: var(--radius);
+  margin-bottom: 6px;
+  cursor: pointer;
+  transition: all .12s;
+}
+.lec-row:active { background: var(--bg-hover); }
+.lec-cover {
+  width: 32px;
+  height: 44px;
+  border-radius: 3px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  flex-shrink: 0;
+}
+.lec-cover img { width: 100%; height: 100%; object-fit: cover; border-radius: 3px; }
+.lec-info { flex: 1; min-width: 0; }
+.lec-titre {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text);
+  line-height: 1.3;
+  margin-bottom: 2px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+.lec-auteur {
+  font-size: 10px;
+  color: var(--muted);
+  margin-bottom: 3px;
+}
+.lec-badge {
+  display: inline-block;
+  font-size: 8px;
+  padding: 2px 5px;
+  border-radius: 4px;
+  font-weight: 500;
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+.lec-badge.lu { background: #d3e8d3; color: #2d5a2d; }
+.lec-badge.cours { background: #fde8c8; color: #7a4a00; }
+.lec-badge.lire { background: #e8e8f0; color: #3d3d6b; }
+
+/* ══════════════════════════════════════════
+   MODALE LECTURE
+   ══════════════════════════════════════════ */
+.pop-ov {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,.25);
+  display: none;
+  align-items: flex-end;
+  justify-content: center;
+  z-index: 50;
+  backdrop-filter: blur(1px);
+}
+.pop-ov.open { display: flex; }
+.dpanel {
+  background: var(--bg);
+  border-radius: var(--radius) var(--radius) 0 0;
+  width: 100%;
+  max-height: 88vh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 -4px 16px rgba(0,0,0,.1);
+  border: 1px solid var(--border);
+  border-bottom: none;
+  overflow: hidden;
+}
+.ph {
+  display: flex;
+  align-items: center;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+  gap: 8px;
+}
+.ph-title {
+  font-family: 'Lora', serif;
+  font-size: 13px;
+  font-weight: 500;
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.ph-actions { display: flex; gap: 4px; flex-shrink: 0; }
+.btn-ico {
+  width: 28px;
+  height: 28px;
+  border-radius: var(--radius);
+  border: none;
+  background: none;
+  cursor: pointer;
+  color: var(--muted);
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all .12s;
+}
+.btn-ico:active { background: var(--bg-hover); color: var(--text); }
+.pbody {
+  flex: 1;
+  overflow-y: auto;
+  padding: 12px;
+  -webkit-overflow-scrolling: touch;
+}
+.rh {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 12px;
+  align-items: flex-start;
+}
+.rcov {
+  width: 60px;
+  height: 84px;
+  border-radius: 3px;
+  object-fit: cover;
+  border: 1px solid var(--border);
+  flex-shrink: 0;
+}
+.rcov-ph {
+  width: 60px;
+  height: 84px;
+  border-radius: 3px;
+  background: var(--bg-soft);
+  border: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  flex-shrink: 0;
+}
+.rmeta { flex: 1; }
+.rtitle {
+  font-family: 'Lora', serif;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.3;
+  margin-bottom: 3px;
+}
+.rauteur {
+  font-size: 11px;
+  color: var(--accent);
+  margin-bottom: 8px;
+}
+.rprops { margin-bottom: 10px; }
+.rprop {
+  display: grid;
+  grid-template-columns: 70px 1fr;
+  font-size: 11px;
+  padding: 4px 0;
+  border-bottom: 1px solid var(--bg-soft);
+  align-items: center;
+}
+.rprop-l { color: var(--muted); }
+.rsec { margin-bottom: 10px; }
+.rsec-t {
+  font-size: 9px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  color: var(--muted);
+  margin-bottom: 4px;
+}
+.rsec-b {
+  font-size: 11.5px;
+  line-height: 1.6;
+  background: var(--bg-soft);
+  border-radius: var(--radius);
+  padding: 8px 10px;
+  color: var(--text);
+}
+.rsec-b blockquote {
+  border-left: 2px solid var(--border);
+  margin: 4px 0;
+  padding-left: 8px;
+  color: var(--muted);
+  font-style: italic;
+}
+
+/* ══════════════════════════════════════════
+   PAGE COLLECTIONS
+   ══════════════════════════════════════════ */
+#page-collections {
+  flex-direction: column;
+}
+.col-header {
+  padding: 8px;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+.col-header button {
+  flex: 1;
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--accent);
+  color: #fff;
+  font-size: 11px;
+  cursor: pointer;
+  font-family: inherit;
+  font-weight: 600;
+  transition: opacity .12s;
+}
+.col-header button:active { opacity: .85; }
+.col-main {
+  flex: 1;
+  overflow-y: auto;
+  padding: 8px;
+  -webkit-overflow-scrolling: touch;
+}
+.col-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 48px 20px;
+  text-align: center;
+  gap: 8px;
+  color: var(--light);
+  font-size: 12px;
+}
+.col-empty-icon {
+  font-size: 32px;
+  opacity: .3;
+  margin-bottom: 4px;
+}
+.col-list { display: flex; flex-direction: column; gap: 6px; }
+.col-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px;
+  background: var(--bg-soft);
+  border-radius: var(--radius);
+  cursor: pointer;
+  border: none;
+  font-family: inherit;
+  transition: all .12s;
+}
+.col-item:active { background: var(--bg-hover); }
+.col-item-icon {
+  width: 24px;
+  height: 24px;
+  border-radius: 5px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  overflow: hidden;
+}
+.col-item-icon svg { width: 12px; height: 12px; stroke: #fff; color: #fff; }
+.col-item-label {
+  flex: 1;
+  font-size: 12px;
+  color: var(--text);
+  font-weight: 500;
+}
+.col-item-count {
+  font-size: 9px;
+  color: var(--light);
+  background: var(--bg);
+  border-radius: 8px;
+  padding: 2px 5px;
+  min-width: 16px;
+  text-align: center;
+}
+
+/* Utils */
+.esc { word-break: break-word; overflow-wrap: break-word; }
+</style>
+</head>
+<body>
+
+<!-- ONGLETS -->
+<div class="app-tabs">
+  <button class="app-tab active" data-tab="bujo" onclick="switchTab('bujo')">
+    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8"/><path d="M3 10a2 2 0 0 1 .709-1.528l7-6a2 2 0 0 1 2.582 0l7 6A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
+    <span id="tabLabel-bujo">Bujo</span>
+  </button>
+  <button class="app-tab" data-tab="lectures" onclick="switchTab('lectures')">
+    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m16 6 4 14"/><path d="M12 6v14"/><path d="M8 8v12"/><path d="M4 4v16"/></svg>
+    <span id="tabLabel-lectures">Lectures</span> <span class="tab-badge" id="badge-lectures"></span>
+  </button>
+  <button class="app-tab" data-tab="collections" onclick="switchTab('collections')">
+    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="7" height="7" rx="1"/><rect x="15" y="3" width="7" height="7" rx="1"/><rect x="2" y="14" width="7" height="7" rx="1"/><rect x="15" y="14" width="7" height="7" rx="1"/></svg>
+    <span id="tabLabel-collections">Collections</span> <span class="tab-badge" id="badge-cols"></span>
+  </button>
+</div>
+
+<!-- CONTENU -->
+<div class="app-body">
+
+  <!-- PAGE BUJO -->
+  <div class="page active" id="page-bujo">
+    <div class="bujo-header">
+      <button onclick="setView('today')" class="bujo-nav-btn active" id="btn-today">Aujourd'hui</button>
+      <button onclick="setView('late')" class="bujo-nav-btn" id="btn-late">Retard</button>
+      <button onclick="setView('week')" class="bujo-nav-btn" id="btn-week">Semaine</button>
+      <button onclick="setView('projects')" class="bujo-nav-btn" id="btn-projects">Projets</button>
+      <button class="lec-new-btn" onclick="openBmod()" style="flex:0 1 auto">+</button>
+    </div>
+    <div class="bujo-main" id="bujoMain"></div>
+  </div>
+
+  <!-- PAGE LECTURES -->
+  <div class="page" id="page-lectures">
+    <div class="lec-header">
+      <div class="lec-search-wrap">
+        <span class="lec-search-icon">🔍</span>
+        <input type="text" id="lecSearch" placeholder="Rechercher…">
+      </div>
+      <button class="lec-new-btn" onclick="lecCreate()">+</button>
+    </div>
+    <div class="lec-main">
+      <div class="lec-list" id="lecList"></div>
+    </div>
+  </div>
+
+  <!-- PAGE COLLECTIONS -->
+  <div class="page" id="page-collections">
+    <div class="col-header">
+      <button onclick="openColMod()">+ Collection</button>
+    </div>
+    <div class="col-main" id="colMain">
+      <div class="col-empty" id="colEmpty">
+        <div class="col-empty-icon">📂</div>
+        Aucune collection
+      </div>
+      <div class="col-list" id="colList"></div>
+    </div>
+  </div>
+
+</div>
+
+<!-- MODALE BUJO -->
+<div class="bmod-ov" id="bmodOv" onclick="if(event.target===this)closeBmod()">
+  <div class="bmod">
+    <div class="bmod-title" id="bmodTitle">Nouvelle tâche</div>
+    <div class="bf">
+      <label>Tâche</label>
+      <input type="text" id="bmodName" placeholder="Description…">
+    </div>
+    <div class="bf" id="bdayTogWrap" style="display:none">
+      <div class="tog-row" onclick="toggleBday()">
+        <span class="tog-label">🎂 Anniversaire</span>
+        <div class="tog-sw" id="bdayTog"></div>
+      </div>
+      <div class="bday-hint" id="bdayHint">Date de naissance (format JJ/MM/AAAA)</div>
+    </div>
+    <div class="bf">
+      <label id="bmodDateLbl">Date</label>
+      <input type="text" id="bmodDate" placeholder="JJ/MM/AAAA">
+      <div class="bhint" id="bmodDateHint">ex: 25/03/2025</div>
+      <div class="presets" id="bmodPresets">
+        <button class="preset" onclick="setPreset('today')">Aujourd'hui</button>
+        <button class="preset" onclick="setPreset('tomorrow')">Demain</button>
+        <button class="preset" onclick="setPreset('week')">Semaine</button>
+        <button class="preset" onclick="setPreset('month')">Mois</button>
+      </div>
+    </div>
+    <div class="bf" id="projetTogWrap">
+  <div class="tog-row" onclick="toggleProjet()">
+    <span class="tog-label">📌 Projet</span>
+    <div class="tog-sw" id="projetTog"></div>
+  </div>
+</div>
+    <div class="bmod-act">
+      <button class="bd" id="btnBdel" style="display:none" onclick="deleteBTask()">Supprimer</button>
+      <button class="bc" onclick="closeBmod()">Annuler</button>
+      <button class="bs" onclick="saveBTask()">Valider</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODALE LECTURES -->
+<div class="pop-ov" id="popOv" onclick="if(event.target===this)lecClosePanel()">
+  <div class="dpanel">
+    <div class="ph">
+      <div class="ph-title" id="popTitle">—</div>
+      <div class="ph-actions">
+        <button class="btn-ico" onclick="lecClosePanel()">✕</button>
+      </div>
+    </div>
+    <div class="pbody" id="popBody"></div>
+  </div>
+</div>
+
+<script>
+'use strict';
+const pad = n => String(n).padStart(2,'0');
+const today = new Date(); today.setHours(0,0,0,0);
+const todayStr = `${today.getFullYear()}-${pad(today.getMonth()+1)}-${pad(today.getDate())}`;
+const thisYear = today.getFullYear();
+const MFR = ['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
+const MSH = ['jan','fév','mar','avr','mai','jun','jul','aoû','sep','oct','nov','déc'];
+const DFR = ['Dimanche','Lundi','Mardi','Mercredi','Jeudi','Vendredi','Samedi'];
+
+let tasks = [];
+let lecRecs = [];
+let currentView = 'today';
+let calY = today.getFullYear(), calM = today.getMonth();
+let editIdx = null;
+let isBday = false;
+let isProjet = false;
+let lecSearch = '';
+let lecSelId = null;
+let lecMode = null;
+
+let config = {
+  titre: '',
+  accent: '#e8a020',
+  bujo_on: 'true',
+  lectures_on: 'true',
+  collections_on: 'true',
+  label_bujo: '',
+  label_lectures: '',
+  label_collections: '',
+  bday_on: 'true',
+  projet_on: 'true',
+  col_week_on: 'true'
+};
+
+// ══ NAVIGATION ══
+function switchTab(tab) {
+  document.querySelectorAll('.app-tab').forEach(t => t.classList.toggle('active', t.dataset.tab === tab));
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById('page-' + tab).classList.add('active');
+  if (tab === 'bujo') renderMain();
+  if (tab === 'lectures') lecRender();
+  if (tab === 'collections') colRender();
+}
+
+// ══ CALENDRIER ══
+function calMove(dir) {
+  calM += dir;
+  if (calM > 11) { calM = 0; calY++; }
+  else if (calM < 0) { calM = 11; calY--; }
+  renderMain();
+}
+
+// ══ HELPERS ══
+function classify(t) {
+  const d = t.date || '';
+  if (/^\d{4}-\d{2}-\d{2}$/.test(d)) return 'full';
+  if (/^\d{4}-\d{2}$/.test(d)) return 'monthly';
+  if (/^\d{4}$/.test(d)) return 'yearly';
+  return 'none';
+}
+function isLate(t) { return !t.bday && classify(t)==='full' && t.date<todayStr && !t.done; }
+function isWeek(t) {
+  if(t.bday || classify(t)!=='full') return false;
+  const tm = new Date(today); tm.setDate(today.getDate()+1);
+  const nw = new Date(today); nw.setDate(today.getDate()+8);
+  const dt = new Date(t.date+'T00:00:00');
+  return dt>=tm && dt<nw;
+}
+function esc(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+// ══ RENDU TÂCHE ══
+function tHTML(t,i,age) {
+  if (t.bday) {
+    const a = age !== undefined ? `<span class="tage">${age} ans</span>` : '';
+    return `<div class="titem bday-item">
+      <div class="tchk" onclick="toggleT(${i})"></div>
+      <div class="tname">🎂 ${esc(t.name)}${a}</div>
+      <button class="tedit" onclick="openBmod(${i})">✎</button>
+    </div>`;
+  }
+  return `<div class="titem${t.done?' done':''}">
+    <div class="tchk${t.done?' checked':''}" onclick="toggleT(${i})"></div>
+    <div class="tname">${esc(t.name)}</div>
+    <button class="tedit" onclick="openBmod(${i})">✎</button>
+  </div>`;
+}
+
+// ══ RENDU PRINCIPAL ══
+function renderMain() {
+  const el = document.getElementById('bujoMain');
+  let html = '';
+  
+  if (currentView === 'today') {
+    const todayT = tasks.filter(t=>!t.bday&&!t.projet&&t.date===todayStr);
+    // Anniversaires du jour (comparer MM-DD seulement)
+    const mmdd = todayStr.slice(5);
+    const todayB = config.bday_on === 'false' ? [] : tasks.filter(t=>t.bday && t.date.slice(5)===mmdd);
+    if (todayT.length || todayB.length) {
+      html += `<div class="section"><div class="sec-label">Aujourd'hui</div>`;
+      html += todayB.map(t=>tHTML(t,tasks.indexOf(t))).join('');
+      html += todayT.map(t=>tHTML(t,tasks.indexOf(t))).join('');
+      html += `</div>`;
+    } else {
+      html = `<div class="empty-bujo">Aucune tâche pour aujourd'hui</div>`;
+    }
+  } else if (currentView === 'late') {
+    const late = tasks.filter(t => isLate(t) && !t.projet);
+    if (late.length) {
+      html += `<div class="section"><div class="sec-label">En retard</div>`;
+      html += late.map(t=>tHTML(t,tasks.indexOf(t))).join('');
+      html += `</div>`;
+    } else {
+      html = `<div class="empty-bujo">Aucune tâche en retard</div>`;
+    }
+  } else if (currentView === 'week') {
+    const wg = {};
+    tasks.filter(t=>isWeek(t) && !t.projet).forEach(t=>{
+      if(!wg[t.date]) wg[t.date]=[];
+      wg[t.date].push(t);
+    });
+    const wk = Object.keys(wg).sort();
+    if (wk.length) {
+      html += `<div class="section"><div class="sec-label">Cette semaine</div>`;
+      wk.forEach(k=>{
+        html += `<div class="day-group"><div class="day-hdr">${k}</div>`;
+        html += wg[k].map(t=>tHTML(t,tasks.indexOf(t))).join('');
+        html += `</div>`;
+      });
+      html += `</div>`;
+    } else {
+      html = `<div class="empty-bujo">Aucune tâche</div>`;
+    }
+  } else if (currentView === 'projects') {
+    const proj = tasks.filter(t=>t.projet).sort((a,b)=>(a.done===b.done)?a.date.localeCompare(b.date):(a.done?1:-1));
+    if (proj.length) {
+      html += `<div class="section"><div class="sec-label">Projets</div>`;
+      html += proj.map(t=>tHTML(t,tasks.indexOf(t))).join('');
+      html += `</div>`;
+    } else {
+      html = `<div class="empty-bujo">Aucun projet</div>`;
+    }
+  }
+  
+  el.innerHTML = html;
+}
+
+function renderCalendarView() {
+  const wrap = document.createElement('div');
+  wrap.className = 'cal-wrap';
+  wrap.style.marginBottom = '0';
+  
+  const header = document.createElement('div');
+  header.className = 'cal-header';
+  header.innerHTML = `
+    <div class="cal-title">${MFR[calM].slice(0,3).toUpperCase()} ${calY}</div>
+    <div class="cal-nav">
+      <button onclick="calMove(-1)">‹</button>
+      <button onclick="calMove(1)">›</button>
+    </div>`;
+  
+  const g = document.createElement('div');
+  g.className = 'cal-grid';
+  
+  ['L','M','M','J','V','S','D'].forEach(d => {
+    const e = document.createElement('div');
+    e.className = 'cal-day-name';
+    e.textContent = d;
+    g.appendChild(e);
+  });
+  
+  const off = (new Date(calY, calM, 1).getDay() + 6) % 7;
+  const dim = new Date(calY, calM+1, 0).getDate();
+  const tds = new Set(tasks.filter(t=>!t.bday&&/^\d{4}-\d{2}-\d{2}$/.test(t.date)).map(t=>t.date));
+  const bds = new Set();
+  tasks.filter(t=>t.bday).forEach(t=>{
+    const mx = t.date.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    if (mx) bds.add(`${calY}-${mx[2]}-${mx[3]}`);
+  });
+  
+  for (let i=0; i<off; i++) {
+    const e = document.createElement('div');
+    e.className = 'cal-day other';
+    g.appendChild(e);
+  }
+  
+  for (let d=1; d<=dim; d++) {
+    const e = document.createElement('div');
+    e.className = 'cal-day';
+    e.textContent = d;
+    const ds = `${calY}-${pad(calM+1)}-${pad(d)}`;
+    if (ds === todayStr) e.classList.add('today');
+    if (tds.has(ds)) e.classList.add('has-task');
+    if (bds.has(ds)) e.classList.add('has-bday');
+    g.appendChild(e);
+  }
+  
+  wrap.appendChild(header);
+  wrap.appendChild(g);
+  return wrap.outerHTML;
+}
+
+function setView(v) {
+  currentView = v;
+  // Mettre à jour boutons actifs
+  document.querySelectorAll('.bujo-nav-btn').forEach(btn => btn.classList.remove('active'));
+  const btnMap = {'today':'btn-today', 'late':'btn-late', 'week':'btn-week', 'projects':'btn-projects'};
+  const btnId = btnMap[v];
+  if (btnId) document.getElementById(btnId).classList.add('active');
+  renderMain();
+}
+
+function toggleT(i) {
+  tasks[i].done = !tasks[i].done;
+  gBujoUpdate(tasks[i]);
+  renderMain();
+}
+
+// ══ MODALE BUJO ══
+function openBmod(i) {
+  editIdx = i !== undefined ? i : null;
+  const t = editIdx !== null ? tasks[editIdx] : null;
+  isBday = t ? !!t.bday : false;
+  isProjet = t ? !!t.projet : false;
+  document.getElementById('bmodTitle').textContent = t ? 'Modifier' : 'Nouvelle tâche';
+  document.getElementById('bmodName').value = t ? t.name : '';
+  document.getElementById('btnBdel').style.display = t ? 'block' : 'none';
+  document.getElementById('bdayTogWrap').style.display = config.bday_on === 'false' ? 'none' : 'block';
+document.getElementById('projetTogWrap').style.display = config.projet_on === 'false' ? 'none' : 'block';
+  refreshBdayUI();
+  document.getElementById('bmodDate').value = t ? formatDateForInput(t.date) : '';
+  document.getElementById('bmodOv').classList.add('open');
+  setTimeout(()=>document.getElementById('bmodName').focus(), 50);
+}
+
+function closeBmod() {
+  document.getElementById('bmodOv').classList.remove('open');
+  editIdx = null;
+  isBday = false;
+}
+
+function toggleBday() {
+  isBday = !isBday;
+  refreshBdayUI();
+}
+
+function refreshBdayUI() {
+  document.getElementById('bdayTog').classList.toggle('on', isBday);
+  document.getElementById('bdayHint').classList.toggle('vis', isBday);
+  document.getElementById('bmodDateLbl').textContent = isBday ? 'Date de naissance' : 'Date';
+  document.getElementById('bmodDateHint').textContent = isBday ? 'JJ/MM/AAAA ex: 14/07/1990' : 'JJ/MM/AAAA';
+  document.getElementById('bmodPresets').style.display = isBday ? 'none' : 'flex';
+}
+
+function toggleProjet() {
+  isProjet = !isProjet;
+  document.getElementById('projetTog').classList.toggle('on', isProjet);
+}
+
+function setPreset(p) {
+  const x = new Date(today);
+  let v = '';
+  if (p==='today') v=todayStr;
+  if (p==='tomorrow') { x.setDate(x.getDate()+1); v=`${x.getFullYear()}-${pad(x.getMonth()+1)}-${pad(x.getDate())}`; }
+  if (p==='week') { x.setDate(x.getDate()+3); v=`${x.getFullYear()}-${pad(x.getMonth()+1)}-${pad(x.getDate())}`; }
+  if (p==='month') { x.setMonth(x.getMonth()+1); v=`${x.getFullYear()}-${pad(x.getMonth()+1)}`; }
+  document.getElementById('bmodDate').value = formatDateForInput(v);
+}
+
+function formatDateForInput(s) {
+  if (!s) return '';
+  let m = s.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (m) return `${m[3]}/${m[2]}/${m[1]}`;
+  m = s.match(/^(\d{4})-(\d{2})$/);
+  if (m) return `${m[2]}/${m[1]}`;
+  return s;
+}
+
+function parseInputDate(s) {
+  s = s.trim();
+  if (!s) return '';
+  let m = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+  if (m) return `${m[3]}-${pad(m[2])}-${pad(m[1])}`;
+  m = s.match(/^(\d{1,2})\/(\d{4})$/);
+  if (m) return `${m[2]}-${pad(m[1])}`;
+  m = s.match(/^(\d{4})$/);
+  if (m) return m[1];
+  return s;
+}
+
+function saveBTask() {
+  const name = document.getElementById('bmodName').value.trim();
+  let date = parseInputDate(document.getElementById('bmodDate').value);
+  if (!date && !isBday) date = todayStr;
+  if (!name) { document.getElementById('bmodName').focus(); return; }
+  if (editIdx !== null) {
+    tasks[editIdx] = {name, date, done:tasks[editIdx].done, bday:isBday, projet:isProjet, id:tasks[editIdx].id};
+    gBujoUpdate(tasks[editIdx]);
+  } else {
+    const nt = {name, date, done:false, bday:isBday, projet:isProjet};
+    tasks.push(nt);
+    gBujoAdd(nt);
+  }
+  closeBmod();
+  renderMain();
+}
+
+function deleteBTask() {
+  if (editIdx === null) return;
+  gBujoDelete(tasks[editIdx]);
+  tasks.splice(editIdx,1);
+  closeBmod();
+  renderMain();
+}
+
+// ══ GRIST BUJO ══
+function gBujoUpdate(t) {
+  if (typeof grist === 'undefined' || !t.id) return;
+  grist.docApi.applyUserActions([['UpdateRecord','Bujo',t.id,{tache:t.name,date:t.date,termine:t.done,anniversaire:!!t.bday,projet:!!t.projet}]]).catch(console.error);
+}
+
+function gBujoAdd(t) {
+  if (typeof grist === 'undefined') return;
+  grist.docApi.applyUserActions([['AddRecord','Bujo',null,{tache:t.name,date:t.date,termine:false,anniversaire:!!t.bday,projet:!!t.projet}]]).catch(console.error);
+}
+
+function gBujoDelete(t) {
+  if (typeof grist === 'undefined' || !t.id) return;
+  grist.docApi.applyUserActions([['RemoveRecord','Bujo',t.id]]).catch(console.error);
+}
+
+// ══ LECTURES ══
+function lecRender() {
+  const list = document.getElementById('lecList');
+  const q = lecSearch.toLowerCase();
+  const filtered = lecRecs.filter(r=>
+    (r.titre||'').toLowerCase().includes(q) ||
+    (r.auteur||'').toLowerCase().includes(q)
+  );
+  
+  list.innerHTML = filtered.length ? filtered.map(r=>{
+    const cu = r.cover && String(r.cover).startsWith('http');
+    const coverHtml = cu 
+      ? `<img class="lec-cover" src="${r.cover}" alt="" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'" style="width:32px;height:44px;object-fit:cover;border-radius:3px">`
+      : '';
+    const placeholderHtml = cu ? '' : '<div class="lec-cover">📗</div>';
+    return `<div class="lec-row" onclick="lecOpenPanel(${r.id})">
+      ${coverHtml}${placeholderHtml}
+      <div class="lec-info">
+        <div class="lec-titre">${esc(r.titre||'Sans titre')}</div>
+        <div class="lec-auteur">${esc(r.auteur||'')}</div>
+        <span class="lec-badge ${r.statut==='Lu'?'lu':r.statut==='En cours'?'cours':'lire'}">${r.statut||'—'}</span>
+      </div>
+    </div>`;
+  }).join('') : `<div style="text-align:center;color:var(--light);padding:20px">Aucun résultat</div>`;
+}
+
+function lecOpenPanel(id) {
+  lecSelId = id;
+  const r = lecRecs.find(r=>r.id===id);
+  if (!r) return;
+  document.getElementById('popTitle').textContent = r.titre || 'Sans titre';
+  const cu = r.cover && String(r.cover).startsWith('http');
+  const cov = cu ? `<img class="rcov" src="${r.cover}" alt="" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"><div class="rcov-ph" style="display:none">📗</div>` : `<div class="rcov-ph">📗</div>`;
+  document.getElementById('popBody').innerHTML = `
+    <div class="rh">${cov}<div class="rmeta"><div class="rtitle">${r.titre||'Sans titre'}</div><div class="rauteur">${r.auteur||''}</div></div></div>
+    <div class="rprops">
+      <div class="rprop"><span class="rprop-l">Statut</span><span class="lec-badge ${r.statut==='Lu'?'lu':r.statut==='En cours'?'cours':'lire'}">${r.statut||'—'}</span></div>
+    </div>
+    ${r.resume ? `<div class="rsec"><div class="rsec-t">Résumé</div><div class="rsec-b">${r.resume}</div></div>` : ''}
+    ${r.incipit ? `<div class="rsec"><div class="rsec-t">Incipit</div><div class="rsec-b">${r.incipit}</div></div>` : ''}`;
+  document.getElementById('popOv').classList.add('open');
+}
+
+function lecClosePanel() {
+  document.getElementById('popOv').classList.remove('open');
+  lecSelId = null;
+}
+
+function lecCreate() {
+  lecOpenPanel(null);
+}
+
+document.getElementById('lecSearch').addEventListener('input', e=>{
+  lecSearch = e.target.value;
+  lecRender();
+});
+
+// ══ COLLECTIONS ══
+let cols = [];
+let items = [];
+let selColId = null;
+
+function colRender() {
+  const list = document.getElementById('colList');
+  const empty = document.getElementById('colEmpty');
+  if (cols.length) {
+    empty.style.display = 'none';
+    list.innerHTML = cols.map((col,i)=>`<button class="col-item" onclick="selectCol('${col.id}')">
+      <div class="col-item-icon" style="background:${col.couleur||'#888'}">${col.icone||'📂'}</div>
+      <span class="col-item-label">${esc(col.nom)}</span>
+      <span class="col-item-count">${(items.filter(it=>it.col_id===col.id)||[]).length}</span>
+    </button>`).join('');
+    document.getElementById('badge-cols').textContent = cols.length;
+  } else {
+    empty.style.display = 'block';
+    list.innerHTML = '';
+  }
+}
+
+function selectCol(id) {
+  selColId = id;
+  const col = cols.find(c => c.id === id);
+  if (!col) return;
+  
+  const main = document.getElementById('colMain');
+  const empty = document.getElementById('colEmpty');
+  const list = document.getElementById('colList');
+  
+  // Masquer liste, afficher contenu
+  list.style.display = 'none';
+  empty.style.display = 'none';
+  
+  // Créer/afficher le contenu de la collection
+  let existing = main.querySelector('.col-content');
+  if (!existing) {
+    existing = document.createElement('div');
+    existing.className = 'col-content';
+    existing.style.cssText = 'flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;display:flex;flex-direction:column';
+    main.appendChild(existing);
+  }
+  
+  const colItems = items.filter(it => it.col_id === id);
+  
+  // Construire la barre de tags
+  const tags = [...new Set(colItems.map(it => it.tag).filter(Boolean))].sort();
+  let tagBarHtml = '';
+  if (tags.length) {
+    tagBarHtml = `<div style="padding:8px;border-bottom:1px solid var(--border);flex-shrink:0;display:flex;gap:4px;overflow-x:auto;-webkit-overflow-scrolling:touch">
+      <button class="col-tag-filter-btn active" onclick="filterColByTag('${id}','all')" style="padding:5px 10px;border:1px solid var(--border);border-radius:999px;background:var(--accent-soft);color:var(--accent);font-size:10px;cursor:pointer;font-family:inherit;font-weight:500;flex-shrink:0;border:none">Tous</button>`;
+    tags.forEach(t => {
+      tagBarHtml += `<button class="col-tag-filter-btn" onclick="filterColByTag('${id}','${esc(t)}')" style="padding:5px 10px;border:1px solid var(--border);border-radius:999px;background:var(--bg-soft);color:var(--muted);font-size:10px;cursor:pointer;font-family:inherit;font-weight:500;flex-shrink:0;transition:all .12s" data-tag="${esc(t)}">${esc(t)}</button>`;
+    });
+    tagBarHtml += `</div>`;
+  }
+  
+  let html = `<div style="display:flex;align-items:center;gap:8px;padding:8px;padding-bottom:0;flex-shrink:0">
+    <button onclick="backToColList()" style="background:none;border:none;color:var(--accent);font-size:14px;cursor:pointer;padding:4px">‹</button>
+    <div style="font-size:13px;font-weight:600;color:var(--text)">${esc(col.nom)}</div>
+  </div>
+  ${tagBarHtml}
+  <div id="colItemsView" style="flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:8px"></div>`;
+  
+  existing.innerHTML = html;
+  
+  // Afficher les items (tous par défaut)
+  renderColItems(id, colItems, 'all', col.theme);
+}
+
+function filterColByTag(colId, tag) {
+  const col = cols.find(c => c.id === colId);
+  if (!col) return;
+  
+  const colItems = items.filter(it => it.col_id === colId);
+  
+  // Mettre à jour le style des boutons
+  document.querySelectorAll('.col-tag-filter-btn').forEach(btn => {
+    const btnTag = btn.dataset.tag;
+    const isActive = (tag === 'all' && !btnTag) || (btnTag && btnTag === tag);
+    btn.style.background = isActive ? 'var(--accent-soft)' : 'var(--bg-soft)';
+    btn.style.color = isActive ? 'var(--accent)' : 'var(--muted)';
+  });
+  
+  renderColItems(colId, colItems, tag, col.theme);
+}
+
+function renderColItems(colId, allItems, tagFilter, theme) {
+  const filtered = tagFilter === 'all' 
+    ? allItems 
+    : allItems.filter(it => it.tag === tagFilter);
+  
+  let html = '';
+  if (!filtered.length) {
+    html = `<div style="text-align:center;color:var(--light);padding:20px">Aucun élément</div>`;
+  } else {
+    filtered.forEach(it => {
+      if (theme === 'listes') {
+        html += `<div class="item-liste" style="display:flex;gap:8px;padding:8px;background:var(--bg-soft);border-radius:var(--radius);margin-bottom:6px;align-items:flex-start">
+          <div class="item-chk${it.fait?' done':''}" onclick="toggleItem('${it.id}')" style="width:14px;height:14px;border:1px solid var(--light);border-radius:3px;cursor:pointer;flex-shrink:0;margin-top:2px"></div>
+          <div style="flex:1">
+            <div style="font-size:12px;color:var(--text);font-weight:500${it.fait?';text-decoration:line-through;color:var(--muted)':''}">${esc(it.titre)}</div>
+            ${it.tag ? `<div style="font-size:9px;color:var(--muted);margin-top:3px">${esc(it.tag)}</div>` : ''}
+          </div>
+        </div>`;
+      } else if (theme === 'liens') {
+        const domain = it.url ? new URL(it.url).hostname : '';
+        html += `<div style="padding:8px;background:var(--bg-soft);border-radius:var(--radius);margin-bottom:6px">
+          <div style="font-size:12px;font-weight:500;color:var(--text)">${esc(it.titre||it.url||'Sans titre')}</div>
+          ${it.url ? `<div style="font-size:10px;color:var(--accent)"><a href="${esc(it.url)}" target="_blank" style="color:inherit;text-decoration:none">${esc(domain)}</a></div>` : ''}
+          ${it.tag ? `<div style="font-size:9px;color:var(--muted);margin-top:3px">${esc(it.tag)}</div>` : ''}
+        </div>`;
+      } else if (theme === 'fiches') {
+        const preview = (it.texte||'').replace(/<[^>]+>/g,'').substring(0,80);
+        html += `<div style="padding:8px;background:var(--bg-soft);border-radius:var(--radius);margin-bottom:6px;cursor:pointer" onclick="alert('Fiche: '+${JSON.stringify(it.titre)})">
+          <div style="font-size:12px;font-weight:600;color:var(--text)">${esc(it.titre||'Sans titre')}</div>
+          ${preview ? `<div style="font-size:11px;color:var(--muted);margin-top:3px;line-height:1.4">${esc(preview)}…</div>` : ''}
+          ${it.tag ? `<div style="font-size:9px;color:var(--accent);margin-top:3px">${esc(it.tag)}</div>` : ''}
+        </div>`;
+      } else if (theme === 'couleurs') {
+        const hex = it.url || '';
+        html += `<div style="display:flex;align-items:center;gap:8px;padding:8px;background:var(--bg-soft);border-radius:var(--radius);margin-bottom:6px">
+          <div style="width:24px;height:24px;border-radius:50%;border:1px solid var(--border);background:${hex||'var(--bg-soft)'}"></div>
+          <div style="flex:1">
+            <div style="font-size:12px;font-weight:500;color:var(--text)">${esc(it.titre)}</div>
+            ${hex ? `<div style="font-size:9px;color:var(--muted);font-family:monospace">${esc(hex)}</div>` : ''}
+          </div>
+        </div>`;
+      }
+    });
+  }
+  
+  const container = document.getElementById('colItemsView');
+  if (container) container.innerHTML = html;
+}
+
+function backToColList() {
+  selColId = null;
+  const main = document.getElementById('colMain');
+  const list = document.getElementById('colList');
+  const empty = document.getElementById('colEmpty');
+  const existing = main.querySelector('.col-content');
+  if (existing) existing.remove();
+  if (cols.length) {
+    list.style.display = 'flex';
+  } else {
+    empty.style.display = 'flex';
+  }
+}
+
+function toggleItem(id) {
+  const it = items.find(i => i.id === id);
+  if (it) {
+    it.fait = !it.fait;
+    gItemUpdate(it);
+    selectCol(selColId); // rafraîchir l'affichage
+  }
+}
+
+function openColMod() {
+  // TODO: modale créer collection
+}
+
+// ══ GRIST ITEMS ══
+function gItemUpdate(it) {
+  if (typeof grist === 'undefined' || !it.gid) return;
+  const col = cols.find(c => c.id === it.col_id);
+  grist.docApi.applyUserActions([['UpdateRecord','Items',it.gid,{titre:it.titre,texte:it.texte,url:it.url,tag:it.tag,fait:!!it.fait}]]).catch(console.error);
+}
+
+async function loadConfig() {
+  if (typeof grist === 'undefined') { applyConfig(); return; }
+  try {
+    const raw = await grist.docApi.fetchTable('Config');
+    (raw.id || []).forEach((id, i) => {
+      const cle = String(raw.cle?.[i] || '');
+      if (cle && cle in config) config[cle] = String(raw.valeur?.[i] ?? '');
+    });
+  } catch (e) {
+    console.warn('Config: table introuvable —', e);
+  }
+  applyConfig();
+}
+
+function applyConfig() {
+  if (config.titre) document.title = config.titre;
+  if (config.accent) document.documentElement.style.setProperty('--accent', config.accent);
+
+  document.querySelector('.app-tab[data-tab="bujo"]').style.display = config.bujo_on === 'false' ? 'none' : '';
+  document.querySelector('.app-tab[data-tab="lectures"]').style.display = config.lectures_on === 'false' ? 'none' : '';
+  document.querySelector('.app-tab[data-tab="collections"]').style.display = config.collections_on === 'false' ? 'none' : '';
+
+  document.getElementById('tabLabel-bujo').textContent = config.label_bujo || 'Bujo';
+  document.getElementById('tabLabel-lectures').textContent = config.label_lectures || 'Lectures';
+  document.getElementById('tabLabel-collections').textContent = config.label_collections || 'Collections';
+
+  document.getElementById('btn-projects').style.display = config.projet_on === 'false' ? 'none' : '';
+  document.getElementById('btn-week').style.display = config.col_week_on === 'false' ? 'none' : '';
+
+  renderMain();
+}
+
+// ══ INIT ══
+if (typeof grist !== 'undefined') {
+  grist.ready({requiredAccess:'full'});
+  grist.onRecords(records=>{
+    tasks = records.map(r => ({id:r.id, name:r.tache||'', date:r.date||'', done:!!r.termine, bday:!!r.anniversaire, projet:!!r.projet}));
+    renderMain();
+  });
+  loadConfig();
+  loadLectures();
+  loadCollections();
+} else {
+  // Démo
+  const bd = (y,mm,dd) => `${y}-${pad(mm)}-${pad(dd)}`;
+  tasks = [
+    {name:'Appel équipe', date:todayStr, done:false, bday:false, projet:false},
+    {name:'Rapport', date:'2025-03-27', done:false, bday:false, projet:false},
+    {name:'Marie', date:bd(1990,today.getMonth()+1,14), done:false, bday:true, projet:false},
+    {name:'Refonte site', date:'2025-04-15', done:false, bday:false, projet:true},
+  ];
+  cols = [
+    {id:'c1',nom:'Courses',theme:'listes',icone:'🛒',couleur:'#d3e8d3'},
+  ];
+  items = [
+    {id:'i1',col_id:'c1',titre:'Lait',tag:'',texte:'',url:'',fait:true},
+    {id:'i2',col_id:'c1',titre:'Café',tag:'',texte:'',url:'',fait:false},
+  ];
+  lecRecs = [
+    {id:1,titre:'La Montagne Magique',auteur:'Thomas Mann',statut:'Lu',resume:'Un classique du roman allemand.'},
+    {id:2,titre:'Les Misérables',auteur:'Victor Hugo',statut:'Lu',resume:''},
+  ];
+  renderMain();
+  document.getElementById('badge-lectures').textContent = lecRecs.length;
+  document.getElementById('badge-cols').textContent = cols.length;
+  colRender();
+  applyConfig();
+}
+
+async function loadLectures() {
+  if (typeof grist === 'undefined') return;
+  try {
+    const raw = await grist.docApi.fetchTable('Lectures');
+    lecRecs = (raw.id||[]).map((id,i)=>({
+      id,
+      titre: String(raw.titre?.[i] || ''),
+      auteur: String(raw.auteur?.[i] || ''),
+      statut: String(raw.statut?.[i] || ''),
+      resume: String(raw.resume?.[i] || ''),
+      incipit: String(raw.incipit?.[i] || ''),
+      cover: String(raw.cover?.[i] || ''),
+    }));
+    lecRender();
+    document.getElementById('badge-lectures').textContent = lecRecs.length || '';
+  } catch(e) { console.warn('Lectures:', e); }
+}
+
+async function loadCollections() {
+  if (typeof grist === 'undefined') return;
+  try {
+    const rc = await grist.docApi.fetchTable('Collections');
+    cols = (rc.id||[]).map((id,i)=>({
+      id: 'g'+id, gid: id,
+      nom: String(rc.nom?.[i] || ''),
+      theme: String(rc.theme?.[i] || 'listes'),
+      icone: String(rc.icone?.[i] || ''),
+      couleur: String(rc.couleur?.[i] || ''),
+    }));
+    const ri = await grist.docApi.fetchTable('Items');
+    items = (ri.id||[]).map((id,i)=>({
+      id: 'g'+id, gid: id,
+      col_id: 'g'+(ri.collection?.[i]||0),
+      titre: String(ri.titre?.[i] || ''),
+      texte: String(ri.texte?.[i] || ''),
+      url: String(ri.url?.[i] || ''),
+      tag: String(ri.tag?.[i] || ''),
+      fait: !!ri.fait?.[i],
+    }));
+    colRender();
+    document.getElementById('badge-cols').textContent = cols.length || '';
+  } catch(e) { console.warn('Collections:', e); }
+}
+
+// Clavier
+document.addEventListener('keydown', e=>{
+  if (e.key==='Escape') { closeBmod(); lecClosePanel(); }
+});
+</script>
+
+</body>
+</html>
