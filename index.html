@@ -1119,6 +1119,174 @@ select.cfilt { cursor: pointer; }
 .col-tag-pill:hover { border-color: var(--accent); color: var(--text); }
 .col-tag-pill.active { background: var(--text); color: #fff; border-color: var(--text); font-weight: 500; }
 .col-tag-label { font-size: 9px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--light); margin-right: 4px; font-family: 'DM Sans', sans-serif; }
+/* ══════════════════════════════════════════
+   PAGE OUTLINER
+   ══════════════════════════════════════════ */
+#page-outliner {
+  --out-bg:            #faf9f7;
+  --out-surface:       #f2f0ed;
+  --out-border:        #e0ddd8;
+  --out-text:          #1c1b18;
+  --out-text-muted:    #8a8680;
+  --out-text-dim:      #c4c1bb;
+  --out-accent:        #8a6f4e;
+  --out-accent-soft:   rgba(138,111,78,0.06);
+  --out-accent-hover:  rgba(138,111,78,0.11);
+  --out-bullet:        #c4c1bb;
+  --out-indent-line:   #e0ddd8;
+  --out-danger:        #c05050;
+  --out-check-color:       #4e8a4e;
+  --out-check-color-hover: #5fa85f;
+  --out-mark-bg:       rgba(138,111,78,0.22);
+  --out-radius: 4px;
+  --out-font: 'DM Sans', sans-serif;
+  overflow-y: auto;
+  background: var(--out-bg);
+}
+#outliner-app { width: 100%; padding: 28px 32px 80px; color: var(--out-text); font-family: var(--out-font); font-size: 14px; line-height: 1.6; }
+
+/* ── Header ── */
+#out-header { display: flex; align-items: center; justify-content: space-between; padding-bottom: 14px; border-bottom: 1px solid var(--out-border); }
+#out-header-title { font-size: 11px; font-weight: 400; letter-spacing: 0.12em; text-transform: uppercase; color: var(--out-text-muted); }
+#out-header-right { display: flex; align-items: center; gap: 6px; }
+
+.out-header-btn {
+  width: 28px; height: 28px;
+  display: flex; align-items: center; justify-content: center;
+  background: none; border: 1px solid var(--out-border); border-radius: var(--out-radius);
+  cursor: pointer; color: var(--out-text-muted); transition: all 0.15s; flex-shrink: 0;
+}
+.out-header-btn:hover { border-color: var(--out-accent); color: var(--out-accent); }
+.out-header-btn.active { border-color: var(--out-accent); color: var(--out-accent); background: var(--out-accent-soft); }
+
+#out-add-root-btn {
+  display: flex; align-items: center; gap: 6px;
+  background: none; border: 1px solid var(--out-border); color: var(--out-text-muted);
+  font-family: var(--out-font); font-size: 12px; padding: 5px 10px;
+  border-radius: var(--out-radius); cursor: pointer; transition: all 0.15s;
+}
+#out-add-root-btn:hover { border-color: var(--out-accent); color: var(--out-accent); }
+
+/* ── Barre de recherche ── */
+#out-search-bar {
+  overflow: hidden; max-height: 0; opacity: 0;
+  transition: max-height 0.22s ease, opacity 0.18s ease, padding 0.22s ease;
+  padding: 0; border-bottom: 1px solid transparent;
+}
+#out-search-bar.open { max-height: 52px; opacity: 1; padding: 12px 0 10px; border-bottom-color: var(--out-border); }
+#out-search-inner { display: flex; align-items: center; gap: 8px; }
+#out-search-icon { color: var(--out-text-dim); flex-shrink: 0; display: flex; align-items: center; }
+#out-search-input {
+  flex: 1; background: transparent; border: none; color: var(--out-text);
+  font-family: var(--out-font); font-size: 13px; font-weight: 300;
+  padding: 2px 0; outline: none; caret-color: var(--out-accent);
+}
+#out-search-input::placeholder { color: var(--out-text-dim); font-style: italic; }
+#out-search-count { font-size: 11px; color: var(--out-text-dim); white-space: nowrap; min-width: 36px; text-align: right; }
+#out-search-clear {
+  background: none; border: none; cursor: pointer; color: var(--out-text-dim);
+  padding: 2px; display: flex; align-items: center; border-radius: 3px;
+  opacity: 0; pointer-events: none; transition: opacity 0.15s, color 0.15s; flex-shrink: 0;
+}
+#out-search-clear.visible { opacity: 1; pointer-events: auto; }
+#out-search-clear:hover { color: var(--out-text-muted); }
+
+.out-node-row.search-match { background: var(--out-accent-soft) !important; }
+.out-node.search-hidden { display: none; }
+
+/* ── Breadcrumb ── */
+#out-breadcrumb { display: none; align-items: center; gap: 4px; padding: 10px 0 14px; flex-wrap: wrap; }
+.out-crumb { font-size: 12px; font-weight: 400; color: var(--out-text-muted); background: none; border: none; font-family: var(--out-font); padding: 0; cursor: default; }
+.out-crumb-link { cursor: pointer; transition: color 0.15s; }
+.out-crumb-link:hover { color: var(--out-accent); }
+.out-crumb-sep { font-size: 11px; color: var(--out-text-dim); user-select: none; }
+.out-crumb-current { color: var(--out-text); font-weight: 400; }
+
+.out-zoom-title { font-size: 18px; font-weight: 500; color: var(--out-text); padding: 4px 0 18px; line-height: 1.4; letter-spacing: -0.01em; }
+
+/* ── Empty / loading ── */
+#out-empty-state { text-align: center; padding: 60px 0; color: var(--out-text-dim); font-size: 13px; }
+#out-loading { text-align: center; padding: 60px 0; color: var(--out-text-muted); font-size: 12px; letter-spacing: 0.08em; }
+
+/* ── Node ── */
+.out-node { position: relative; }
+.out-node-row { display: flex; align-items: flex-start; min-height: 28px; border-radius: var(--out-radius); transition: background 0.1s; }
+.out-node-row:hover { background: var(--out-accent-soft); }
+.out-node-row.editing { background: var(--out-accent-hover); }
+
+.out-node-children { position: relative; padding-left: 20px; }
+.out-node-children::before {
+  content: ''; position: absolute; left: 9px; top: 0; bottom: 0;
+  width: 1px; background: var(--out-indent-line); transition: background 0.15s;
+}
+.out-node:hover > .out-node-children::before { background: var(--out-border); }
+
+.out-chevron-btn {
+  width: 18px; height: 28px; display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0; background: none; border: none; cursor: pointer;
+  color: var(--out-bullet); transition: color 0.15s; border-radius: 3px; padding: 0; z-index: 2;
+}
+.out-chevron-btn:hover { color: var(--out-accent); }
+.out-chevron-btn svg { transition: transform 0.15s ease; display: block; }
+.out-chevron-btn.collapsed svg { transform: rotate(-90deg); }
+
+.out-bullet-btn {
+  width: 24px; height: 28px; display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0; background: none; border: none; cursor: pointer;
+  color: var(--out-bullet); transition: color 0.15s; border-radius: 3px; padding: 4px; z-index: 2;
+}
+.out-bullet-btn:hover { color: var(--out-accent); }
+.out-bullet-btn.checked { color: var(--out-check-color); }
+.out-bullet-btn.checked:hover { color: var(--out-check-color-hover); }
+.out-bullet-btn svg { display: block; flex-shrink: 0; }
+
+.out-content-wrap { position: relative; flex: 1; min-width: 0; }
+
+.out-highlight-overlay {
+  position: absolute; top: 0; left: 0; right: 0;
+  padding: 4px 4px 4px 3px;
+  font-family: var(--out-font); font-size: 14px; font-weight: 300; line-height: 1.65;
+  word-break: break-word; white-space: pre-wrap; overflow: hidden;
+  color: transparent; pointer-events: none; z-index: 0;
+  border: 1px solid transparent;
+}
+.out-highlight-overlay mark { background: var(--out-mark-bg); color: transparent; border-radius: 2px; }
+
+.out-node-content {
+  position: relative; z-index: 1; display: block; width: 100%;
+  padding: 4px 4px 4px 3px;
+  outline: none; background: transparent; border: none;
+  color: var(--out-text); font-family: var(--out-font);
+  font-size: 14px; font-weight: 300; line-height: 1.65;
+  resize: none; overflow: hidden;
+  word-break: break-word; white-space: pre-wrap;
+  cursor: text; caret-color: var(--out-accent);
+}
+.out-node-content::placeholder { color: var(--out-text-dim); }
+.out-node-content.checked {
+  text-decoration: line-through; text-decoration-color: var(--out-check-color);
+  text-decoration-thickness: 1px; color: var(--out-text-muted);
+}
+
+.out-node-actions { display: flex; align-items: flex-start; gap: 1px; opacity: 0; transition: opacity 0.15s; padding: 3px 4px 0; flex-shrink: 0; }
+.out-node-row:hover .out-node-actions { opacity: 1; }
+.out-action-btn {
+  width: 22px; height: 22px; display: flex; align-items: center; justify-content: center;
+  background: none; border: none; cursor: pointer;
+  color: var(--out-text-muted); border-radius: 3px; transition: all 0.1s; flex-shrink: 0;
+}
+.out-action-btn:hover { background: var(--out-accent-hover); color: var(--out-accent); }
+.out-action-btn.danger:hover { background: rgba(192,80,80,0.08); color: var(--out-danger); }
+
+.out-node.dragging { opacity: 0.3; }
+.out-node.drag-over-child > .out-node-row { background: var(--out-accent-soft); outline: 1px solid var(--out-accent); outline-offset: -1px; }
+.out-node-row.drag-over-before { box-shadow: inset 0 2px 0 0 var(--out-accent); }
+.out-node-row.drag-over-after  { box-shadow: inset 0 -2px 0 0 var(--out-accent); }
+.out-drag-handle {
+  width: 14px; height: 28px; display: flex; align-items: center; justify-content: center;
+  cursor: grab; color: var(--out-text-dim); opacity: 0; transition: opacity 0.1s; flex-shrink: 0;
+}
+.out-node-row:hover .out-drag-handle { opacity: 1; }
 </style>
 </head>
 <body>
@@ -1142,6 +1310,10 @@ select.cfilt { cursor: pointer; }
     <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="7" height="7" rx="1"/><rect x="15" y="3" width="7" height="7" rx="1"/><rect x="2" y="14" width="7" height="7" rx="1"/><rect x="15" y="14" width="7" height="7" rx="1"/></svg>
     <span class="tab-label">Collections</span>
     <span class="tab-badge" id="badge-cols"></span>
+  </button>
+  <button class="app-tab" data-tab="outliner" onclick="switchTab('outliner')">
+    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+    <span class="tab-label">Outliner</span>
   </button>
 </div>
 
@@ -1309,6 +1481,52 @@ select.cfilt { cursor: pointer; }
       </div>
     </div>
 
+  </div>
+
+  <!-- ── PAGE OUTLINER ── -->
+  <div class="page" id="page-outliner">
+    <div id="outliner-app">
+      <div id="out-header">
+        <span id="out-header-title">Outliner</span>
+        <div id="out-header-right">
+          <button id="out-search-toggle" class="out-header-btn" title="Rechercher (Ctrl+F)">
+            <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+              <circle cx="5" cy="5" r="3.5" stroke="currentColor" stroke-width="1.3"/>
+              <path d="M8 8l2.5 2.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+            </svg>
+          </button>
+          <button id="out-add-root-btn">
+            <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
+              <path d="M5 1v8M1 5h8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+            </svg>
+            Ajouter
+          </button>
+        </div>
+      </div>
+
+      <div id="out-search-bar">
+        <div id="out-search-inner">
+          <span id="out-search-icon">
+            <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+              <circle cx="5" cy="5" r="3.5" stroke="currentColor" stroke-width="1.2"/>
+              <path d="M8 8l2.5 2.5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>
+            </svg>
+          </span>
+          <input id="out-search-input" type="text" placeholder="Rechercher…" autocomplete="off" spellcheck="false"/>
+          <span id="out-search-count"></span>
+          <button id="out-search-clear" title="Effacer">
+            <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
+              <path d="M2 2l6 6M8 2l-6 6" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+
+      <div id="out-breadcrumb"></div>
+      <div id="out-loading">Chargement…</div>
+      <div id="out-tree" style="display:none"></div>
+      <div id="out-empty-state" style="display:none">Aucun élément — cliquez sur Ajouter pour commencer.</div>
+    </div>
   </div>
 
   <!-- ── MODALE NOUVELLE/ÉDITION COLLECTION ── -->
@@ -1507,7 +1725,7 @@ function applyConfigValues() {
     titleEl.classList.toggle('vis', !!CFG.titre);
   }
 
-  const tabVis = { bujo: cfgOn('bujo_on'), lectures: cfgOn('lectures_on'), collections: cfgOn('collections_on') };
+  const tabVis = { bujo: cfgOn('bujo_on'), lectures: cfgOn('lectures_on'), collections: cfgOn('collections_on'), outliner: cfgOn('outliner_on') };
   Object.keys(tabVis).forEach(tab => {
     const el = document.querySelector(`[data-tab="${tab}"]`);
     if (el) el.style.display = tabVis[tab] ? '' : 'none';
@@ -1520,6 +1738,7 @@ function applyConfigValues() {
   setLabel('bujo', CFG.label_bujo, 'Bujo');
   setLabel('lectures', CFG.label_lectures, 'Lectures');
   setLabel('collections', CFG.label_collections, 'Collections');
+  setLabel('outliner', CFG.label_outliner, 'Outliner');
 
   document.getElementById('n-bdays').style.display = cfgOn('bday_on') ? '' : 'none';
   document.getElementById('bujoProjetCol').style.display = cfgOn('projet_on') ? '' : 'none';
@@ -1529,7 +1748,7 @@ function applyConfigValues() {
 
   const activeTab = document.querySelector('.app-tab.active');
   if (activeTab && activeTab.style.display === 'none') {
-    const nextTab = ['bujo','lectures','collections'].find(t => tabVis[t]);
+    const nextTab = ['bujo','lectures','collections','outliner'].find(t => tabVis[t]);
     if (nextTab) switchTab(nextTab);
   }
 
@@ -1589,6 +1808,11 @@ function switchTab(tab) {
     colsLoaded = true;
     if (typeof grist !== 'undefined') loadCollections();
     else initColDemo();
+  }
+  if (tab === 'outliner' && !outlinerLoaded) {
+    outlinerLoaded = true;
+    if (typeof grist !== 'undefined') loadOutliner();
+    else { outRecords = []; outRender(); }
   }
   if (typeof grist !== 'undefined' && tab !== currentTabStored) {
     currentTabStored = tab;
@@ -2465,6 +2689,503 @@ async function loadLectures(){
 }
 
 // ══════════════════════════════════════════════════════
+//  OUTLINER  (table Grist "Data" : id, title, parent_id, position, collapsed, checked)
+// ══════════════════════════════════════════════════════
+const OUT_TABLE_ID = 'Data';
+let outRecords = [];
+let outDragSrcId = null;
+let outDragOverZone = null;
+let outFocusRootId = null;
+let outlinerLoaded = false;
+
+function outIsEditing() {
+  const a = document.activeElement;
+  return a && a.classList.contains('out-node-content');
+}
+function outGetFocusedNodeId() {
+  const a = document.activeElement;
+  if (!a || !a.classList.contains('out-node-content')) return null;
+  return parseInt(a.closest('.out-node')?.dataset.id);
+}
+function outMoveCursorToEnd(el) { const l = el.value.length; el.setSelectionRange(l, l); }
+
+// ── Chargement (fetchTable, pas de flux live — la table n'est pas la table liée du widget) ──
+async function loadOutliner() {
+  try {
+    const raw = await grist.docApi.fetchTable(OUT_TABLE_ID);
+    const ids = raw.id || [];
+    outRecords = ids.map((id, i) => ({
+      id,
+      title: String(raw.title?.[i] ?? ''),
+      parent_id: raw.parent_id?.[i] || 0,
+      position: raw.position?.[i] || 0,
+      collapsed: !!raw.collapsed?.[i],
+      checked: !!raw.checked?.[i],
+    }));
+  } catch (e) {
+    console.warn('Outliner (table Data introuvable) :', e);
+    outRecords = [];
+  }
+  outRender();
+}
+
+// ── Helpers data ──
+function outGetChildren(parentId) {
+  return outRecords
+    .filter(r => (r.parent_id || 0) === (parentId || 0))
+    .sort((a, b) => (a.position || 0) - (b.position || 0));
+}
+function outGetRecord(id) { return outRecords.find(r => r.id === id); }
+function outMaxPosition(pid) {
+  const s = outGetChildren(pid);
+  return s.length ? Math.max(...s.map(r => r.position || 0)) : 0;
+}
+function outGetAncestors(id) {
+  const out = []; let cur = outGetRecord(id);
+  while (cur && cur.parent_id) {
+    const p = outGetRecord(cur.parent_id); if (!p) break;
+    out.unshift(p); cur = p;
+  }
+  return out;
+}
+function outGetAllDescendants(id) {
+  let all = [];
+  for (const c of outGetChildren(id)) { all.push(c.id); all = all.concat(outGetAllDescendants(c.id)); }
+  return all;
+}
+
+// ── Mutations : appel Grist + mise à jour optimiste locale + re-render ──
+async function outAddNode(parentId, afterId) {
+  const siblings = outGetChildren(parentId || 0);
+  let pos;
+  if (afterId) {
+    pos = (outGetRecord(afterId)?.position || 0) + 1;
+    const toShift = siblings.filter(r => r.id !== afterId && (r.position || 0) >= pos);
+    if (toShift.length) {
+      await grist.docApi.applyUserActions([['BulkUpdateRecord', OUT_TABLE_ID, toShift.map(r => r.id), { position: toShift.map(r => (r.position||0)+1) }]]);
+      toShift.forEach(r => { r.position = (r.position||0) + 1; });
+    }
+  } else {
+    pos = outMaxPosition(parentId || 0) + 1;
+  }
+  const res = await grist.docApi.applyUserActions([
+    ['AddRecord', OUT_TABLE_ID, null, { title: '', parent_id: parentId || 0, position: pos, collapsed: false, checked: false }]
+  ]);
+  const newId = res.retValues[0];
+  outRecords.push({ id: newId, title: '', parent_id: parentId || 0, position: pos, collapsed: false, checked: false });
+  outRender();
+  return newId;
+}
+async function outUpdateTitle(id, title) {
+  const r = outGetRecord(id); if (r) r.title = title;
+  await grist.docApi.applyUserActions([['UpdateRecord', OUT_TABLE_ID, id, { title }]]);
+}
+async function outToggleCollapse(id) {
+  const r = outGetRecord(id); if (!r) return;
+  r.collapsed = !r.collapsed;
+  await grist.docApi.applyUserActions([['UpdateRecord', OUT_TABLE_ID, id, { collapsed: r.collapsed }]]);
+  outRender();
+}
+async function outToggleChecked(id) {
+  const r = outGetRecord(id); if (!r) return;
+  r.checked = !r.checked;
+  await grist.docApi.applyUserActions([['UpdateRecord', OUT_TABLE_ID, id, { checked: r.checked }]]);
+  outRender();
+}
+async function outDeleteNode(id) {
+  const all = outGetAllDescendants(id); all.push(id);
+  await grist.docApi.applyUserActions([['BulkRemoveRecord', OUT_TABLE_ID, all]]);
+  outRecords = outRecords.filter(r => !all.includes(r.id));
+  outRender();
+}
+async function outIndentNode(id) {
+  const rec = outGetRecord(id); if (!rec) return;
+  const siblings = outGetChildren(rec.parent_id || 0);
+  const idx = siblings.findIndex(r => r.id === id); if (idx < 1) return;
+  const np = siblings[idx - 1];
+  const newPos = outMaxPosition(np.id) + 1;
+  await grist.docApi.applyUserActions([['UpdateRecord', OUT_TABLE_ID, id, { parent_id: np.id, position: newPos }]]);
+  rec.parent_id = np.id; rec.position = newPos;
+  if (np.collapsed) {
+    await grist.docApi.applyUserActions([['UpdateRecord', OUT_TABLE_ID, np.id, { collapsed: false }]]);
+    np.collapsed = false;
+  }
+  outRender();
+}
+async function outUnindentNode(id) {
+  const rec = outGetRecord(id); if (!rec || !rec.parent_id) return;
+  const parent = outGetRecord(rec.parent_id); if (!parent) return;
+  const newPos = (parent.position || 0) + 1;
+  const gpId   = parent.parent_id || 0;
+  const toShift = outGetChildren(gpId).filter(r => (r.position||0) >= newPos);
+  const actions = [];
+  if (toShift.length) actions.push(['BulkUpdateRecord', OUT_TABLE_ID, toShift.map(r=>r.id), { position: toShift.map(r=>(r.position||0)+1) }]);
+  actions.push(['UpdateRecord', OUT_TABLE_ID, id, { parent_id: gpId, position: newPos }]);
+  await grist.docApi.applyUserActions(actions);
+  toShift.forEach(r => { r.position = (r.position||0) + 1; });
+  rec.parent_id = gpId; rec.position = newPos;
+  outRender();
+}
+async function outMoveNode(dragId, targetId, position) {
+  const dragRec = outGetRecord(dragId);
+  if (!dragRec || dragId === targetId || outGetAllDescendants(dragId).includes(targetId)) return;
+  let newParentId, newPos;
+  if (position === 'child') {
+    newParentId = targetId; newPos = outMaxPosition(targetId) + 1;
+    const tr = outGetRecord(targetId);
+    if (tr?.collapsed) { await grist.docApi.applyUserActions([['UpdateRecord', OUT_TABLE_ID, targetId, { collapsed: false }]]); tr.collapsed = false; }
+  } else {
+    const tr = outGetRecord(targetId);
+    newParentId = tr?.parent_id || 0;
+    newPos = (tr?.position || 0) + (position === 'after' ? 1 : 0);
+    const toShift = outGetChildren(newParentId).filter(r => r.id !== dragId && (r.position||0) >= newPos);
+    if (toShift.length) {
+      await grist.docApi.applyUserActions([['BulkUpdateRecord', OUT_TABLE_ID, toShift.map(r=>r.id), { position: toShift.map(r=>(r.position||0)+1) }]]);
+      toShift.forEach(r => { r.position = (r.position||0) + 1; });
+    }
+  }
+  await grist.docApi.applyUserActions([['UpdateRecord', OUT_TABLE_ID, dragId, { parent_id: newParentId, position: newPos }]]);
+  dragRec.parent_id = newParentId; dragRec.position = newPos;
+  outRender();
+}
+
+// ── Zoom ──
+async function outZoomInto(id) { outFocusRootId = id;       await grist.setOption('outZoomId', id);       outRender(); }
+async function outZoomTo(id)   { outFocusRootId = id||null; await grist.setOption('outZoomId', id||null); outRender(); }
+
+// ── Breadcrumb ──
+function outRenderBreadcrumb() {
+  const bc = document.getElementById('out-breadcrumb');
+  bc.innerHTML = '';
+  if (!outFocusRootId) { bc.style.display = 'none'; return; }
+  bc.style.display = 'flex';
+  bc.appendChild(outMakeCrumb('⌂', null));
+  outGetAncestors(outFocusRootId).forEach(r => { bc.appendChild(outMakeSep()); bc.appendChild(outMakeCrumb(r.title || '…', r.id)); });
+  const cur = outGetRecord(outFocusRootId);
+  if (cur) { bc.appendChild(outMakeSep()); const s = document.createElement('span'); s.className = 'out-crumb out-crumb-current'; s.textContent = cur.title || '…'; bc.appendChild(s); }
+}
+function outMakeCrumb(label, id) {
+  const b = document.createElement('button'); b.className = 'out-crumb out-crumb-link'; b.textContent = label; b.onclick = () => outZoomTo(id); return b;
+}
+function outMakeSep() { const s = document.createElement('span'); s.className = 'out-crumb-sep'; s.textContent = '/'; return s; }
+
+// ── Render ──
+function outRender() {
+  document.getElementById('out-loading').style.display = 'none';
+  outRenderBreadcrumb();
+  const tree  = document.getElementById('out-tree');
+  const empty = document.getElementById('out-empty-state');
+  if (outRecords.length === 0) { tree.style.display = 'none'; empty.style.display = 'block'; return; }
+  empty.style.display = 'none'; tree.style.display = 'block';
+  tree.innerHTML = '';
+  if (outFocusRootId) {
+    const zr = outGetRecord(outFocusRootId);
+    if (zr) { const zt = document.createElement('div'); zt.className = 'out-zoom-title'; zt.textContent = zr.title || '…'; tree.appendChild(zt); }
+    outGetChildren(outFocusRootId).forEach(r => tree.appendChild(outCreateNodeEl(r)));
+  } else {
+    outGetChildren(0).forEach(r => tree.appendChild(outCreateNodeEl(r)));
+  }
+  requestAnimationFrame(() => document.querySelectorAll('.out-node-content').forEach(outAutoResize));
+  if (outSearchOpen && outSearchQuery) outRunSearch(outSearchQuery);
+}
+
+// ── Node element ──
+function outCreateNodeEl(rec) {
+  const hasChildren = outGetChildren(rec.id).length > 0;
+  const isCollapsed = rec.collapsed && hasChildren;
+  const isChecked   = !!rec.checked;
+
+  const node = document.createElement('div');
+  node.className = 'out-node';
+  node.dataset.id = rec.id;
+
+  const row = document.createElement('div');
+  row.className = 'out-node-row';
+
+  const dragHandle = document.createElement('div');
+  dragHandle.className = 'out-drag-handle';
+  dragHandle.draggable = true;
+  dragHandle.innerHTML = `<svg width="8" height="12" viewBox="0 0 8 12" fill="none">
+    <circle cx="2" cy="2" r="1" fill="currentColor"/><circle cx="6" cy="2" r="1" fill="currentColor"/>
+    <circle cx="2" cy="6" r="1" fill="currentColor"/><circle cx="6" cy="6" r="1" fill="currentColor"/>
+    <circle cx="2" cy="10" r="1" fill="currentColor"/><circle cx="6" cy="10" r="1" fill="currentColor"/>
+  </svg>`;
+
+  const chevron = document.createElement('button');
+  chevron.className = 'out-chevron-btn' + (isCollapsed ? ' collapsed' : '');
+  if (hasChildren) {
+    chevron.title = isCollapsed ? 'Déplier' : 'Replier';
+    chevron.innerHTML = `<svg width="9" height="9" viewBox="0 0 9 9" fill="none">
+      <path d="M2 3.5l2.5 2.5 2.5-2.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>`;
+    chevron.onclick = (e) => { if (e.altKey) { outZoomInto(rec.id); } else { outToggleCollapse(rec.id); } };
+  } else {
+    chevron.style.visibility  = 'hidden';
+    chevron.style.pointerEvents = 'none';
+  }
+
+  const bullet = document.createElement('button');
+  bullet.className = 'out-bullet-btn' + (isChecked ? ' checked' : '');
+  bullet.title = isChecked ? 'Décocher' : 'Cocher';
+  bullet.innerHTML = isChecked
+    ? `<svg width="13" height="13" viewBox="0 0 13 13" fill="none">
+         <circle cx="6.5" cy="6.5" r="6" stroke="currentColor" stroke-width="1.3" fill="currentColor" fill-opacity="0.12"/>
+         <path d="M3.5 6.5l2.5 2.5 3.5-3.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
+       </svg>`
+    : `<svg width="8" height="8" viewBox="0 0 8 8" fill="none">
+         <circle cx="4" cy="4" r="3.2" stroke="currentColor" stroke-width="1.1" fill="none"/>
+       </svg>`;
+  bullet.onclick = (e) => { e.stopPropagation(); outToggleChecked(rec.id); };
+
+  const contentWrap = document.createElement('div');
+  contentWrap.className = 'out-content-wrap';
+
+  const overlay = document.createElement('div');
+  overlay.className = 'out-highlight-overlay';
+
+  const content = document.createElement('textarea');
+  content.className = 'out-node-content' + (isChecked ? ' checked' : '');
+  content.value = rec.title || '';
+  content.rows = 1;
+  content.setAttribute('placeholder', 'Écrire ici…');
+
+  let saveTimer = null;
+  const scheduleSave = () => { clearTimeout(saveTimer); saveTimer = setTimeout(() => outUpdateTitle(rec.id, content.value), 1000); };
+
+  content.addEventListener('input', () => { outAutoResize(content); scheduleSave(); });
+  content.addEventListener('scroll', () => { overlay.scrollTop = content.scrollTop; });
+
+  content.addEventListener('keydown', async (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      clearTimeout(saveTimer); await outUpdateTitle(rec.id, content.value);
+      const newId = await outAddNode(rec.parent_id || 0, rec.id);
+      setTimeout(() => document.querySelector(`.out-node[data-id="${newId}"] .out-node-content`)?.focus(), 100);
+    }
+    if (e.key === 'Tab') {
+      e.preventDefault();
+      clearTimeout(saveTimer); await outUpdateTitle(rec.id, content.value);
+      if (e.shiftKey) { await outUnindentNode(rec.id); } else { await outIndentNode(rec.id); }
+      setTimeout(() => document.querySelector(`.out-node[data-id="${rec.id}"] .out-node-content`)?.focus(), 100);
+    }
+    if (e.key === 'Backspace' && content.value === '') {
+      e.preventDefault(); clearTimeout(saveTimer);
+      const siblings = outGetChildren(rec.parent_id || 0);
+      const idx = siblings.findIndex(r => r.id === rec.id);
+      const prevId = idx > 0 ? siblings[idx-1].id : rec.parent_id;
+      await outDeleteNode(rec.id);
+      if (prevId) setTimeout(() => { const el = document.querySelector(`.out-node[data-id="${prevId}"] .out-node-content`); el?.focus(); outMoveCursorToEnd(el); }, 100);
+    }
+  });
+
+  content.addEventListener('focus', () => row.classList.add('editing'));
+  content.addEventListener('blur',  () => { row.classList.remove('editing'); clearTimeout(saveTimer); outUpdateTitle(rec.id, content.value); });
+
+  contentWrap.appendChild(overlay);
+  contentWrap.appendChild(content);
+
+  const actions = document.createElement('div');
+  actions.className = 'out-node-actions';
+
+  const zoomBtn = outMakeActionBtn(`<svg width="10" height="10" viewBox="0 0 10 10" fill="none"><circle cx="4.5" cy="4.5" r="3.5" stroke="currentColor" stroke-width="1.2"/><path d="M7.5 7.5l2 2" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>`, 'Zoomer ici');
+  zoomBtn.onclick = () => outZoomInto(rec.id);
+
+  const addBtn = outMakeActionBtn(`<svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M5 1v8M1 5h8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>`, 'Ajouter enfant');
+  addBtn.onclick = async () => {
+    const wasCollapsed = rec.collapsed;
+    const newId = await outAddNode(rec.id);
+    if (wasCollapsed) await outToggleCollapse(rec.id);
+    setTimeout(() => document.querySelector(`.out-node[data-id="${newId}"] .out-node-content`)?.focus(), 100);
+  };
+
+  const delBtn = outMakeActionBtn(`<svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M2 2l6 6M8 2l-6 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>`, 'Supprimer', true);
+  delBtn.onclick = () => outDeleteNode(rec.id);
+
+  actions.appendChild(zoomBtn);
+  actions.appendChild(addBtn);
+  actions.appendChild(delBtn);
+
+  dragHandle.addEventListener('dragstart', (e) => { outDragSrcId = rec.id; node.classList.add('dragging'); e.dataTransfer.effectAllowed = 'move'; });
+  dragHandle.addEventListener('dragend',   ()  => {
+    node.classList.remove('dragging');
+    document.querySelectorAll('.out-node-row').forEach(r => r.classList.remove('drag-over-before','drag-over-after'));
+    document.querySelectorAll('.out-node').forEach(n => n.classList.remove('drag-over-child'));
+    outDragSrcId = null; outDragOverZone = null;
+  });
+  row.addEventListener('dragover', (e) => {
+    if (!outDragSrcId || outDragSrcId === rec.id) return;
+    e.preventDefault(); e.stopPropagation();
+    const rect = row.getBoundingClientRect();
+    const relY = (e.clientY - rect.top) / rect.height;
+    const zone = relY < 0.25 ? 'before' : (relY > 0.75 ? 'after' : 'child');
+    outDragOverZone = zone;
+    document.querySelectorAll('.out-node-row').forEach(r => r.classList.remove('drag-over-before','drag-over-after'));
+    document.querySelectorAll('.out-node').forEach(n => n.classList.remove('drag-over-child'));
+    if (zone === 'child') node.classList.add('drag-over-child');
+    else row.classList.add(zone === 'before' ? 'drag-over-before' : 'drag-over-after');
+  });
+  row.addEventListener('drop', async (e) => {
+    e.preventDefault(); e.stopPropagation();
+    document.querySelectorAll('.out-node-row').forEach(r => r.classList.remove('drag-over-before','drag-over-after'));
+    document.querySelectorAll('.out-node').forEach(n => n.classList.remove('drag-over-child'));
+    if (!outDragSrcId || outDragSrcId === rec.id) return;
+    await outMoveNode(outDragSrcId, rec.id, outDragOverZone || 'after');
+  });
+
+  row.appendChild(dragHandle);
+  row.appendChild(chevron);
+  row.appendChild(bullet);
+  row.appendChild(contentWrap);
+  row.appendChild(actions);
+  node.appendChild(row);
+
+  if (hasChildren && !isCollapsed) {
+    const cc = document.createElement('div');
+    cc.className = 'out-node-children';
+    outGetChildren(rec.id).forEach(child => cc.appendChild(outCreateNodeEl(child)));
+    node.appendChild(cc);
+  }
+  return node;
+}
+
+function outMakeActionBtn(svg, title, danger = false) {
+  const b = document.createElement('button'); b.className = 'out-action-btn' + (danger ? ' danger' : ''); b.title = title; b.innerHTML = svg; return b;
+}
+function outAutoResize(el) {
+  el.style.height = 'auto';
+  el.style.height = el.scrollHeight + 'px';
+}
+
+// ── Header ──
+document.getElementById('out-add-root-btn').addEventListener('click', async () => {
+  const newId = await outAddNode(outFocusRootId || 0);
+  setTimeout(() => document.querySelector(`.out-node[data-id="${newId}"] .out-node-content`)?.focus(), 100);
+});
+
+// ── Recherche ──
+let outSearchQuery = '';
+let outSearchOpen  = false;
+
+function outOpenSearch() {
+  outSearchOpen = true;
+  document.getElementById('out-search-bar').classList.add('open');
+  document.getElementById('out-search-toggle').classList.add('active');
+  setTimeout(() => document.getElementById('out-search-input').focus(), 180);
+}
+function outCloseSearch() {
+  outSearchOpen = false;
+  outSearchQuery = '';
+  document.getElementById('out-search-bar').classList.remove('open');
+  document.getElementById('out-search-toggle').classList.remove('active');
+  document.getElementById('out-search-input').value = '';
+  outClearSearch();
+}
+function outClearSearch() {
+  document.querySelectorAll('.out-node').forEach(n => n.classList.remove('search-hidden'));
+  document.querySelectorAll('.out-node-row').forEach(r => r.classList.remove('search-match'));
+  document.querySelectorAll('.out-highlight-overlay').forEach(ov => { ov.innerHTML = ''; });
+  document.querySelectorAll('.out-node[data-search-injected]').forEach(n => n.remove());
+  document.getElementById('out-search-count').textContent = '';
+  document.getElementById('out-search-clear').classList.remove('visible');
+}
+function outRunSearch(query) {
+  outClearSearch();
+  if (!query) return;
+  const q = query.toLowerCase();
+  const matchingIds = new Set(
+    outRecords.filter(r => (r.title || '').toLowerCase().includes(q)).map(r => r.id)
+  );
+  if (matchingIds.size === 0) {
+    document.getElementById('out-search-count').textContent = '—';
+    document.getElementById('out-search-clear').classList.add('visible');
+    return;
+  }
+  const toReveal = new Set();
+  matchingIds.forEach(id => {
+    let cur = outGetRecord(id);
+    while (cur && cur.parent_id) {
+      if (outFocusRootId && cur.id === outFocusRootId) break;
+      toReveal.add(cur.parent_id);
+      cur = outGetRecord(cur.parent_id);
+    }
+  });
+  outEnsureNodesInDOM(matchingIds, toReveal);
+  document.querySelectorAll('.out-node[data-id]').forEach(nodeEl => {
+    const id = parseInt(nodeEl.dataset.id);
+    if (matchingIds.has(id)) {
+      nodeEl.querySelector('.out-node-row')?.classList.add('search-match');
+      outApplyOverlayHighlight(nodeEl, outGetRecord(id)?.title || '', query);
+    } else if (!toReveal.has(id)) {
+      nodeEl.classList.add('search-hidden');
+    }
+  });
+  document.getElementById('out-search-count').textContent = `${matchingIds.size}`;
+  document.getElementById('out-search-clear').classList.add('visible');
+}
+function outEnsureNodesInDOM(matchingIds, toReveal) {
+  const needed = new Set([...matchingIds, ...toReveal]);
+  needed.forEach(id => {
+    if (document.querySelector(`.out-node[data-id="${id}"]`)) return;
+    const rec = outGetRecord(id);
+    if (!rec) return;
+    const parentContainerId = rec.parent_id || 0;
+    let container;
+    if (parentContainerId === 0 || parentContainerId === outFocusRootId) {
+      container = document.getElementById('out-tree');
+    } else {
+      const parentEl = document.querySelector(`.out-node[data-id="${parentContainerId}"]`);
+      if (!parentEl) return;
+      container = parentEl.querySelector('.out-node-children');
+      if (!container) {
+        container = document.createElement('div');
+        container.className = 'out-node-children';
+        parentEl.appendChild(container);
+      }
+    }
+    const nodeEl = outCreateNodeEl(rec);
+    nodeEl.setAttribute('data-search-injected', '1');
+    container.appendChild(nodeEl);
+    requestAnimationFrame(() => { nodeEl.querySelectorAll('.out-node-content').forEach(outAutoResize); });
+  });
+}
+function outSyncOverlaySize(overlay, textarea) {
+  const h = Math.max(textarea.scrollHeight, parseInt(textarea.style.height) || 0);
+  overlay.style.height = h + 'px';
+}
+function outApplyOverlayHighlight(nodeEl, title, query) {
+  const overlay = nodeEl.querySelector('.out-highlight-overlay');
+  const ta      = nodeEl.querySelector('.out-node-content');
+  if (!overlay || !ta) return;
+  outAutoResize(ta);
+  overlay.innerHTML = outEscapeHtml(title).replace(
+    new RegExp(outEscapeRe(outEscapeHtml(query)), 'gi'),
+    m => `<mark>${m}</mark>`
+  );
+  outSyncOverlaySize(overlay, ta);
+}
+function outEscapeRe(s)   { return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }
+function outEscapeHtml(s) { return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+document.getElementById('out-search-toggle').addEventListener('click', () => { outSearchOpen ? outCloseSearch() : outOpenSearch(); });
+document.getElementById('out-search-input').addEventListener('input', (e) => {
+  outSearchQuery = e.target.value.trim();
+  outRunSearch(outSearchQuery);
+});
+document.getElementById('out-search-input').addEventListener('keydown', (e) => { if (e.key === 'Escape') outCloseSearch(); });
+document.getElementById('out-search-clear').addEventListener('click', () => {
+  document.getElementById('out-search-input').value = '';
+  outSearchQuery = '';
+  outClearSearch();
+  document.getElementById('out-search-input').focus();
+});
+document.addEventListener('keydown', (e) => {
+  if ((e.ctrlKey || e.metaKey) && e.key === 'f' && document.getElementById('page-outliner').classList.contains('active')) {
+    e.preventDefault();
+    outSearchOpen ? document.getElementById('out-search-input').focus() : outOpenSearch();
+  }
+});
+
+// ══════════════════════════════════════════════════════
 //  INIT GRIST / DEMO
 // ══════════════════════════════════════════════════════
 if(typeof grist!=='undefined'){
@@ -2483,10 +3204,11 @@ if(typeof grist!=='undefined'){
   loadConfig();  
   grist.onOptions((options) => {
   const saved = options?.lastTab;
-  if (saved && ['bujo','lectures','collections'].includes(saved) && saved !== 'bujo') {
+  if (saved && ['bujo','lectures','collections','outliner'].includes(saved) && saved !== 'bujo') {
     currentTabStored = saved;
     switchTab(saved);
   }
+  if (options?.outZoomId !== undefined) outFocusRootId = options.outZoomId || null;
 });
   // onRecords est appelé à chaque modification de la table Bujo
   grist.onRecords(records=>{
