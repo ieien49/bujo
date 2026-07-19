@@ -4493,25 +4493,56 @@ document.getElementById('mapSelect').addEventListener('change', async e => {
 document.getElementById('newMapBtn').addEventListener('click', createMap);
 document.getElementById('emptyCreateBtn').addEventListener('click', createMap);
 
+function mmPromptModal(title, defaultValue){
+  return new Promise(resolve => {
+    const ov = document.createElement('div');
+    ov.className = 'mod-ov';
+    ov.style.zIndex = 2000;
+    ov.innerHTML = `
+      <div class="mod">
+        <h3>${title}</h3>
+        <input type="text" id="mmPromptInput" style="width:100%;padding:7px 10px;border:1px solid var(--border);border-radius:8px;font-size:13px;font-family:inherit;margin-bottom:14px">
+        <div class="mod-act">
+          <button class="btn btn-ghost" id="mmPromptCancel">Annuler</button>
+          <button class="btn btn-primary" id="mmPromptOk">Valider</button>
+        </div>
+      </div>`;
+    document.body.appendChild(ov);
+    const input = ov.querySelector('#mmPromptInput');
+    input.value = defaultValue || '';
+    input.focus(); input.select();
+    const cleanup = (val) => { document.body.removeChild(ov); resolve(val); };
+    ov.querySelector('#mmPromptOk').onclick = () => cleanup(input.value.trim());
+    ov.querySelector('#mmPromptCancel').onclick = () => cleanup(null);
+    input.addEventListener('keydown', e => {
+      if (e.key === 'Enter') { e.preventDefault(); cleanup(input.value.trim()); }
+      if (e.key === 'Escape') { e.preventDefault(); cleanup(null); }
+    });
+  });
+}
+
 async function createMap(){
-  const titre = prompt('Titre de la nouvelle carte :', 'Nouvelle carte');
+  const titre = await mmPromptModal('Titre de la nouvelle carte :', 'Nouvelle carte');
   if (titre === null) return;
   const res = await grist.docApi.applyUserActions([
     ['AddRecord', TABLE_CARTES, null, { Titre: titre }]
   ]);
   const newId = res.retValues[0];
-  await grist.docApi.applyUserActions([
+  const resNode = await grist.docApi.applyUserActions([
     ['AddRecord', TABLE_NOEUDS, null, { Label: titre, ParentId: 0, Ordre: 0, MapId: newId }]
   ]);
+  const rootId = resNode.retValues[0];
   currentMapId = newId;
   didCenter = false;
   await loadCartes();
+  setSelectedNode(rootId);
+  render();
 }
 
 document.getElementById('renameMapBtn').addEventListener('click', async () => {
   if (!currentMapId) return;
   const carte = cartes.find(c => c.id === currentMapId);
-  const titre = prompt('Nouveau titre :', carte ? carte.Titre : '');
+  const titre = await mmPromptModal('Nouveau titre :', carte ? carte.Titre : '');
   if (titre === null) return;
   await grist.docApi.applyUserActions([
     ['UpdateRecord', TABLE_CARTES, currentMapId, { Titre: titre }]
