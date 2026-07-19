@@ -8,6 +8,8 @@
 <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,500;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.9.0/d3.min.js"></script>
 <style>
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -1287,6 +1289,126 @@ select.cfilt { cursor: pointer; }
   cursor: grab; color: var(--out-text-dim); opacity: 0; transition: opacity 0.1s; flex-shrink: 0;
 }
 .out-node-row:hover .out-drag-handle { opacity: 1; }
+
+/* ══════════════════════════════════════════
+   PAGE MIND MAP
+   ══════════════════════════════════════════ */
+:root{
+  --mm-paper:      #FAFAF8;
+  --mm-paper-dim:  #F0EEE8;
+  --mm-ink:        #1F2430;
+  --mm-ink-dim:    #6B7280;
+  --mm-line:       #E4E1D8;
+  --mm-accent-idx: #5B6EE8;
+  --mm-accent-sag: #4E8B6B;
+  --mm-accent-amb: #C88A2E;
+  --mm-accent-cor: #D2665A;
+  --mm-accent-pru: #8B5E83;
+  --mm-accent-tea: #2E8B98;
+  --mm-radius: 10px;
+  --mm-shadow: 0 1px 2px rgba(31,36,48,.06), 0 4px 14px rgba(31,36,48,.07);
+}
+#page-mindmap{ position:relative; background:var(--mm-paper); color:var(--mm-ink); font-family:'Inter',sans-serif; }
+#page-mindmap .topbar{
+  position:absolute; top:0; left:0; right:0; min-height:52px; z-index:10;
+  display:flex; align-items:center; gap:8px; padding:8px 14px;
+  background:rgba(250,250,248,.92); backdrop-filter:blur(6px);
+  border-bottom:1px solid var(--mm-line); flex-wrap:wrap; row-gap:6px;
+}
+#page-mindmap .topbar select{
+  font-family:'Inter',sans-serif; font-size:13px; font-weight:500;
+  color:var(--mm-ink); background:#fff; border:1px solid var(--mm-line);
+  border-radius:8px; padding:6px 10px; max-width:200px;
+}
+#page-mindmap .topbar button{
+  font-family:'Inter',sans-serif; font-size:12.5px; font-weight:600;
+  color:var(--mm-ink); background:#fff; border:1px solid var(--mm-line);
+  border-radius:8px; padding:6px 10px; cursor:pointer; transition:.15s; white-space:nowrap;
+}
+#page-mindmap .topbar button:hover{ background:var(--mm-paper-dim); }
+#page-mindmap .topbar .sep{ width:1px; align-self:stretch; background:var(--mm-line); margin:0 2px; }
+#page-mindmap .topbar input#searchInput{
+  font-family:'Inter',sans-serif; font-size:12.5px;
+  border:1px solid var(--mm-line); border-radius:8px; padding:6px 10px;
+  width:150px; background:#fff; color:var(--mm-ink);
+}
+#page-mindmap .topbar .hint{ margin-left:auto; font-size:11px; color:var(--mm-ink-dim); display:flex; gap:12px; }
+#page-mindmap .topbar .hint kbd{
+  font-family:'Inter',sans-serif; font-size:10.5px; font-weight:600;
+  background:var(--mm-paper-dim); border:1px solid var(--mm-line);
+  border-radius:4px; padding:1px 5px; color:var(--mm-ink);
+}
+#page-mindmap #canvas-wrap{ position:absolute; inset:68px 0 0 0; }
+body.presentation #page-mindmap #canvas-wrap{ inset:0; }
+body.presentation #page-mindmap .topbar{ display:none; }
+body.presentation #page-mindmap .side-panel{ top: 0; }
+body.presentation .app-tabs{ display:none; }
+body.presentation #page-mindmap{ position:fixed; inset:0; z-index:1000; display:flex; }
+#page-mindmap svg{ width:100%; height:100%; display:block; cursor:grab; }
+#page-mindmap svg:active{ cursor:grabbing; }
+#exitPresentBtn{
+  display:none; position:fixed; top:14px; left:14px; z-index:1001;
+  align-items:center; gap:6px; font-family:'Inter',sans-serif; font-size:12.5px; font-weight:600;
+  color:var(--mm-ink); background:#fff; border:1px solid var(--mm-line); border-radius:8px;
+  padding:7px 12px; cursor:pointer; box-shadow:var(--mm-shadow);
+}
+body.presentation #exitPresentBtn{ display:flex; }
+#page-mindmap .link{ fill:none; stroke-width:2px; opacity:.55; }
+#page-mindmap .node-card{
+  fill:#fff; stroke:var(--mm-line); stroke-width:1px;
+  filter: drop-shadow(0 1px 2px rgba(31,36,48,.08)) drop-shadow(0 3px 8px rgba(31,36,48,.06));
+}
+#page-mindmap .node-card.selected{ stroke-width:2px; }
+#page-mindmap .node-card.search-match{ stroke-width:2.5px; }
+#page-mindmap .node.search-dim{ opacity:.3; }
+#page-mindmap .node-label{
+  font-family:'Inter',sans-serif; font-size:13px; font-weight:500;
+  fill:var(--mm-ink); pointer-events:none; user-select:none;
+}
+#page-mindmap .node.is-root .node-label{ font-family:'Fraunces',serif; font-size:16px; font-weight:600; }
+#page-mindmap .toggle-circle{ fill:#fff; stroke:var(--mm-line); stroke-width:1.3px; cursor:pointer; }
+#page-mindmap .toggle-count{ font-family:'Inter',sans-serif; font-size:9.5px; font-weight:600; fill:var(--mm-ink-dim); pointer-events:none; }
+#page-mindmap .link-indicator{ pointer-events:none; }
+#page-mindmap .edit-input{
+  font-family:'Inter',sans-serif; font-size:13px; font-weight:500;
+  color:var(--mm-ink); border:none; outline:none; background:#fff;
+  width:100%; height:100%; border-radius:8px; padding:0 8px;
+}
+#page-mindmap .empty-state{
+  position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
+  flex-direction:column; gap:10px; color:var(--mm-ink-dim); font-size:14px; text-align:center;
+}
+#page-mindmap .empty-state button{
+  font-family:'Fraunces',serif; font-size:15px; font-weight:600;
+  color:#fff; background:var(--mm-ink); border:none; border-radius:8px; padding:9px 18px; cursor:pointer;
+}
+#page-mindmap .node.dragging{ opacity:.55; }
+#page-mindmap .node:not(.is-root) rect.node-card{ cursor:grab; }
+#page-mindmap .node.dragging rect.node-card{ cursor:grabbing; }
+#page-mindmap rect.node-card.drop-target{ stroke:var(--mm-ink); stroke-width:2px; stroke-dasharray:4 3; }
+#page-mindmap .side-panel{
+  position:absolute; top:68px; right:0; bottom:0; width:280px;
+  background:#fff; border-left:1px solid var(--mm-line); z-index:9;
+  padding:16px; display:none; flex-direction:column; gap:10px;
+  box-shadow:-4px 0 14px rgba(31,36,48,.05);
+}
+#page-mindmap .side-panel-header{ display:flex; justify-content:space-between; align-items:center; }
+#page-mindmap .side-panel-header span{
+  font-family:'Fraunces',serif; font-weight:600; font-size:15px;
+  overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+}
+#page-mindmap .side-panel-header button{ border:none; background:none; cursor:pointer; font-size:15px; color:var(--mm-ink-dim); flex:none; }
+#page-mindmap .side-panel-label{ font-size:10.5px; font-weight:600; color:var(--mm-ink-dim); text-transform:uppercase; letter-spacing:.04em; margin-top:2px; }
+#page-mindmap .side-panel input, #page-mindmap .side-panel textarea{
+  font-family:'Inter',sans-serif; font-size:13px; color:var(--mm-ink);
+  border:1px solid var(--mm-line); border-radius:8px; padding:8px 10px; width:100%;
+}
+#page-mindmap .side-panel textarea{ flex:1; resize:none; min-height:120px; }
+#page-mindmap #panelOpenUrlBtn{
+  font-family:'Inter',sans-serif; font-size:12px; font-weight:600; color:var(--mm-ink);
+  background:var(--mm-paper-dim); border:1px solid var(--mm-line); border-radius:8px;
+  padding:6px 10px; cursor:pointer; align-self:flex-start;
+}
 </style>
 </head>
 <body>
@@ -1315,6 +1437,10 @@ select.cfilt { cursor: pointer; }
     <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
     <span class="tab-label">Outliner</span>
   </button>
+  <button class="app-tab" data-tab="mindmap" onclick="switchTab('mindmap')">
+  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="5" cy="12" r="2.5"/><circle cx="19" cy="6" r="2.5"/><circle cx="19" cy="18" r="2.5"/><path d="M7.3 10.8 16.7 7.2M7.3 13.2 16.7 16.8"/></svg>
+  <span class="tab-label">Mind Map</span>
+</button>
 </div>
 
 <!-- ══════════════════════════════════════════
@@ -1529,6 +1655,55 @@ select.cfilt { cursor: pointer; }
     </div>
   </div>
 
+<!-- ── PAGE MIND MAP ── -->
+<div class="page" id="page-mindmap">
+  <div class="topbar">
+    <select id="mapSelect"></select>
+    <button id="newMapBtn">+ Nouvelle carte</button>
+    <button id="renameMapBtn">Renommer</button>
+    <div class="sep"></div>
+    <button id="collapseAllBtn">Replier tout</button>
+    <button id="expandAllBtn">Déplier tout</button>
+    <button id="recenterBtn">Recentrer</button>
+    <div class="sep"></div>
+    <input id="searchInput" type="text" placeholder="Rechercher…">
+    <div class="sep"></div>
+    <button id="exportSvgBtn">Export SVG</button>
+    <button id="exportPngBtn">Export PNG</button>
+    <button id="exportMdBtn">Export Markdown</button>
+    <div class="sep"></div>
+    <button id="presentBtn">Plein écran</button>
+    <div class="hint">
+      <span><kbd>Tab</kbd> enfant</span>
+      <span><kbd>Entrée</kbd> frère</span>
+      <span><kbd>Suppr</kbd> supprimer</span>
+      <span><kbd>Double-clic</kbd> éditer</span>
+    </div>
+  </div>
+
+  <button id="exitPresentBtn">✕ Quitter le plein écran</button>
+
+  <div id="canvas-wrap">
+    <svg id="svg"></svg>
+    <div class="empty-state" id="emptyState" style="display:none;">
+      <div>Aucune carte pour l'instant.</div>
+      <button id="emptyCreateBtn">Créer ma première carte</button>
+    </div>
+  </div>
+
+  <div id="sidePanel" class="side-panel">
+    <div class="side-panel-header">
+      <span id="panelNodeLabel"></span>
+      <button id="closePanelBtn">✕</button>
+    </div>
+    <label class="side-panel-label">Lien externe</label>
+    <input id="panelUrlInput" type="text" placeholder="https://…">
+    <button id="panelOpenUrlBtn" type="button">Ouvrir le lien ↗</button>
+    <label class="side-panel-label">Notes</label>
+    <textarea id="panelNotesInput" placeholder="Notes détaillées pour ce nœud…"></textarea>
+  </div>
+</div>
+
   <!-- ── MODALE NOUVELLE/ÉDITION COLLECTION ── -->
   <div class="cmod-ov" id="colModOv" onclick="handleCmodClick(event)">
     <div class="cmod">
@@ -1725,7 +1900,7 @@ function applyConfigValues() {
     titleEl.classList.toggle('vis', !!CFG.titre);
   }
 
-  const tabVis = { bujo: cfgOn('bujo_on'), lectures: cfgOn('lectures_on'), collections: cfgOn('collections_on'), outliner: cfgOn('outliner_on') };
+  const tabVis = { bujo: cfgOn('bujo_on'), lectures: cfgOn('lectures_on'), collections: cfgOn('collections_on'), outliner: cfgOn('outliner_on'), mindmap: cfgOn('mindmap_on') };
   Object.keys(tabVis).forEach(tab => {
     const el = document.querySelector(`[data-tab="${tab}"]`);
     if (el) el.style.display = tabVis[tab] ? '' : 'none';
@@ -1739,6 +1914,7 @@ function applyConfigValues() {
   setLabel('lectures', CFG.label_lectures, 'Lectures');
   setLabel('collections', CFG.label_collections, 'Collections');
   setLabel('outliner', CFG.label_outliner, 'Outliner');
+   setLabel('mindmap', CFG.label_mindmap, 'Mind Map');
 
   document.getElementById('n-bdays').style.display = cfgOn('bday_on') ? '' : 'none';
   document.getElementById('bujoProjetCol').style.display = cfgOn('projet_on') ? '' : 'none';
@@ -1748,7 +1924,7 @@ function applyConfigValues() {
 
   const activeTab = document.querySelector('.app-tab.active');
   if (activeTab && activeTab.style.display === 'none') {
-    const nextTab = ['bujo','lectures','collections','outliner'].find(t => tabVis[t]);
+    const nextTab = ['bujo','lectures','collections','outliner','mindmap'].find(t => tabVis[t]);
     if (nextTab) switchTab(nextTab);
   }
 
@@ -1798,6 +1974,8 @@ let saveT = null;
 //  NAVIGATION ONGLETS
 // ══════════════════════════════════════════════════════
 let colsLoaded = false;
+let mindmapLoaded = false;
+
 let currentTabStored = null;
 function switchTab(tab) {
   document.querySelectorAll('.app-tab').forEach(t => t.classList.toggle('active', t.dataset.tab === tab));
@@ -1813,6 +1991,10 @@ function switchTab(tab) {
     outlinerLoaded = true;
     if (typeof grist !== 'undefined') loadOutliner();
     else { outRecords = []; outRender(); }
+  }
+  if (tab === 'mindmap' && !mindmapLoaded) {
+    mindmapLoaded = true;
+    window.mmBoot();
   }
   if (typeof grist !== 'undefined' && tab !== currentTabStored) {
     currentTabStored = tab;
@@ -3204,7 +3386,7 @@ if(typeof grist!=='undefined'){
   loadConfig();  
   grist.onOptions((options) => {
   const saved = options?.lastTab;
-  if (saved && ['bujo','lectures','collections','outliner'].includes(saved) && saved !== 'bujo') {
+  if (saved && ['bujo','lectures','collections','outliner','mindmap'].includes(saved) && saved !== 'bujo') {
     currentTabStored = saved;
     switchTab(saved);
   }
@@ -4232,6 +4414,740 @@ document.addEventListener('keydown',e=>{
   if(e.key==='Escape'){lecClosePanel();closeBmod();closeColMod();closeItemMod();closeFicheModal();document.getElementById('modDel').style.display='none';}
   if(e.key==='Enter'&&document.getElementById('bmodOv').classList.contains('open')){const a=document.activeElement;if(!a||a.tagName!=='BUTTON')saveBTask();}
 });
+(function(){
+const TABLE_CARTES = 'MindMap_Cartes';
+const TABLE_NOEUDS = 'MindMap_Noeuds';
+
+const PALETTE = [
+  getVar('--mm-accent-idx'), getVar('--mm-accent-sag'), getVar('--mm-accent-amb'),
+  getVar('--mm-accent-cor'), getVar('--mm-accent-pru'), getVar('--mm-accent-tea')
+];
+function getVar(name){
+  return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+}
+
+let cartes = [];
+let noeuds = [];
+let currentMapId = null;
+let selectedNodeId = null;
+let root;
+let svg, g, zoomBehavior;
+let didCenter = false;
+let presentationMode = false;
+let searchQuery = '';
+let searchMatchIds = new Set();
+let searchAncestorIds = new Set();
+let searchActive = false;
+const collapsedIds = new Set(); // état plié/déplié, persistant entre les rendus
+
+const NODE_H = 40, NODE_MIN_W = 90, NODE_MAX_W = 260, NODE_PAD_X = 16;
+const LEVEL_GAP_MARGIN = 50, SIB_GAP = 14;
+
+/* ---------- Grist wiring ---------- */
+
+
+async function loadCartes(){
+  cartes = toRows(await grist.docApi.fetchTable(TABLE_CARTES));
+  populateMapSelect();
+  if (!currentMapId && cartes.length) currentMapId = cartes[0].id;
+  if (currentMapId) await loadNoeuds();
+  else showEmptyState();
+}
+
+async function loadNoeuds(){
+  const all = toRows(await grist.docApi.fetchTable(TABLE_NOEUDS));
+  noeuds = all.filter(n => n.MapId === currentMapId);
+  render();
+}
+
+function toRows(colTable){
+  const keys = Object.keys(colTable);
+  const n = colTable.id ? colTable.id.length : 0;
+  const rows = [];
+  for (let i = 0; i < n; i++){
+    const row = {};
+    keys.forEach(k => row[k] = colTable[k][i]);
+    rows.push(row);
+  }
+  return rows;
+}
+
+function populateMapSelect(){
+  const sel = document.getElementById('mapSelect');
+  sel.innerHTML = '';
+  cartes.forEach(c => {
+    const opt = document.createElement('option');
+    opt.value = c.id; opt.textContent = c.Titre || `Carte ${c.id}`;
+    sel.appendChild(opt);
+  });
+  if (currentMapId) sel.value = currentMapId;
+}
+
+document.getElementById('mapSelect').addEventListener('change', async e => {
+  currentMapId = Number(e.target.value);
+  didCenter = false;
+  setSelectedNode(null);
+  await loadNoeuds();
+});
+
+document.getElementById('newMapBtn').addEventListener('click', createMap);
+document.getElementById('emptyCreateBtn').addEventListener('click', createMap);
+
+async function createMap(){
+  const titre = prompt('Titre de la nouvelle carte :', 'Nouvelle carte');
+  if (titre === null) return;
+  const res = await grist.docApi.applyUserActions([
+    ['AddRecord', TABLE_CARTES, null, { Titre: titre }]
+  ]);
+  const newId = res.retValues[0];
+  await grist.docApi.applyUserActions([
+    ['AddRecord', TABLE_NOEUDS, null, { Label: titre, ParentId: 0, Ordre: 0, MapId: newId }]
+  ]);
+  currentMapId = newId;
+  didCenter = false;
+  await loadCartes();
+}
+
+document.getElementById('renameMapBtn').addEventListener('click', async () => {
+  if (!currentMapId) return;
+  const carte = cartes.find(c => c.id === currentMapId);
+  const titre = prompt('Nouveau titre :', carte ? carte.Titre : '');
+  if (titre === null) return;
+  await grist.docApi.applyUserActions([
+    ['UpdateRecord', TABLE_CARTES, currentMapId, { Titre: titre }]
+  ]);
+  await loadCartes();
+});
+
+
+
+/* ---------- Sélection (garde le panneau latéral synchronisé) ---------- */
+function setSelectedNode(id){
+  selectedNodeId = id;
+  if (id){
+    const n = noeuds.find(x => x.id === id);
+    if (n) openSidePanel(n); else closeSidePanel();
+  } else {
+    closeSidePanel();
+  }
+}
+
+/* ---------- Construction hiérarchie ---------- */
+function buildHierarchy(){
+  const byId = new Map(noeuds.map(n => [n.id, { ...n, children: [], collapsedView: collapsedIds.has(n.id) }]));
+  let rootNode = null;
+  byId.forEach(n => {
+    if (!n.ParentId || n.ParentId === 0){
+      rootNode = n;
+    } else {
+      const parent = byId.get(n.ParentId);
+      if (parent) parent.children.push(n);
+    }
+  });
+  byId.forEach(n => n.children.sort((a,b) => (a.Ordre||0) - (b.Ordre||0)));
+  return rootNode;
+}
+
+function showEmptyState(){
+  document.getElementById('emptyState').style.display = 'flex';
+  document.getElementById('svg').style.display = 'none';
+}
+function hideEmptyState(){
+  document.getElementById('emptyState').style.display = 'none';
+  document.getElementById('svg').style.display = 'block';
+}
+
+/* ---------- Rendu D3 ---------- */
+function initSvgOnce(){
+  if (svg) return;
+  svg = d3.select('#svg');
+  g = svg.append('g').attr('class', 'viewport');
+  g.append('g').attr('class', 'links-layer');
+  g.append('g').attr('class', 'nodes-layer');
+  zoomBehavior = d3.zoom().scaleExtent([0.2, 2]).on('zoom', ev => {
+    g.attr('transform', ev.transform);
+  });
+  svg.call(zoomBehavior);
+  svg.on('dblclick.zoom', null); // libère le double-clic pour l'édition
+  document.addEventListener('keydown', onKeyDown);
+}
+
+function render(){
+  const rawRoot = buildHierarchy();
+  if (!rawRoot){ showEmptyState(); return; }
+  hideEmptyState();
+  initSvgOnce();
+
+  // ---- recherche : calcule correspondances + ancêtres à forcer déplier ----
+  searchMatchIds = new Set();
+  searchAncestorIds = new Set();
+  searchActive = !!searchQuery.trim();
+  if (searchActive){
+    const q = searchQuery.trim().toLowerCase();
+    (function collect(n, path){
+      if ((n.Label||'').toLowerCase().includes(q)){
+        searchMatchIds.add(n.id);
+        path.forEach(pid => searchAncestorIds.add(pid));
+      }
+      (n.children||[]).forEach(c => collect(c, [...path, n.id]));
+    })(rawRoot, []);
+    (function forceExpand(n){
+      if (searchAncestorIds.has(n.id)) n.collapsedView = false;
+      (n.children||[]).forEach(forceExpand);
+    })(rawRoot);
+  }
+
+  root = d3.hierarchy(rawRoot, d => d.collapsedView ? null : d.children);
+  root.each(d => { d.data._colorIdx = branchColorIndex(d); });
+
+  const treeLayout = d3.tree()
+    .nodeSize([NODE_H + SIB_GAP, 1]) // le 2e axe est recalculé dynamiquement ci-dessous
+    .separation((a, b) => a.parent === b.parent ? 1 : 1.3);
+  treeLayout(root);
+
+  // Racine à gauche, arbre horizontal : on échange x/y
+  root.each(d => { const t = d.x; d.x = d.y; d.y = t; });
+
+  // espacement horizontal adapté à la largeur réelle des cartes de chaque niveau
+  const maxWidthByDepth = [];
+  root.each(d => {
+    maxWidthByDepth[d.depth] = Math.max(maxWidthByDepth[d.depth] || 0, nodeWidth(d));
+  });
+  const depthX = [0];
+  for (let i = 1; i < maxWidthByDepth.length; i++){
+    depthX[i] = depthX[i-1] + maxWidthByDepth[i-1]/2 + maxWidthByDepth[i]/2 + LEVEL_GAP_MARGIN;
+  }
+  root.each(d => { d.x = depthX[d.depth]; });
+
+  drawLinks();
+  drawNodes();
+  if (!didCenter){ didCenter = true; recenterView(false); }
+}
+
+function recenterView(animate){
+  const bbox = document.getElementById('canvas-wrap').getBoundingClientRect();
+  const target = d3.zoomIdentity.translate(60, bbox.height/2).scale(0.95);
+  if (animate) svg.transition().duration(300).call(zoomBehavior.transform, target);
+  else svg.call(zoomBehavior.transform, target);
+}
+document.getElementById('recenterBtn').addEventListener('click', () => recenterView(true));
+
+function branchColorIndex(d){
+  if (!d.parent) return -1;
+  let node = d;
+  while (node.depth > 1) node = node.parent;
+  return node.parent.children.indexOf(node) % PALETTE.length;
+}
+function nodeColor(d){
+  return d.data._colorIdx === -1 ? getVar('--mm-ink-dim') : PALETTE[d.data._colorIdx];
+}
+
+const _measureCanvas = document.createElement('canvas').getContext('2d');
+function measureTextWidth(text, isRoot){
+  _measureCanvas.font = isRoot ? "600 16px Fraunces, serif" : "500 13px Inter, sans-serif";
+  return _measureCanvas.measureText(text).width;
+}
+function truncateLabel(label, isRoot){
+  const maxTextW = NODE_MAX_W - NODE_PAD_X * 2;
+  if (measureTextWidth(label, isRoot) <= maxTextW) return label;
+  let lo = 0, hi = label.length;
+  while (lo < hi){
+    const mid = Math.ceil((lo + hi) / 2);
+    if (measureTextWidth(label.slice(0, mid) + '…', isRoot) <= maxTextW) lo = mid; else hi = mid - 1;
+  }
+  return label.slice(0, lo) + '…';
+}
+function nodeWidth(d){
+  const label = d.data.Label || '';
+  const isRoot = !d.parent;
+  const w = measureTextWidth(label, isRoot) + NODE_PAD_X * 2;
+  return Math.min(Math.max(NODE_MIN_W, w), NODE_MAX_W);
+}
+
+function drawLinks(){
+  const links = root.links();
+  const path = d3.linkHorizontal().x(d => d.x).y(d => d.y);
+  const sel = g.select('.links-layer').selectAll('path.link').data(links, d => d.target.data.id);
+  sel.exit().remove();
+  sel.enter().append('path').attr('class', 'link')
+    .merge(sel)
+    .attr('stroke', d => nodeColor(d.target))
+    .attr('d', path);
+}
+
+function drawNodes(){
+  const nodes = root.descendants();
+
+  const sel = g.select('.nodes-layer').selectAll('g.node').data(nodes, d => d.data.id);
+  sel.exit().remove();
+
+  const enter = sel.enter().append('g').attr('class', 'node');
+  enter.append('rect').attr('class', 'node-card');
+  enter.append('rect').attr('class', 'node-bar');
+  enter.append('text').attr('class', 'node-label');
+  enter.append('circle').attr('class', 'link-indicator').attr('r', 3);
+  enter.append('title');
+  enter.append('g').attr('class', 'toggle-group').style('display', 'none')
+    .call(tg => { tg.append('circle').attr('class', 'toggle-circle').attr('r', 8);
+                  tg.append('text').attr('class', 'toggle-count').attr('text-anchor','middle').attr('dy', 3); });
+
+  const merged = enter.merge(sel);
+
+  merged.classed('is-root', d => !d.parent)
+        .classed('search-dim', d => searchActive && !searchMatchIds.has(d.data.id) && !searchAncestorIds.has(d.data.id))
+        .attr('transform', d => `translate(${d.x - nodeWidth(d)/2},${d.y - NODE_H/2})`);
+
+  merged.select('rect.node-card')
+    .attr('width', d => nodeWidth(d))
+    .attr('height', NODE_H)
+    .attr('rx', 10)
+    .classed('selected', d => d.data.id === selectedNodeId)
+    .classed('search-match', d => searchMatchIds.has(d.data.id))
+    .attr('stroke', d => d.data.id === selectedNodeId ? nodeColor(d) : (searchMatchIds.has(d.data.id) ? getVar('--mm-ink') : getVar('--mm-ine')));
+
+  merged.select('rect.node-bar')
+    .attr('x', 0).attr('y', 0).attr('width', 4).attr('height', NODE_H)
+    .attr('rx', 2)
+    .attr('fill', d => d.data._colorIdx === -1 ? 'transparent' : nodeColor(d));
+
+  merged.select('text.node-label')
+    .attr('x', d => nodeWidth(d)/2)
+    .attr('y', NODE_H/2 + 4.5)
+    .attr('text-anchor', 'middle')
+    .style('opacity', 1)
+    .text(d => truncateLabel(d.data.Label || '(sans titre)', !d.parent));
+
+  merged.select('title').text(d => d.data.Label || '');
+
+  merged.select('circle.link-indicator')
+    .attr('cx', d => nodeWidth(d) - 10)
+    .attr('cy', NODE_H - 8)
+    .attr('fill', d => d.data.Url ? nodeColor(d) : 'transparent');
+
+  merged.select('g.toggle-group')
+    .style('display', d => (d.data.children && d.data.children.length) ? 'block' : 'none')
+    .attr('transform', d => `translate(${nodeWidth(d)},${NODE_H/2})`)
+    .on('click', (ev, d) => { ev.stopPropagation(); toggleCollapse(d.data); })
+    .select('text.toggle-count').text(d => d.data.collapsedView ? d.data.children.length : '−');
+
+  merged.call(d3.drag()
+    .clickDistance(6)
+    .filter(ev => !ev.target.closest('.toggle-group'))
+    .on('start', dragStarted)
+    .on('drag', dragged)
+    .on('end', dragEnded));
+}
+
+function toggleCollapse(dataNode){
+  if (collapsedIds.has(dataNode.id)) collapsedIds.delete(dataNode.id);
+  else collapsedIds.add(dataNode.id);
+  render();
+}
+
+document.getElementById('collapseAllBtn').addEventListener('click', () => {
+  if (!root) return;
+  root.each(d => {
+    if (d.parent && d.data.children && d.data.children.length) collapsedIds.add(d.data.id);
+  });
+  render();
+});
+document.getElementById('expandAllBtn').addEventListener('click', () => {
+  collapsedIds.clear();
+  render();
+});
+
+/* ---------- Recherche ---------- */
+let searchDebounce = null;
+document.getElementById('searchInput').addEventListener('input', e => {
+  clearTimeout(searchDebounce);
+  const val = e.target.value;
+  searchDebounce = setTimeout(() => { searchQuery = val; render(); }, 200);
+});
+
+/* ---------- Glisser-déposer (reparenter / réordonner) ---------- */
+function dragStarted(ev, d){
+  if (!d.parent) return;
+  if (presentationMode) return;   // ← ajouté
+  const [px, py] = d3.pointer(ev.sourceEvent, g.node());
+  d._offX = px - d.x;
+  d._offY = py - d.y;
+  d._dragMoved = false;
+}
+
+function dragged(ev, d){
+  if (!d.parent) return;
+  if (presentationMode) return;   // ← ajouté
+  if (!d._dragMoved){
+    d._dragMoved = true;
+    d3.select(this).raise().classed('dragging', true);
+  }
+  const [px, py] = d3.pointer(ev.sourceEvent, g.node());
+  const w = nodeWidth(d);
+  const nx = px - d._offX, ny = py - d._offY;
+  d3.select(this).attr('transform', `translate(${nx - w/2},${ny - NODE_H/2})`);
+  window._dropTargetId = findDropTarget(px, py, d);
+  g.selectAll('rect.node-card').classed('drop-target', n => n.data.id === window._dropTargetId);
+}
+
+async function dragEnded(ev, d){
+  if (!d.parent) return;
+  d3.select(this).classed('dragging', false);
+  g.selectAll('rect.node-card').classed('drop-target', false);
+
+  if (presentationMode || !d._dragMoved){   // ← condition modifiée
+    const now = Date.now();
+    const isDoubleClick = window._lastClickId === d.data.id && (now - (window._lastClickTime||0)) < 400;
+    window._lastClickId = d.data.id;
+    window._lastClickTime = now;
+
+    setSelectedNode(d.data.id);
+    if (isDoubleClick && !presentationMode){   // ← ajout du garde-fou
+      window._lastClickId = null;
+      render();
+      const target = root.descendants().find(n => n.data.id === d.data.id);
+      if (target) startEdit(target);
+    } else {
+      render();
+    }
+    return;
+  }
+
+  const targetId = window._dropTargetId;
+  window._dropTargetId = null;
+  if (!targetId){ render(); return; }
+
+  const current = noeuds.find(n => n.id === d.data.id);
+  const targetNode = noeuds.find(n => n.id === targetId);
+  if (!current || !targetNode){ render(); return; }
+
+  if (targetNode.ParentId === current.ParentId){
+    await reorderSibling(current, targetNode);
+  } else {
+    await reparentNode(current, targetNode);
+  }
+  await loadNoeuds();
+}
+
+function findDropTarget(px, py, dragged){
+  const excluded = new Set(dragged.descendants().map(n => n.data.id));
+  excluded.add(dragged.data.id);
+  let found = null;
+  root.each(n => {
+    if (excluded.has(n.data.id)) return;
+    const w = nodeWidth(n);
+    const x0 = n.x - w/2, x1 = n.x + w/2, y0 = n.y - NODE_H/2, y1 = n.y + NODE_H/2;
+    if (px >= x0 && px <= x1 && py >= y0 && py <= y1) found = n.data.id;
+  });
+  return found;
+}
+
+async function reorderSibling(current, targetNode){
+  const siblings = noeuds
+    .filter(n => n.ParentId === targetNode.ParentId && n.id !== current.id)
+    .sort((a,b) => (a.Ordre||0) - (b.Ordre||0));
+  const idx = siblings.findIndex(s => s.id === targetNode.id);
+  siblings.splice(idx, 0, current);
+  const actions = siblings.map((s, i) => ['UpdateRecord', TABLE_NOEUDS, s.id, { Ordre: i }]);
+  await grist.docApi.applyUserActions(actions);
+}
+
+async function reparentNode(current, targetNode){
+  const futureSiblings = noeuds.filter(n => n.ParentId === targetNode.id);
+  const ordre = futureSiblings.length ? Math.max(...futureSiblings.map(s => s.Ordre || 0)) + 1 : 0;
+  await grist.docApi.applyUserActions([
+    ['UpdateRecord', TABLE_NOEUDS, current.id, { ParentId: targetNode.id, Ordre: ordre }]
+  ]);
+}
+
+/* ---------- Édition inline ---------- */
+function startEdit(d){
+  if (presentationMode) return;
+  const w = nodeWidth(d);
+
+  g.selectAll('g.node').filter(n => n.data.id === d.data.id)
+    .select('text.node-label').style('opacity', 0);
+
+  const fo = g.select('.nodes-layer').append('foreignObject')
+    .attr('x', d.x - w/2 + 2)
+    .attr('y', d.y - NODE_H/2 + 2)
+    .attr('width', w - 4)
+    .attr('height', NODE_H - 4);
+
+  const input = fo.append('xhtml:input')
+    .attr('class', 'edit-input')
+    .attr('value', d.data.Label || '')
+    .style('font-family', d.parent ? "'Inter',sans-serif" : "'Fraunces',serif")
+    .style('font-size', d.parent ? '13px' : '16px')
+    .style('font-weight', d.parent ? '500' : '600');
+
+  const node = input.node();
+  node.focus(); node.select();
+
+  let committed = false;
+  const commit = async () => {
+    if (committed) return;
+    committed = true;
+    const val = node.value.trim();
+    fo.remove();
+    if (val && val !== d.data.Label){
+      await grist.docApi.applyUserActions([
+        ['UpdateRecord', TABLE_NOEUDS, d.data.id, { Label: val }]
+      ]);
+      await loadNoeuds();
+    } else {
+      render();
+    }
+  };
+
+  node.addEventListener('blur', commit);
+  node.addEventListener('keydown', ev => {
+    ev.stopPropagation();
+    if (ev.key === 'Enter'){ ev.preventDefault(); node.blur(); }
+    if (ev.key === 'Escape'){
+      ev.preventDefault();
+      committed = true;
+      fo.remove();
+      render();
+    }
+  });
+}
+
+/* ---------- Raccourcis clavier ---------- */
+async function onKeyDown(ev){
+  if (!document.getElementById('page-mindmap').classList.contains('active')) return;
+  if (document.activeElement && document.activeElement.tagName === 'INPUT') return;
+  if (document.activeElement && document.activeElement.tagName === 'TEXTAREA') return;
+  if (presentationMode){
+    if (ev.key === 'Escape') togglePresentation();
+    return;
+  }
+  if (!selectedNodeId) return;
+  const current = noeuds.find(n => n.id === selectedNodeId);
+  if (!current) return;
+
+  if (ev.key === 'Tab'){
+    ev.preventDefault();
+    await addNode(current.id);
+  } else if (ev.key === 'Enter'){
+    ev.preventDefault();
+    if (current.ParentId) await addNode(current.ParentId);
+  } else if (ev.key === 'Delete' || ev.key === 'Backspace'){
+    ev.preventDefault();
+    if (!current.ParentId) return;
+    await deleteNode(current.id);
+  } else if (ev.key === 'Escape'){
+    setSelectedNode(null);
+    render();
+  }
+}
+
+async function addNode(parentId){
+  const siblings = noeuds.filter(n => n.ParentId === parentId);
+  const ordre = siblings.length ? Math.max(...siblings.map(s => s.Ordre||0)) + 1 : 0;
+  const res = await grist.docApi.applyUserActions([
+    ['AddRecord', TABLE_NOEUDS, null, {
+      Label: 'Nouvelle idée', ParentId: parentId, Ordre: ordre, MapId: currentMapId
+    }]
+  ]);
+  const newId = res.retValues[0];
+  await loadNoeuds();
+  setSelectedNode(newId);
+  render();
+}
+
+async function deleteNode(id){
+  const idsToDelete = collectSubtreeIds(id);
+  await grist.docApi.applyUserActions(
+    idsToDelete.map(i => ['RemoveRecord', TABLE_NOEUDS, i])
+  );
+  setSelectedNode(null);
+  await loadNoeuds();
+}
+
+function collectSubtreeIds(id){
+  const children = noeuds.filter(n => n.ParentId === id).map(n => n.id);
+  return [id, ...children.flatMap(collectSubtreeIds)];
+}
+
+/* ---------- Panneau latéral (Notes + Lien) ---------- */
+function openSidePanel(nodeData){
+  const panel = document.getElementById('sidePanel');
+  panel.style.display = 'flex';
+  document.getElementById('panelNodeLabel').textContent = nodeData.Label || '(sans titre)';
+  document.getElementById('panelUrlInput').value = nodeData.Url || '';
+  document.getElementById('panelNotesInput').value = nodeData.Notes || '';
+}
+function closeSidePanel(){
+  document.getElementById('sidePanel').style.display = 'none';
+}
+document.getElementById('closePanelBtn').addEventListener('click', () => {
+  setSelectedNode(null);
+  render();
+});
+document.getElementById('panelOpenUrlBtn').addEventListener('click', () => {
+  const url = document.getElementById('panelUrlInput').value.trim();
+  if (url) window.open(url, '_blank', 'noopener');
+});
+
+let panelSaveTimer = null;
+function schedulePanelSave(){
+  clearTimeout(panelSaveTimer);
+  const idAtEdit = selectedNodeId;
+  panelSaveTimer = setTimeout(async () => {
+    if (!idAtEdit) return;
+    const url = document.getElementById('panelUrlInput').value.trim();
+    const notes = document.getElementById('panelNotesInput').value;
+    await grist.docApi.applyUserActions([
+      ['UpdateRecord', TABLE_NOEUDS, idAtEdit, { Url: url, Notes: notes }]
+    ]);
+    await loadNoeuds();
+  }, 500);
+}
+document.getElementById('panelUrlInput').addEventListener('input', schedulePanelSave);
+document.getElementById('panelNotesInput').addEventListener('input', schedulePanelSave);
+
+/* ---------- Export SVG / PNG ---------- */
+function sanitizeFilename(name){
+  return (name || 'mindmap').replace(/[^a-z0-9\-_]+/gi, '_');
+}
+
+function buildExportSvgClone(){
+  const original = document.getElementById('svg');
+  const viewportOriginal = original.querySelector('g.viewport');
+  const bbox = viewportOriginal.getBBox();
+  const pad = 40;
+
+  const clone = original.cloneNode(true);
+  clone.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
+  clone.setAttribute('width', Math.ceil(bbox.width + pad*2));
+  clone.setAttribute('height', Math.ceil(bbox.height + pad*2));
+  clone.setAttribute('viewBox', `${bbox.x-pad} ${bbox.y-pad} ${bbox.width+pad*2} ${bbox.height+pad*2}`);
+
+  const viewportClone = clone.querySelector('g.viewport');
+  viewportClone.removeAttribute('transform');
+
+  // supprime les éléments d'UI transitoires qui ne devraient pas apparaître à l'export
+  clone.querySelectorAll('.drop-target, foreignObject').forEach(el => el.remove());
+
+  const styleEl = document.createElement('style');
+  styleEl.textContent = document.querySelector('style').textContent;
+  clone.insertBefore(styleEl, clone.firstChild);
+
+  const bg = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+  bg.setAttribute('x', bbox.x-pad); bg.setAttribute('y', bbox.y-pad);
+  bg.setAttribute('width', bbox.width+pad*2); bg.setAttribute('height', bbox.height+pad*2);
+  bg.setAttribute('fill', getVar('--mm-paper'));
+  viewportClone.insertBefore(bg, viewportClone.firstChild);
+
+  return clone;
+}
+
+function downloadBlob(content, filename, mime){
+  const blob = new Blob([content], { type: mime });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = filename;
+  document.body.appendChild(a); a.click(); a.remove();
+  URL.revokeObjectURL(url);
+}
+
+document.getElementById('exportSvgBtn').addEventListener('click', () => {
+  if (!root) return;
+  const clone = buildExportSvgClone();
+  const svgStr = '<?xml version="1.0" encoding="UTF-8"?>\n' + new XMLSerializer().serializeToString(clone);
+  const carte = cartes.find(c => c.id === currentMapId);
+  downloadBlob(svgStr, `${sanitizeFilename(carte && carte.Titre)}.svg`, 'image/svg+xml');
+});
+
+document.getElementById('exportPngBtn').addEventListener('click', () => {
+  if (!root) return;
+  const clone = buildExportSvgClone();
+  const svgStr = new XMLSerializer().serializeToString(clone);
+  const svgBlob = new Blob([svgStr], { type: 'image/svg+xml;charset=utf-8' });
+  const url = URL.createObjectURL(svgBlob);
+  const img = new Image();
+  img.onload = () => {
+    const scale = 2;
+    const w = Number(clone.getAttribute('width'));
+    const h = Number(clone.getAttribute('height'));
+    const canvas = document.createElement('canvas');
+    canvas.width = w * scale; canvas.height = h * scale;
+    const ctx = canvas.getContext('2d');
+    ctx.scale(scale, scale);
+    ctx.drawImage(img, 0, 0, w, h);
+    URL.revokeObjectURL(url);
+    canvas.toBlob(blob => {
+      const carte = cartes.find(c => c.id === currentMapId);
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = `${sanitizeFilename(carte && carte.Titre)}.png`;
+      document.body.appendChild(a); a.click(); a.remove();
+    });
+  };
+  img.src = url;
+});
+
+/* ---------- Export Markdown ---------- */
+document.getElementById('exportMdBtn').addEventListener('click', () => {
+  const rawRoot = buildHierarchy();
+  if (!rawRoot) return;
+  const lines = [];
+  (function walk(n, depth){
+    const prefix = depth === 0 ? '# ' : `${'  '.repeat(depth-1)}- `;
+    lines.push(prefix + (n.Label || '(sans titre)'));
+    if (n.Notes) lines.push(`${'  '.repeat(depth)}  > ${String(n.Notes).replace(/\n/g,' ')}`);
+    if (n.Url) lines.push(`${'  '.repeat(depth)}  (${n.Url})`);
+    (n.children || []).slice().sort((a,b) => (a.Ordre||0) - (b.Ordre||0)).forEach(c => walk(c, depth+1));
+  })(rawRoot, 0);
+  const carte = cartes.find(c => c.id === currentMapId);
+  downloadBlob(lines.join('\n'), `${sanitizeFilename(carte && carte.Titre)}.md`, 'text/markdown');
+});
+
+/* ---------- Mode présentation plein écran ---------- */
+function fitToContent(){
+  if (!root) return;
+  const nodesArr = root.descendants();
+  if (!nodesArr.length) return;
+  let minX=Infinity, maxX=-Infinity, minY=Infinity, maxY=-Infinity;
+  nodesArr.forEach(d => {
+    const w = nodeWidth(d);
+    minX = Math.min(minX, d.x - w/2); maxX = Math.max(maxX, d.x + w/2);
+    minY = Math.min(minY, d.y - NODE_H/2); maxY = Math.max(maxY, d.y + NODE_H/2);
+  });
+  const bbox = document.getElementById('canvas-wrap').getBoundingClientRect();
+  const contentW = Math.max(maxX - minX, 1), contentH = Math.max(maxY - minY, 1);
+  const pad = 60;
+  const scale = Math.min((bbox.width - pad*2) / contentW, (bbox.height - pad*2) / contentH, 1.4);
+  const tx = bbox.width/2 - scale * (minX + contentW/2);
+  const ty = bbox.height/2 - scale * (minY + contentH/2);
+  svg.transition().duration(350).call(zoomBehavior.transform, d3.zoomIdentity.translate(tx, ty).scale(scale));
+}
+
+function togglePresentation(){
+  presentationMode = !presentationMode;
+  document.body.classList.toggle('presentation', presentationMode);
+  if (presentationMode) fitToContent();
+}
+document.getElementById('presentBtn').addEventListener('click', togglePresentation);
+document.getElementById('exitPresentBtn').addEventListener('click', togglePresentation);
+
+/* ---------- Boot ---------- */
+window.mmBoot = function(){
+  if (typeof grist !== 'undefined') loadCartes();
+  else mmBootDemo();
+};
+async function mmBootDemo(){
+  cartes = [{ id: 1, Titre: 'Exemple' }];
+  currentMapId = 1;
+  noeuds = [
+    { id: 1, Label: 'Idée centrale', ParentId: 0, Ordre: 0, MapId: 1, Notes: '', Url: '' },
+    { id: 2, Label: 'Branche 1',     ParentId: 1, Ordre: 0, MapId: 1, Notes: '', Url: '' },
+    { id: 3, Label: 'Branche 2',     ParentId: 1, Ordre: 1, MapId: 1, Notes: '', Url: '' },
+  ];
+  populateMapSelect();
+  render();
+}
+})();
 </script>
 <div id="calPop" class="cal-pop" style="display:none"></div>
 </body>
