@@ -139,6 +139,10 @@ h1 {
   <span class="tog-label">Outliner</span>
   <div class="tog-sw" id="tog-outliner_on"></div>
 </div>
+<div class="tog-row" onclick="toggleField('mindmap_on')">
+  <span class="tog-label">Mind Map</span>
+  <div class="tog-sw" id="tog-mindmap_on"></div>
+</div>
 <div class="hint" style="margin-bottom:14px">Activé = onglet visible dans le Journal.</div>
 
 <div class="label-grid">
@@ -158,6 +162,10 @@ h1 {
     <label>Libellé onglet Outliner</label>
     <input type="text" id="cfgLabelOutliner" placeholder="Outliner">
   </div>
+  <div class="cf">
+  <label>Libellé onglet Mind Map</label>
+  <input type="text" id="cfgLabelMindmap" placeholder="Mind Map">
+</div>
 </div>
 
 <div class="section-title">Modules Bujo</div>
@@ -202,10 +210,12 @@ let config = {
   lectures_on: 'true',
   collections_on: 'true',
   outliner_on: 'true',
+  mindmap_on: 'true',
   label_bujo: '',
   label_lectures: '',
   label_collections: '',
   label_outliner: '',
+  label_mindmap: '',
   bday_on: 'true',
   projet_on: 'true',
   col_cal_on: 'true',
@@ -216,7 +226,7 @@ let config = {
 let rowIds = {};
 let saveT = null;
 
-const TOGGLE_KEYS = ['bujo_on','lectures_on','collections_on','outliner_on','bday_on','projet_on','col_cal_on','col_futurelogs_on','col_week_on'];
+const TOGGLE_KEYS = ['bujo_on','lectures_on','collections_on','outliner_on','mindmap_on','bday_on','projet_on','col_cal_on','col_futurelogs_on','col_week_on'];
 
 function toggleField(key) {
   config[key] = (config[key] === 'false') ? 'true' : 'false';
@@ -236,6 +246,7 @@ function refreshFields() {
   document.getElementById('cfgLabelLectures').value = config.label_lectures || '';
   document.getElementById('cfgLabelCollections').value = config.label_collections || '';
   document.getElementById('cfgLabelOutliner').value = config.label_outliner || '';
+  document.getElementById('cfgLabelMindmap').value = config.label_mindmap || '';
   const hex = config.accent || '#e8a020';
   document.getElementById('cfgAccentHex').value = hex;
   document.getElementById('cfgAccentPicker').value = /^#[0-9a-fA-F]{6}$/.test(hex) ? hex : '#e8a020';
@@ -257,6 +268,7 @@ document.getElementById('cfgLabelBujo').addEventListener('input', e => { config.
 document.getElementById('cfgLabelLectures').addEventListener('input', e => { config.label_lectures = e.target.value; });
 document.getElementById('cfgLabelCollections').addEventListener('input', e => { config.label_collections = e.target.value; });
 document.getElementById('cfgLabelOutliner').addEventListener('input', e => { config.label_outliner = e.target.value; });
+document.getElementById('cfgLabelMindmap').addEventListener('input', e => { config.label_mindmap = e.target.value; });
 
 async function loadConfig() {
   if (typeof grist === 'undefined') { refreshFields(); return; }
