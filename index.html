@@ -450,6 +450,7 @@ select.cfilt { cursor: pointer; }
 }
 .tag-suggestion-item:hover { background: var(--bg-soft); }
 .tag-suggestion-item em { font-style: normal; font-weight: 700; color: var(--accent); }
+.tag-suggestion-other { float: right; font-size: 9.5px; color: var(--light); font-weight: 400; }
 .presets { display: flex; flex-wrap: wrap; gap: 3px; margin-top: 5px; }
 .preset { font-size: 10px; padding: 2px 7px; border: 1px solid var(--border); border-radius: 20px; background: var(--bg-soft); color: var(--muted); cursor: pointer; font-family: inherit; transition: background .1s; }
 .preset:hover { background: var(--bg-hover); border-color: var(--accent); }
@@ -4093,10 +4094,16 @@ function renderItemModFields(theme, it) {
   }
 }
 
+function normalizeTag(tag) {
+  if (!tag) return '';
+  const existing = getAllTags().find(t => t.toLowerCase() === tag.toLowerCase());
+  return existing || tag;
+}
+
 function saveItem() {
   const titre   = document.getElementById('imoTitre')?.value.trim()||'';
   const url     = document.getElementById('imoUrl')?.value.trim()||'';
-  const tag     = document.getElementById('imoTag')?.value.trim()||'';
+  const tag     = normalizeTag(document.getElementById('imoTag')?.value.trim()||'');
   const colId   = document.getElementById('imoColId')?.value || selColId;
   const texteEl = document.getElementById('imoTexte');
   const texte   = texteEl ? (texteEl.tagName==='TEXTAREA' ? texteEl.value : texteEl.innerHTML) : '';
@@ -4320,24 +4327,37 @@ function showTagSuggestions(input) {
   const q = input.value.trim().toLowerCase();
   const box = document.getElementById('tagSuggestions');
   if (!box) return;
-  if (!q) { box.style.display = 'none'; return; }
-  
+
+  const colTags = [...new Set(items.filter(it => it.col_id === selColId).map(it => it.tag).filter(Boolean))];
   const allTags = getAllTags();
-  const matches = allTags.filter(t => t.toLowerCase().includes(q) && t.toLowerCase() !== q);
+
+  let matches;
+  if (!q) {
+    // Champ vide (focus) : on affiche tout ce qui existe, tags de cette collection en tête
+    const others = allTags.filter(t => !colTags.includes(t));
+    matches = [...colTags.sort((a,b)=>a.localeCompare(b,'fr',{sensitivity:'base'})), ...others];
+  } else {
+    matches = allTags.filter(t => t.toLowerCase().includes(q) && t.toLowerCase() !== q);
+    matches.sort((a, b) => {
+      const aInCol = colTags.includes(a) ? 0 : 1;
+      const bInCol = colTags.includes(b) ? 0 : 1;
+      if (aInCol !== bInCol) return aInCol - bInCol;
+      const aStartsWith = a.toLowerCase().startsWith(q) ? 0 : 1;
+      const bStartsWith = b.toLowerCase().startsWith(q) ? 0 : 1;
+      if (aStartsWith !== bStartsWith) return aStartsWith - bStartsWith;
+      return a.localeCompare(b, 'fr', { sensitivity: 'base' });
+    });
+  }
+
   if (!matches.length) { box.style.display = 'none'; return; }
-  
-  matches.sort((a, b) => {
-    const aStartsWith = a.toLowerCase().startsWith(q) ? 0 : 1;
-    const bStartsWith = b.toLowerCase().startsWith(q) ? 0 : 1;
-    if (aStartsWith !== bStartsWith) return aStartsWith - bStartsWith;
-    return a.localeCompare(b, 'fr', { sensitivity: 'base' });
-  });
-  
-  const limited = matches.slice(0, 8);
+
+  const qEsc = q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const limited = matches.slice(0, 10);
   box.innerHTML = limited.map(t => {
-    const qEsc = q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-    const hl = t.replace(new RegExp(`(${qEsc})`, 'gi'), '<em>$1</em>');
-    return `<div class="tag-suggestion-item" onmousedown="event.preventDefault();pickTag('${esc(t)}')">${hl}</div>`;
+    const tEsc = esc(t);
+    const hl = q ? tEsc.replace(new RegExp(`(${qEsc})`, 'gi'), '<em>$1</em>') : tEsc;
+    const badge = colTags.includes(t) ? '' : '<span class="tag-suggestion-other">autre collection</span>';
+    return `<div class="tag-suggestion-item" onmousedown="event.preventDefault();pickTag('${esc(t)}')">${hl}${badge}</div>`;
   }).join('');
   box.style.display = 'block';
 }
