@@ -915,6 +915,24 @@ select.cfilt { cursor: pointer; }
   background: var(--bg-soft); color: var(--muted);
   border: .5px solid var(--border); font-family: 'DM Sans', sans-serif;
 }
+/* ── Couvertures (colonne "cover" des Items) ── */
+.item-cover-card {
+  display: block; width: calc(100% + 32px); height: 130px;
+  object-fit: cover; border-radius: 8px 8px 0 0;
+  margin: -14px -16px 10px -16px;
+}
+.item-cover-thumb {
+  width: 34px; height: 34px; border-radius: 6px; object-fit: cover;
+  border: .5px solid var(--border); flex-shrink: 0; display: block;
+}
+.item-cover-table {
+  width: 28px; height: 28px; border-radius: 4px; object-fit: cover;
+  border: .5px solid var(--border); display: block;
+}
+.fiche-modal-cover {
+  display: block; width: 100%; max-height: 240px; object-fit: cover;
+  border-radius: 8px; margin-bottom: 16px;
+}
 .item-body-row {
   display: flex; align-items: center; justify-content: space-between;
   gap: 10px; min-width: 0;
@@ -3518,6 +3536,11 @@ function renderColIcon(svgCode, size) {
   return `<svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}" fill="none"><rect x="${size*.1}" y="${size*.1}" width="${size*.8}" height="${size*.8}" rx="2" stroke="#1a1a1a" stroke-width="1.5" opacity=".7"/></svg>`;
 }
 
+function coverImg(url, cls) {
+  if (!url) return '';
+  return `<img class="${cls}" src="${esc(url)}" alt="" loading="lazy" onerror="this.remove()">`;
+}
+
 // ── Multi-tags : un item.tag est une chaîne "tag1, tag2, tag3" ──
 function splitTags(tagStr) {
   if (!tagStr) return [];
@@ -3718,6 +3741,7 @@ function renderItemsCards(colItems, theme) {
       const tagHtml = tagsHtml(it.tag);
       return `<div class="item-fiche" data-item-idx="${idx}" onclick="openFicheModal(${idx})">
         <span class="card-drag-handle" onclick="event.stopPropagation()">&#8942;&#8942;</span>
+        ${coverImg(it.cover, 'item-cover-card')}
         <div class="item-fiche-title">${esc(it.titre||'Sans titre')}</div>
         ${preview ? `<div class="item-fiche-preview">${esc(preview)}…</div>` : ''}
         <div class="item-fiche-meta">${tagHtml}<div style="flex:1"></div><button class="item-act-btn" onclick="event.stopPropagation();openItemMod(${idx},'fiches')" title="Modifier">&#9998;</button></div>
@@ -3746,6 +3770,7 @@ function renderItemsCards(colItems, theme) {
       const tagHtml = tagsHtml(it.tag);
       return `<div class="item-fiche" data-item-idx="${idx}">
         <span class="card-drag-handle" onclick="event.stopPropagation()">&#8942;&#8942;</span>
+        ${coverImg(it.cover, 'item-cover-card')}
         <div style="display:flex;align-items:flex-start;gap:8px">
           <div class="item-chk${it.fait?' done':''}" onclick="toggleItem(${idx})"></div>
           <div class="item-fiche-title" style="${it.fait?'text-decoration:line-through;color:var(--muted)':''}">${esc(it.titre)}</div>
@@ -3762,6 +3787,7 @@ function renderItemsCards(colItems, theme) {
       const urlDisplay = it.url ? it.url.replace(/^https?:\/\//,'').split('/')[0] : '';
       return `<div class="item-fiche" data-item-idx="${idx}" onclick="openLienCard(${idx})">
         <span class="card-drag-handle" onclick="event.stopPropagation()">&#8942;&#8942;</span>
+        ${coverImg(it.cover, 'item-cover-card')}
         <div class="item-fiche-title">${esc(it.titre||it.url||'Sans titre')}</div>
         ${it.url ? `<div class="item-fiche-url"><a href="${esc(it.url)}" target="_blank" onclick="event.stopPropagation()">${esc(urlDisplay)}</a></div>` : ''}
         <div class="item-fiche-meta">${tagHtml}<div style="flex:1"></div><button class="item-act-btn" onclick="event.stopPropagation();openItemMod(${idx},'liens')" title="Modifier">&#9998;</button></div>
@@ -3783,9 +3809,9 @@ function renderItemsTable(colItems, theme) {
   const th = (key, label) => `<th onclick="sortColTable('${key}')" class="${colTableSort.key===key?'sorted':''}">${label} <span class="sort-ic">${sortIc(key)}</span></th>`;
 
   let head = '';
-  if (theme === 'listes')   head = '<th style="width:30px;cursor:default"></th>' + th('titre','Titre') + th('tag','Tag') + '<th style="width:34px;cursor:default"></th>';
-  if (theme === 'liens')    head = th('titre','Titre') + th('url','URL') + th('tag','Tag') + '<th style="width:34px;cursor:default"></th>';
-  if (theme === 'fiches')   head = th('titre','Titre') + th('texte','Aperçu') + th('tag','Tag') + '<th style="width:34px;cursor:default"></th>';
+  if (theme === 'listes')   head = '<th style="width:30px;cursor:default"></th>' + '<th style="width:40px;cursor:default"></th>' + th('titre','Titre') + th('tag','Tag') + '<th style="width:34px;cursor:default"></th>';
+  if (theme === 'liens')    head = '<th style="width:40px;cursor:default"></th>' + th('titre','Titre') + th('url','URL') + th('tag','Tag') + '<th style="width:34px;cursor:default"></th>';
+  if (theme === 'fiches')   head = '<th style="width:40px;cursor:default"></th>' + th('titre','Titre') + th('texte','Aperçu') + th('tag','Tag') + '<th style="width:34px;cursor:default"></th>';
   if (theme === 'couleurs') head = '<th style="width:40px;cursor:default"></th>' + th('titre','Nom') + th('url','Hex') + '<th style="width:34px;cursor:default"></th>';
 
   let sortedItems = colItems;
@@ -3802,17 +3828,20 @@ function renderItemsTable(colItems, theme) {
     const editBtn = `<button class="item-act-btn" onclick="event.stopPropagation();openItemMod(${idx},'${theme}')" title="Modifier">&#9998;</button>`;
     if (theme === 'listes') return `<tr onclick="toggleItem(${idx})">
       <td><div class="item-chk${it.fait?' done':''}"></div></td>
+      <td>${coverImg(it.cover, 'item-cover-table')}</td>
       <td class="td-titre" style="${it.fait?'text-decoration:line-through;color:var(--muted)':''}">${esc(it.titre)}</td>
       <td class="td-auteur">${tagsHtml(it.tag)}</td>
       <td onclick="event.stopPropagation()">${editBtn}</td></tr>`;
     if (theme === 'liens') { const url = it.url ? it.url.replace(/^https?:\/\//,'').split('/')[0] : '';
       return `<tr onclick="openItemMod(${idx},'liens')">
+      <td>${coverImg(it.cover, 'item-cover-table')}</td>
       <td class="td-titre">${esc(it.titre||url||'Sans titre')}</td>
       <td class="td-auteur"><a href="${esc(it.url)}" target="_blank" onclick="event.stopPropagation()">${esc(url)}</a></td>
       <td class="td-auteur">${tagsHtml(it.tag)}</td>
       <td onclick="event.stopPropagation()">${editBtn}</td></tr>`; }
     if (theme === 'fiches') { const preview = (it.texte||'').replace(/<[^>]+>/g,'').substring(0,70);
       return `<tr onclick="openFicheModal(${idx})">
+      <td>${coverImg(it.cover, 'item-cover-table')}</td>
       <td class="td-titre">${esc(it.titre||'Sans titre')}</td>
       <td class="td-auteur">${esc(preview)}${preview?'…':''}</td>
       <td class="td-auteur">${tagsHtml(it.tag)}</td>
@@ -3838,6 +3867,7 @@ function renderItemsListe(colItems, theme) {
       const tagHtml = tagsHtml(it.tag);
       return `<div class="item-liste">
         <div class="item-chk${it.fait?' done':''}" onclick="toggleItem(${idx})"></div>
+        ${coverImg(it.cover, 'item-cover-thumb')}
         <div class="item-body">
           <div class="item-body-row">
             <div class="item-titre${it.fait?' done':''}">${esc(it.titre)}</div>
@@ -3857,7 +3887,7 @@ function renderItemsListe(colItems, theme) {
       const tagHtml = tagsHtml(it.tag);
       const urlDisplay = it.url ? it.url.replace(/^https?:\/\//,'').split('/')[0] : '';
       return `<div class="item-lien">
-        <div class="item-lien-ico"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg></div>
+        ${it.cover ? coverImg(it.cover, 'item-cover-thumb') : '<div class="item-lien-ico"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg></div>'}
         <div class="item-body">
           <div class="item-body-row">
             <div class="item-lien-title">${esc(it.titre||it.url||'Sans titre')}</div>
@@ -3878,6 +3908,7 @@ function renderItemsListe(colItems, theme) {
       const preview = (it.texte||'').replace(/<[^>]+>/g,'').substring(0,90);
       const tagHtml = tagsHtml(it.tag);
       return `<div class="item-liste" onclick="openFicheModal(${idx})" style="cursor:pointer">
+        ${coverImg(it.cover, 'item-cover-thumb')}
         <div class="item-body">
           <div class="item-body-row">
             <div class="item-titre">${esc(it.titre||'Sans titre')}</div>
@@ -3925,7 +3956,7 @@ function openFicheModal(idx) {
     ? (/<[a-z]/i.test(it.texte) ? it.texte : esc(it.texte).replace(/\n/g,'<br>'))
     : '<span style="color:var(--light);font-style:italic">Aucun contenu</span>';
   document.getElementById('ficheModalBody').innerHTML =
-    `${tagHtml}<div class="fiche-modal-content">${content}</div>${urlHtml}`;
+    `${coverImg(it.cover, 'fiche-modal-cover')}${tagHtml}<div class="fiche-modal-content">${content}</div>${urlHtml}`;
   document.getElementById('ficheModalOv').classList.add('open');
 }
 function openFicheDrawer(idx) { openFicheModal(idx); }
@@ -4050,10 +4081,12 @@ function renderItemModFields(theme, it) {
   let html = '';
   if (theme === 'listes') {
     html = `<div class="cf"><label>Élément</label><input type="text" id="imoTitre" value="${esc(v('titre'))}" placeholder="Nom de l'élément…"></div>
+    <div class="cf"><label>URL couverture</label><input type="url" id="imoCover" value="${esc(v('cover'))}" placeholder="https://… (optionnel)"></div>
     <div class="cf" style="position:relative"><label>Tag</label><input type="text" id="imoTag" value="${esc(v('tag'))}" placeholder="tags séparés par virgule…" oninput="showTagSuggestions(this)" onfocus="showTagSuggestions(this)" autocomplete="off"><div class="tag-suggestions-box" id="tagSuggestions"></div></div>`;
   } else if (theme === 'liens') {
     html = `<div class="cf"><label>Titre</label><input type="text" id="imoTitre" value="${esc(v('titre'))}" placeholder="Nom du lien…"></div>
     <div class="cf"><label>URL</label><input type="url" id="imoUrl" value="${esc(v('url'))}" placeholder="https://…"></div>
+    <div class="cf"><label>URL couverture</label><input type="url" id="imoCover" value="${esc(v('cover'))}" placeholder="https://… (optionnel)"></div>
     <div class="cf" style="position:relative"><label>Tag</label><input type="text" id="imoTag" value="${esc(v('tag'))}" placeholder="tags séparés par virgule…" oninput="showTagSuggestions(this)" onfocus="showTagSuggestions(this)" autocomplete="off"><div class="tag-suggestions-box" id="tagSuggestions"></div></div>`;
   } else if (theme === 'fiches') {
     const texteVal = (it&&it.texte) ? it.texte : '';
@@ -4071,6 +4104,7 @@ function renderItemModFields(theme, it) {
     html = `<div class="cf"><label>Titre</label><input type="text" id="imoTitre" value="${esc(v('titre'))}" placeholder="Titre de la fiche…"></div>
     <div class="cf"><label>Contenu</label>${toolbar}<div class="item-rich-ed" id="imoTexte" contenteditable="true" data-ph="Rédigez le contenu de la fiche…"></div></div>
     <div class="cf"><label>URL</label><input type="url" id="imoUrl" value="${esc(v('url'))}" placeholder="https://… (optionnel)"></div>
+    <div class="cf"><label>URL couverture</label><input type="url" id="imoCover" value="${esc(v('cover'))}" placeholder="https://… (optionnel)"></div>
     <div class="cf" style="position:relative"><label>Tag</label><input type="text" id="imoTag" value="${esc(v('tag'))}" placeholder="tags séparés par virgule…" oninput="showTagSuggestions(this)" onfocus="showTagSuggestions(this)" autocomplete="off"><div class="tag-suggestions-box" id="tagSuggestions"></div></div>`;
     // Contenu chargé après insertion dans le DOM (via setTimeout)
     window._ficheTexteToLoad = texteVal;
@@ -4120,16 +4154,17 @@ function normalizeTag(tag) {
 function saveItem() {
   const titre   = document.getElementById('imoTitre')?.value.trim()||'';
   const url     = document.getElementById('imoUrl')?.value.trim()||'';
+  const cover   = document.getElementById('imoCover')?.value.trim()||'';
   const tag     = splitTags(document.getElementById('imoTag')?.value||'').map(normalizeTag).join(', ');
   const colId   = document.getElementById('imoColId')?.value || selColId;
   const texteEl = document.getElementById('imoTexte');
   const texte   = texteEl ? (texteEl.tagName==='TEXTAREA' ? texteEl.value : texteEl.innerHTML) : '';
   if (!titre && !url) { const f=document.getElementById('imoTitre'); if(f)f.focus(); return; }
   if (editItemIdx !== null) {
-    items[editItemIdx] = {...items[editItemIdx], titre, url, tag, texte, col_id: colId};
+    items[editItemIdx] = {...items[editItemIdx], titre, url, cover, tag, texte, col_id: colId};
     gItemUpdate(items[editItemIdx]);
   } else {
-    const ni = {id:'i'+Date.now(), col_id: colId, titre, url, tag, texte, fait:false};
+    const ni = {id:'i'+Date.now(), col_id: colId, titre, url, cover, tag, texte, fait:false};
     items.push(ni);
     gItemAdd(ni);
   }
@@ -4191,7 +4226,7 @@ function gItemReorderBulk(itemsArr) {
 function gItemAdd(it) {
   if(typeof grist==='undefined')return;
   const col = cols.find(c=>c.id===it.col_id);
-  grist.docApi.applyUserActions([['AddRecord','Items',null,{collection:col?.gid||0,titre:it.titre,texte:it.texte,url:it.url,tag:it.tag,fait:!!it.fait,type:col?.theme||'',ordre:it.ordre||0}]])
+  grist.docApi.applyUserActions([['AddRecord','Items',null,{collection:col?.gid||0,titre:it.titre,texte:it.texte,url:it.url,cover:it.cover||'',tag:it.tag,fait:!!it.fait,type:col?.theme||'',ordre:it.ordre||0}]])
     .then(res => {
       const gid = res?.retValues?.[0];
       if (gid) { const existing = items.find(x=>x.id===it.id); if (existing) existing.gid = gid; }
@@ -4201,7 +4236,7 @@ function gItemAdd(it) {
 function gItemUpdate(it) {
   if(typeof grist==='undefined'||!it.gid)return;
   const col = cols.find(c => c.id === it.col_id);
-  grist.docApi.applyUserActions([['UpdateRecord','Items',it.gid,{collection:col?.gid||0,titre:it.titre,texte:it.texte,url:it.url,tag:it.tag,fait:!!it.fait,ordre:it.ordre||0}]]).catch(console.error);
+  grist.docApi.applyUserActions([['UpdateRecord','Items',it.gid,{collection:col?.gid||0,titre:it.titre,texte:it.texte,url:it.url,cover:it.cover||'',tag:it.tag,fait:!!it.fait,ordre:it.ordre||0}]]).catch(console.error);
 }
 function gItemDelete(it) {
   if(typeof grist==='undefined'||!it.gid)return;
@@ -4442,6 +4477,7 @@ async function loadCollections() {
       titre:  String(ri.titre?.[i] ||''),
       texte:  String(ri.texte?.[i] ||''),
       url:    String(ri.url?.[i]   ||''),
+      cover:  String(ri.cover?.[i] ||''),
       tag:    String(ri.tag?.[i]   ||''),
       fait:   !!ri.fait?.[i],
       ordre:  Number(ri.ordre?.[i] ?? i),
