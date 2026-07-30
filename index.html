@@ -916,12 +916,10 @@ select.cfilt { cursor: pointer; }
   border: .5px solid var(--border); font-family: 'DM Sans', sans-serif;
 }
 /* ── Couvertures (colonne "cover" des Items) ── */
-.item-fiche.has-cover { display: flex; align-items: stretch; gap: 0; }
-.item-fiche-content { flex: 1; min-width: 0; }
-.item-cover-card-left {
-  width: 92px; flex-shrink: 0; align-self: stretch;
-  object-fit: cover; border-radius: 8px 0 0 8px;
-  margin: -14px 0 -14px -16px;
+.item-cover-card {
+  display: block; width: calc(100% + 32px); height: 130px;
+  object-fit: cover; border-radius: 8px 8px 0 0;
+  margin: -14px -16px 10px -16px;
 }
 .item-cover-thumb {
   width: 34px; height: 34px; border-radius: 6px; object-fit: cover;
