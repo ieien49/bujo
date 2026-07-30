@@ -4419,6 +4419,7 @@ async function loadCollections() {
       ordre:  Number(ri.ordre?.[i] ?? i),
     }));
   }
+  if (!selColId && cols.length) selColId = cols[0].id;
   renderColSidebar();
   if (selColId) renderColMain();
 }
@@ -4443,9 +4444,10 @@ function initColDemo() {
     {id:'i6',col_id:'c3',titre:'Idées projet', tag:'perso',  texte:'Un espace pour noter les id\u00e9es au fil de l\u2019eau, sans contrainte de structure.\n\nPeut \u00eatre utilis\u00e9 pour les projets personnels ou professionnels.',url:'',fait:false},
     {id:'i7',col_id:'c3',titre:'Recette carbonara',tag:'cuisine',texte:'Spaghetti, lardons, oeufs, pecorino. Pas de cr\u00e8me !',url:'',fait:false},
   ];
+  if (!selColId && cols.length) selColId = cols[0].id;
   renderColSidebar();
+  if (selColId) renderColMain();
 }
-// Keyboard
 document.addEventListener('keydown',e=>{
   if(e.key==='Escape'){lecClosePanel();closeBmod();closeColMod();closeItemMod();closeFicheModal();document.getElementById('modDel').style.display='none';}
   if(e.key==='Enter'&&document.getElementById('bmodOv').classList.contains('open')){const a=document.activeElement;if(!a||a.tagName!=='BUTTON')saveBTask();}
