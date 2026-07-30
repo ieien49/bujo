@@ -3686,6 +3686,13 @@ function initItemsSortable() {
   });
 }
 
+function openLienCard(idx) {
+  const it = items[idx];
+  if (!it) return;
+  if (!it.url) { openItemMod(idx, 'liens'); return; }
+  window.open(it.url, '_blank', 'noopener');
+}
+
 function renderItems(colItems, theme, vue) {
   if (!colItems.length) return `<div class="col-empty" style="padding:24px 0"><div class="col-empty-icon" style="font-size:22px;opacity:.3">${theme==='listes'?'☑':theme==='liens'?'🔗':'📄'}</div>Aucun élément pour l'instant</div>`;
   if (vue === 'table') return renderItemsTable(colItems, theme);
@@ -3743,11 +3750,11 @@ function renderItemsCards(colItems, theme) {
       const idx = items.indexOf(it);
       const tagHtml = it.tag ? `<span class="item-tag">${esc(it.tag)}</span>` : '';
       const urlDisplay = it.url ? it.url.replace(/^https?:\/\//,'').split('/')[0] : '';
-      return `<div class="item-fiche" data-item-idx="${idx}">
+      return `<div class="item-fiche" data-item-idx="${idx}" onclick="openLienCard(${idx})">
         <span class="card-drag-handle" onclick="event.stopPropagation()">&#8942;&#8942;</span>
         <div class="item-fiche-title">${esc(it.titre||it.url||'Sans titre')}</div>
-        ${it.url ? `<div class="item-fiche-url"><a href="${esc(it.url)}" target="_blank">${esc(urlDisplay)}</a></div>` : ''}
-        <div class="item-fiche-meta">${tagHtml}<div style="flex:1"></div><button class="item-act-btn" onclick="openItemMod(${idx},'liens')" title="Modifier">&#9998;</button></div>
+        ${it.url ? `<div class="item-fiche-url"><a href="${esc(it.url)}" target="_blank" onclick="event.stopPropagation()">${esc(urlDisplay)}</a></div>` : ''}
+        <div class="item-fiche-meta">${tagHtml}<div style="flex:1"></div><button class="item-act-btn" onclick="event.stopPropagation();openItemMod(${idx},'liens')" title="Modifier">&#9998;</button></div>
       </div>`;
     }).join('');
     return `<div class="fiches-grid" id="cardsGrid">${html}</div>`;
