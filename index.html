@@ -2012,7 +2012,7 @@ function switchTab(tab) {
   }
   if (typeof grist !== 'undefined' && tab !== currentTabStored) {
     currentTabStored = tab;
-    grist.setOption('lastTab', tab);
+    try { localStorage.setItem('bujoWidget_lastTab', tab); } catch(e) {}
   }
 }
 
@@ -3409,12 +3409,14 @@ if(typeof grist!=='undefined'){
     requiredAccess:'full'
   });
   loadConfig();  
+  try {
+    const savedTab = localStorage.getItem('bujoWidget_lastTab');
+    if (savedTab && ['bujo','lectures','collections','outliner','mindmap'].includes(savedTab) && savedTab !== 'bujo') {
+      currentTabStored = savedTab;
+      switchTab(savedTab);
+    }
+  } catch(e) {}
   grist.onOptions((options) => {
-  const saved = options?.lastTab;
-  if (saved && ['bujo','lectures','collections','outliner','mindmap'].includes(saved) && saved !== 'bujo') {
-    currentTabStored = saved;
-    switchTab(saved);
-  }
   if (options?.outZoomId !== undefined) outFocusRootId = options.outZoomId || null;
 });
   // onRecords est appelé à chaque modification de la table Bujo
