@@ -3406,17 +3406,7 @@ document.addEventListener('keydown', (e) => {
 // ══════════════════════════════════════════════════════
 if(typeof grist!=='undefined'){
   grist.ready({
-    requiredAccess:'full',
-    columns:[
-      {name:'tache',       title:'Tâche',       type:'Text'},
-      {name:'date',        title:'Date',        type:'Text'},
-      {name:'termine',     title:'Terminé',     type:'Bool'},
-      {name:'anniversaire',title:'Anniversaire',type:'Bool'},
-      
-      {name:'projet',      title:'Projet',      type:'Bool'},
-      {name:'archive',     title:'Archivé',     type:'Bool'},
-      {name:'urgent',      title:'Urgent',      type:'Bool'}
-    ]
+    requiredAccess:'full'
   });
   loadConfig();  
   grist.onOptions((options) => {
