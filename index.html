@@ -246,7 +246,7 @@ body {
   box-shadow: 0 1px 4px rgba(0,0,0,.05);
 }
 .titem:hover { background: var(--bg-soft); }
-.titem:hover .tedit, .titem:hover .tmove { opacity: 1; }
+.titem:hover .tedit, .titem:hover .tmove, .titem:hover .turgent-btn { opacity: 1; }
 .titem.done { opacity: .4; }
 .tchk {
   width: 16px; height: 16px; border-radius: 50%;
@@ -265,9 +265,13 @@ body {
 }
 .titem.done .tname { text-decoration: line-through; color: var(--muted); }
 .titem.bday-item .tname { color: var(--bday-text); }
+.titem.urgent .tname { color: #e05252; font-weight: 700; }
 .tage { font-size: 10px; color: var(--bday-muted); margin-left: 3px; }
 .tedit { opacity: 0; background: none; border: none; cursor: pointer; color: var(--light); font-size: 13px; padding: 0 2px; flex-shrink: 0; transition: color .12s, opacity .12s; font-family: inherit; }
 .tedit:hover { color: var(--accent); }
+.turgent-btn { opacity: 0; display: flex; align-items: center; justify-content: center; width: 16px; height: 16px; flex-shrink: 0; background: none; border: none; cursor: pointer; color: var(--light); padding: 0; transition: opacity .12s, color .12s; }
+.turgent-btn:hover { color: #e05252; }
+.turgent-btn.on { opacity: 1; color: #e05252; }
 .tmove { opacity: 0; background: none; border: none; cursor: pointer; color: var(--light); font-size: 13px; padding: 0 2px; flex-shrink: 0; transition: color .12s, opacity .12s; font-family: inherit; }
 .tmove:hover { color: var(--accent); }
 .tdate-right { font-size: 10.5px; color: var(--accent); flex-shrink: 0; white-space: nowrap; margin-left: 4px; }
@@ -1858,6 +1862,15 @@ body.presentation #exitPresentBtn{ display:flex; }
         <div class="tog-sw" id="projetTog"></div>
       </div>
     </div>
+    <div class="bf" id="urgentTogWrap">
+      <div class="tog-row" onclick="toggleUrgent()">
+        <span class="tog-label">
+          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>
+          Urgent
+        </span>
+        <div class="tog-sw" id="urgentTog"></div>
+      </div>
+    </div>
     <div class="bmod-act">
       <button class="bd" id="btnBdel" style="display:none" onclick="deleteBTask()">Supprimer</button>
       <button class="bc" onclick="closeBmod()">Annuler</button>
@@ -1948,6 +1961,7 @@ const DFR = ['Dimanche','Lundi','Mardi','Mercredi','Jeudi','Vendredi','Samedi'];
 //  ÉTAT
 // ══════════════════════════════════════════════════════
 let isProjet = false;
+let isUrgent = false;
 let lateOpen = true; // ouvert par défaut
 let tasks       = [];   // données bujo
 let lecRecs     = [];   // données lectures
@@ -2160,11 +2174,13 @@ function tHTML(t,i,age,dateRight,late){
   }
   const dr = dateRight ? `<span class="tdate-right">${dateRight}</span>` : '';
   const mv = late ? `<button class="tmove" onclick="moveToToday(${i})" title="Déplacer à aujourd'hui">&#8635;</button>` : '';
-  return `<div class="titem${t.done?' done':''}">
+  const ug = `<button class="turgent-btn${t.urgent?' on':''}" onclick="toggleUrgentTask(event,${i})" title="${t.urgent?'Retirer l\'urgence':'Marquer comme urgent'}"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg></button>`;
+  return `<div class="titem${t.done?' done':''}${t.urgent?' urgent':''}">
     <div class="tchk${t.done?' checked':''}" onclick="toggleT(${i})"></div>
     <div class="tname">${esc(t.name)}</div>
     ${dr}
     ${mv}
+    ${ug}
     <button class="tedit" onclick="openBmod(${i})">&#9998;</button>
   </div>`;
 }
@@ -2482,6 +2498,13 @@ function toggleT(i){
   renderMain();
 }
 
+function toggleUrgentTask(e,i){
+  e.stopPropagation();
+  tasks[i].urgent=!tasks[i].urgent;
+  gBujoUpdate(tasks[i]);
+  renderMain();
+}
+
 function moveToToday(i){
   tasks[i].date = todayStr;
   gBujoUpdate(tasks[i]);
@@ -2511,19 +2534,22 @@ function openBmod(i){
   const t=editIdx!==null?tasks[editIdx]:null;
   isBday=t?!!t.bday:false;
   isProjet = t ? !!t.projet : false;
+  isUrgent = t ? !!t.urgent : false;
   document.getElementById('bmodTitle').textContent=t?(t.bday?'Modifier l\'anniversaire':'Modifier la tâche'):'Nouvelle tâche';
   document.getElementById('bmodName').value=t?t.name:'';
   document.getElementById('btnBdel').style.display=t?'block':'none';
   refreshBdayUI();
   refreshProjetUI();
+  refreshUrgentUI();
   // Masquer le toggle anniversaire APRES refreshBdayUI pour ne pas être écrasé
   const showBdayToggle = t && t.bday && cfgOn('bday_on');
 document.getElementById('bdayTogWrap').style.display = showBdayToggle ? 'block' : 'none';
+document.getElementById('urgentTogWrap').style.display = (t && t.bday && cfgOn('bday_on')) ? 'none' : 'block';
   document.getElementById('bmodDate').value=t?formatDateForInput(t.date):'';
   document.getElementById('bmodOv').classList.add('open');
   setTimeout(()=>document.getElementById('bmodName').focus(),60);
 }
-function closeBmod(){document.getElementById('bmodOv').classList.remove('open');editIdx=null;isBday=false;}
+function closeBmod(){document.getElementById('bmodOv').classList.remove('open');editIdx=null;isBday=false;isUrgent=false;}
 function handleBmodClick(e){if(e.target===document.getElementById('bmodOv'))closeBmod();}
 
 function toggleBday(){
@@ -2544,6 +2570,14 @@ function toggleProjet() {
 }
 function refreshProjetUI() {
   document.getElementById('projetTog').classList.toggle('on', isProjet);
+}
+
+function toggleUrgent() {
+  isUrgent = !isUrgent;
+  refreshUrgentUI();
+}
+function refreshUrgentUI() {
+  document.getElementById('urgentTog').classList.toggle('on', isUrgent);
 }
 
 
@@ -2596,10 +2630,10 @@ function saveBTask(){
   if(!date && !isBday) date=todayStr;
   if(!name){document.getElementById('bmodName').focus();return;}
   if(editIdx!==null){
-    tasks[editIdx].name=name; tasks[editIdx].date=date; tasks[editIdx].bday=isBday; tasks[editIdx].projet=isProjet;
+    tasks[editIdx].name=name; tasks[editIdx].date=date; tasks[editIdx].bday=isBday; tasks[editIdx].projet=isProjet; tasks[editIdx].urgent=isUrgent;
     gBujoUpdate(tasks[editIdx]);
   } else {
-    const nt = {name, date, done:false, bday:isBday, projet:isProjet};
+    const nt = {name, date, done:false, bday:isBday, projet:isProjet, urgent:isUrgent};
     tasks.push(nt); gBujoAdd(nt);
   }
   closeBmod(); renderMain();
@@ -2620,11 +2654,11 @@ function toggleLate(){
 // ══════════════════════════════════════════════════════
 function gBujoUpdate(t){
   if(typeof grist==='undefined'||!t.id)return;
-  grist.docApi.applyUserActions([['UpdateRecord','Bujo',t.id,{tache:t.name,date:t.date,termine:t.done,anniversaire:!!t.bday,projet:!!t.projet,archive:!!t.archive}]]).catch(console.error);
+  grist.docApi.applyUserActions([['UpdateRecord','Bujo',t.id,{tache:t.name,date:t.date,termine:t.done,anniversaire:!!t.bday,projet:!!t.projet,archive:!!t.archive,urgent:!!t.urgent}]]).catch(console.error);
 }
 function gBujoAdd(t){
   if(typeof grist==='undefined')return;
-  grist.docApi.applyUserActions([['AddRecord','Bujo',null,{tache:t.name,date:t.date,termine:false,anniversaire:!!t.bday,projet:!!t.projet,archive:!!t.archive}]]).catch(console.error);
+  grist.docApi.applyUserActions([['AddRecord','Bujo',null,{tache:t.name,date:t.date,termine:false,anniversaire:!!t.bday,projet:!!t.projet,archive:!!t.archive,urgent:!!t.urgent}]]).catch(console.error);
 }
 function gBujoDelete(t){
   if(typeof grist==='undefined'||!t.id)return;
@@ -3394,7 +3428,7 @@ if(typeof grist!=='undefined'){
 });
   // onRecords est appelé à chaque modification de la table Bujo
   grist.onRecords(records=>{
-    tasks = records.map(r => ({id:r.id, name:r.tache||'', date:r.date||'', done:!!r.termine, bday:!!r.anniversaire, projet:!!r.projet, archive:!!r.archive}));
+    tasks = records.map(r => ({id:r.id, name:r.tache||'', date:r.date||'', done:!!r.termine, bday:!!r.anniversaire, projet:!!r.projet, archive:!!r.archive, urgent:!!r.urgent}));
     renderMain();
   });
   loadLectures();
