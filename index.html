@@ -909,9 +909,10 @@ select.cfilt { cursor: pointer; }
 .item-body { flex: 1; min-width: 0; }
 .item-titre { font-size: 13px; color: var(--text); line-height: 1.45; font-family: 'DM Sans', sans-serif; }
 .item-titre.done { text-decoration: line-through; color: var(--muted); }
+.item-tags { display: inline-flex; flex-wrap: wrap; gap: 4px; margin-top: 4px; }
 .item-tag {
   display: inline-block; font-size: 10px; padding: 1px 7px; border-radius: 999px;
-  background: var(--bg-soft); color: var(--muted); margin-top: 4px;
+  background: var(--bg-soft); color: var(--muted);
   border: .5px solid var(--border); font-family: 'DM Sans', sans-serif;
 }
 .item-body-row {
@@ -919,7 +920,8 @@ select.cfilt { cursor: pointer; }
   gap: 10px; min-width: 0;
 }
 .item-body-row .item-titre { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.item-body-row .item-tag { margin-top: 0; flex-shrink: 0; }
+.item-body-row .item-tags { margin-top: 0; flex-shrink: 0; }
+.td-auteur .item-tags { margin-top: 0; }
 
 /* ── Items liens ── */
 .item-lien {
@@ -1083,13 +1085,14 @@ select.cfilt { cursor: pointer; }
 .fiche-modal-body { flex: 1; overflow-y: auto; padding: 20px 22px; }
 .fiche-modal-body::-webkit-scrollbar { width: 4px; }
 .fiche-modal-body::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+.fiche-modal-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 14px; }
 .fiche-modal-tag {
   display: inline-flex; align-items: center;
   padding: 2px 9px; border-radius: 999px;
   font-size: 10px; font-weight: 500; letter-spacing: .04em;
   background: var(--bg-soft); color: var(--muted);
   border: .5px solid var(--border);
-  margin-bottom: 14px; font-family: 'DM Sans', sans-serif;
+  font-family: 'DM Sans', sans-serif;
 }
 .fiche-modal-content {
   font-size: 13.5px; line-height: 1.8; color: var(--text);
@@ -3515,9 +3518,23 @@ function renderColIcon(svgCode, size) {
   return `<svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}" fill="none"><rect x="${size*.1}" y="${size*.1}" width="${size*.8}" height="${size*.8}" rx="2" stroke="#1a1a1a" stroke-width="1.5" opacity=".7"/></svg>`;
 }
 
+// ── Multi-tags : un item.tag est une chaîne "tag1, tag2, tag3" ──
+function splitTags(tagStr) {
+  if (!tagStr) return [];
+  return tagStr.split(',').map(t => t.trim()).filter(Boolean);
+}
+function tagsHtml(tagStr, cls) {
+  cls = cls || 'item-tag';
+  const tags = splitTags(tagStr);
+  if (!tags.length) return '';
+  const wrapClass = cls === 'item-tag' ? 'item-tags' : cls === 'fiche-modal-tag' ? 'fiche-modal-tags' : '';
+  const wrapAttr = wrapClass ? `class="${wrapClass}"` : `style="display:inline-flex;flex-wrap:wrap;gap:4px"`;
+  return `<span ${wrapAttr}>${tags.map(t => `<span class="${cls}">${esc(t)}</span>`).join('')}</span>`;
+}
+
 // ── Filtre tags ──
 function buildTagBar(colItems) {
-  const tags = [...new Set(colItems.map(it => it.tag).filter(Boolean))].sort();
+  const tags = [...new Set(colItems.flatMap(it => splitTags(it.tag)))].sort((a,b)=>a.localeCompare(b,'fr',{sensitivity:'base'}));
   if (!tags.length) return '';
   const allActive = !activeTagFilter ? ' active' : '';
   let html = '<div class="col-tag-filter"><span class="col-tag-label">Tags' + ' ' + ':</span>';
@@ -3556,7 +3573,7 @@ function setColVue(vue) {
 
 function filteredByTag(colItems) {
   if (!activeTagFilter) return colItems;
-  return colItems.filter(it => it.tag === activeTagFilter);
+  return colItems.filter(it => splitTags(it.tag).includes(activeTagFilter));
 }
 
 // ── Rendu liste sidebar ──
@@ -3698,7 +3715,7 @@ function renderItemsCards(colItems, theme) {
     const html = colItems.map((it) => {
       const idx = items.indexOf(it);
       const preview = (it.texte||'').replace(/<[^>]+>/g,'').substring(0,90);
-      const tagHtml = it.tag ? `<span class="item-tag">${esc(it.tag)}</span>` : '';
+      const tagHtml = tagsHtml(it.tag);
       return `<div class="item-fiche" data-item-idx="${idx}" onclick="openFicheModal(${idx})">
         <span class="card-drag-handle" onclick="event.stopPropagation()">&#8942;&#8942;</span>
         <div class="item-fiche-title">${esc(it.titre||'Sans titre')}</div>
@@ -3726,7 +3743,7 @@ function renderItemsCards(colItems, theme) {
   if (theme === 'listes') {
     const html = colItems.map((it) => {
       const idx = items.indexOf(it);
-      const tagHtml = it.tag ? `<span class="item-tag">${esc(it.tag)}</span>` : '';
+      const tagHtml = tagsHtml(it.tag);
       return `<div class="item-fiche" data-item-idx="${idx}">
         <span class="card-drag-handle" onclick="event.stopPropagation()">&#8942;&#8942;</span>
         <div style="display:flex;align-items:flex-start;gap:8px">
@@ -3741,7 +3758,7 @@ function renderItemsCards(colItems, theme) {
   if (theme === 'liens') {
     const html = colItems.map((it) => {
       const idx = items.indexOf(it);
-      const tagHtml = it.tag ? `<span class="item-tag">${esc(it.tag)}</span>` : '';
+      const tagHtml = tagsHtml(it.tag);
       const urlDisplay = it.url ? it.url.replace(/^https?:\/\//,'').split('/')[0] : '';
       return `<div class="item-fiche" data-item-idx="${idx}" onclick="openLienCard(${idx})">
         <span class="card-drag-handle" onclick="event.stopPropagation()">&#8942;&#8942;</span>
@@ -3786,19 +3803,19 @@ function renderItemsTable(colItems, theme) {
     if (theme === 'listes') return `<tr onclick="toggleItem(${idx})">
       <td><div class="item-chk${it.fait?' done':''}"></div></td>
       <td class="td-titre" style="${it.fait?'text-decoration:line-through;color:var(--muted)':''}">${esc(it.titre)}</td>
-      <td class="td-auteur">${esc(it.tag||'')}</td>
+      <td class="td-auteur">${tagsHtml(it.tag)}</td>
       <td onclick="event.stopPropagation()">${editBtn}</td></tr>`;
     if (theme === 'liens') { const url = it.url ? it.url.replace(/^https?:\/\//,'').split('/')[0] : '';
       return `<tr onclick="openItemMod(${idx},'liens')">
       <td class="td-titre">${esc(it.titre||url||'Sans titre')}</td>
       <td class="td-auteur"><a href="${esc(it.url)}" target="_blank" onclick="event.stopPropagation()">${esc(url)}</a></td>
-      <td class="td-auteur">${esc(it.tag||'')}</td>
+      <td class="td-auteur">${tagsHtml(it.tag)}</td>
       <td onclick="event.stopPropagation()">${editBtn}</td></tr>`; }
     if (theme === 'fiches') { const preview = (it.texte||'').replace(/<[^>]+>/g,'').substring(0,70);
       return `<tr onclick="openFicheModal(${idx})">
       <td class="td-titre">${esc(it.titre||'Sans titre')}</td>
       <td class="td-auteur">${esc(preview)}${preview?'…':''}</td>
-      <td class="td-auteur">${esc(it.tag||'')}</td>
+      <td class="td-auteur">${tagsHtml(it.tag)}</td>
       <td onclick="event.stopPropagation()">${editBtn}</td></tr>`; }
     if (theme === 'couleurs') { const hex = (it.url||'').trim();
       return `<tr onclick="openItemMod(${idx},'couleurs')">
@@ -3818,7 +3835,7 @@ function renderItemsListe(colItems, theme) {
   if (theme === 'listes') {
     return colItems.map((it,i) => {
       const idx = items.indexOf(it);
-      const tagHtml = it.tag ? `<span class="item-tag">${esc(it.tag)}</span>` : '';
+      const tagHtml = tagsHtml(it.tag);
       return `<div class="item-liste">
         <div class="item-chk${it.fait?' done':''}" onclick="toggleItem(${idx})"></div>
         <div class="item-body">
@@ -3837,7 +3854,7 @@ function renderItemsListe(colItems, theme) {
   if (theme === 'liens') {
     return colItems.map((it,i) => {
       const idx = items.indexOf(it);
-      const tagHtml = it.tag ? `<span class="item-tag">${esc(it.tag)}</span>` : '';
+      const tagHtml = tagsHtml(it.tag);
       const urlDisplay = it.url ? it.url.replace(/^https?:\/\//,'').split('/')[0] : '';
       return `<div class="item-lien">
         <div class="item-lien-ico"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg></div>
@@ -3859,7 +3876,7 @@ function renderItemsListe(colItems, theme) {
     return colItems.map((it) => {
       const idx = items.indexOf(it);
       const preview = (it.texte||'').replace(/<[^>]+>/g,'').substring(0,90);
-      const tagHtml = it.tag ? `<span class="item-tag">${esc(it.tag)}</span>` : '';
+      const tagHtml = tagsHtml(it.tag);
       return `<div class="item-liste" onclick="openFicheModal(${idx})" style="cursor:pointer">
         <div class="item-body">
           <div class="item-body-row">
@@ -3876,7 +3893,7 @@ function renderItemsListe(colItems, theme) {
     return colItems.map((it) => {
       const idx = items.indexOf(it);
       const hex = (it.url||'').trim();
-      const tagHtml = it.tag ? `<span class="item-tag">${esc(it.tag)}</span>` : '';
+      const tagHtml = tagsHtml(it.tag);
       return `<div class="item-liste">
         <div class="item-couleur-swatch" style="width:20px;height:20px;background:${hex||'var(--bg-soft)'}"></div>
         <div class="item-body">
@@ -3903,7 +3920,7 @@ function openFicheModal(idx) {
     ? `<a class="fiche-url-link" href="${esc(it.url)}" target="_blank">
         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
         ${esc(it.url.replace(/^https?:\/\//, '').split('/')[0])}</a>` : '';
-  const tagHtml = it.tag ? `<div class="fiche-modal-tag">${esc(it.tag)}</div>` : '';
+  const tagHtml = tagsHtml(it.tag, 'fiche-modal-tag');
   const content = it.texte
     ? (/<[a-z]/i.test(it.texte) ? it.texte : esc(it.texte).replace(/\n/g,'<br>'))
     : '<span style="color:var(--light);font-style:italic">Aucun contenu</span>';
@@ -4033,11 +4050,11 @@ function renderItemModFields(theme, it) {
   let html = '';
   if (theme === 'listes') {
     html = `<div class="cf"><label>Élément</label><input type="text" id="imoTitre" value="${esc(v('titre'))}" placeholder="Nom de l'élément…"></div>
-    <div class="cf" style="position:relative"><label>Tag</label><input type="text" id="imoTag" value="${esc(v('tag'))}" placeholder="tag optionnel…" oninput="showTagSuggestions(this)" onfocus="showTagSuggestions(this)" autocomplete="off"><div class="tag-suggestions-box" id="tagSuggestions"></div></div>`;
+    <div class="cf" style="position:relative"><label>Tag</label><input type="text" id="imoTag" value="${esc(v('tag'))}" placeholder="tags séparés par virgule…" oninput="showTagSuggestions(this)" onfocus="showTagSuggestions(this)" autocomplete="off"><div class="tag-suggestions-box" id="tagSuggestions"></div></div>`;
   } else if (theme === 'liens') {
     html = `<div class="cf"><label>Titre</label><input type="text" id="imoTitre" value="${esc(v('titre'))}" placeholder="Nom du lien…"></div>
     <div class="cf"><label>URL</label><input type="url" id="imoUrl" value="${esc(v('url'))}" placeholder="https://…"></div>
-    <div class="cf" style="position:relative"><label>Tag</label><input type="text" id="imoTag" value="${esc(v('tag'))}" placeholder="tag optionnel…" oninput="showTagSuggestions(this)" onfocus="showTagSuggestions(this)" autocomplete="off"><div class="tag-suggestions-box" id="tagSuggestions"></div></div>`;
+    <div class="cf" style="position:relative"><label>Tag</label><input type="text" id="imoTag" value="${esc(v('tag'))}" placeholder="tags séparés par virgule…" oninput="showTagSuggestions(this)" onfocus="showTagSuggestions(this)" autocomplete="off"><div class="tag-suggestions-box" id="tagSuggestions"></div></div>`;
   } else if (theme === 'fiches') {
     const texteVal = (it&&it.texte) ? it.texte : '';
     const toolbar = `<div class="item-rich-tb">
@@ -4054,7 +4071,7 @@ function renderItemModFields(theme, it) {
     html = `<div class="cf"><label>Titre</label><input type="text" id="imoTitre" value="${esc(v('titre'))}" placeholder="Titre de la fiche…"></div>
     <div class="cf"><label>Contenu</label>${toolbar}<div class="item-rich-ed" id="imoTexte" contenteditable="true" data-ph="Rédigez le contenu de la fiche…"></div></div>
     <div class="cf"><label>URL</label><input type="url" id="imoUrl" value="${esc(v('url'))}" placeholder="https://… (optionnel)"></div>
-    <div class="cf" style="position:relative"><label>Tag</label><input type="text" id="imoTag" value="${esc(v('tag'))}" placeholder="tag optionnel…" oninput="showTagSuggestions(this)" onfocus="showTagSuggestions(this)" autocomplete="off"><div class="tag-suggestions-box" id="tagSuggestions"></div></div>`;
+    <div class="cf" style="position:relative"><label>Tag</label><input type="text" id="imoTag" value="${esc(v('tag'))}" placeholder="tags séparés par virgule…" oninput="showTagSuggestions(this)" onfocus="showTagSuggestions(this)" autocomplete="off"><div class="tag-suggestions-box" id="tagSuggestions"></div></div>`;
     // Contenu chargé après insertion dans le DOM (via setTimeout)
     window._ficheTexteToLoad = texteVal;
   } else if (theme === 'couleurs') {
@@ -4069,7 +4086,7 @@ function renderItemModFields(theme, it) {
       <div class="bhint">Format #RRGGBB ou #RGB</div>
     </div>
     <div class="cf" style="position:relative"><label>Tag</label>
-      <input type="text" id="imoTag" value="${esc(v('tag'))}" placeholder="tag optionnel…" oninput="showTagSuggestions(this)" onfocus="showTagSuggestions(this)" autocomplete="off"><div class="tag-suggestions-box" id="tagSuggestions"></div></div>`;
+      <input type="text" id="imoTag" value="${esc(v('tag'))}" placeholder="tags séparés par virgule…" oninput="showTagSuggestions(this)" onfocus="showTagSuggestions(this)" autocomplete="off"><div class="tag-suggestions-box" id="tagSuggestions"></div></div>`;
   }
   const colOptions = cols.map(c =>
     `<option value="${esc(c.id)}" ${c.id === (it ? it.col_id : selColId) ? 'selected' : ''}>${esc(c.nom)}</option>`
@@ -4103,7 +4120,7 @@ function normalizeTag(tag) {
 function saveItem() {
   const titre   = document.getElementById('imoTitre')?.value.trim()||'';
   const url     = document.getElementById('imoUrl')?.value.trim()||'';
-  const tag     = normalizeTag(document.getElementById('imoTag')?.value.trim()||'');
+  const tag     = splitTags(document.getElementById('imoTag')?.value||'').map(normalizeTag).join(', ');
   const colId   = document.getElementById('imoColId')?.value || selColId;
   const texteEl = document.getElementById('imoTexte');
   const texte   = texteEl ? (texteEl.tagName==='TEXTAREA' ? texteEl.value : texteEl.innerHTML) : '';
@@ -4245,7 +4262,7 @@ function renderColSearchResults() {
   items.forEach(it => {
     const fields = [it.titre, it.texte ? it.texte.replace(/<[^>]+>/g,'') : '', it.tag, it.url];
     const match = isTagMode
-      ? (it.tag && it.tag.toLowerCase() === tagValue)
+      ? splitTags(it.tag).some(t => t.toLowerCase() === tagValue)
       : fields.some(f => f && f.toLowerCase().includes(q));
     if (match) {
       if (!results[it.col_id]) results[it.col_id] = [];
@@ -4276,7 +4293,7 @@ function renderColSearchResults() {
       its.forEach(it => {
         const idx = items.indexOf(it);
         const nameHl = highlight(it.titre || 'Sans titre', q);
-        const tagHtml = it.tag ? `<span class="col-search-item-tag">${esc(it.tag)}</span>` : '';
+        const tagHtml = tagsHtml(it.tag, 'col-search-item-tag');
         // Pour une fiche, afficher un aperçu du texte
         const preview = it.texte
           ? '<span style="font-size:11px;color:var(--muted)"> — ' + esc((it.texte.replace(/<[^>]+>/g,'')).substring(0,60)) + '…</span>'
@@ -4318,26 +4335,30 @@ let gristAllTags = [];
 
 function getAllTags() {
   const gristTags = gristAllTags || [];
-  const localTags = [...new Set(items.map(it => it.tag).filter(Boolean))];
+  const localTags = [...new Set(items.flatMap(it => splitTags(it.tag)))];
   const combined = [...new Set([...gristTags, ...localTags])];
   return combined.sort((a, b) => a.localeCompare(b, 'fr', { sensitivity: 'base' }));
 }
 
 function showTagSuggestions(input) {
-  const q = input.value.trim().toLowerCase();
+  // On travaille sur le dernier segment tapé après la dernière virgule (saisie multi-tags)
+  const rawParts = input.value.split(',');
+  const alreadyAdded = rawParts.slice(0, -1).map(t => t.trim()).filter(Boolean);
+  const q = rawParts[rawParts.length - 1].trim().toLowerCase();
   const box = document.getElementById('tagSuggestions');
   if (!box) return;
 
-  const colTags = [...new Set(items.filter(it => it.col_id === selColId).map(it => it.tag).filter(Boolean))];
-  const allTags = getAllTags();
+  const colTags = [...new Set(items.filter(it => it.col_id === selColId).flatMap(it => splitTags(it.tag)))];
+  const allTagsRaw = getAllTags().filter(t => !alreadyAdded.some(a => a.toLowerCase() === t.toLowerCase()));
 
   let matches;
   if (!q) {
     // Champ vide (focus) : on affiche tout ce qui existe, tags de cette collection en tête
-    const others = allTags.filter(t => !colTags.includes(t));
-    matches = [...colTags.sort((a,b)=>a.localeCompare(b,'fr',{sensitivity:'base'})), ...others];
+    const colTagsAvail = colTags.filter(t => allTagsRaw.includes(t));
+    const others = allTagsRaw.filter(t => !colTagsAvail.includes(t));
+    matches = [...colTagsAvail.sort((a,b)=>a.localeCompare(b,'fr',{sensitivity:'base'})), ...others];
   } else {
-    matches = allTags.filter(t => t.toLowerCase().includes(q) && t.toLowerCase() !== q);
+    matches = allTagsRaw.filter(t => t.toLowerCase().includes(q) && t.toLowerCase() !== q);
     matches.sort((a, b) => {
       const aInCol = colTags.includes(a) ? 0 : 1;
       const bInCol = colTags.includes(b) ? 0 : 1;
@@ -4365,12 +4386,13 @@ function showTagSuggestions(input) {
 function pickTag(tag) {
   const input = document.getElementById('imoTag');
   if (input) {
-    input.value = tag;
+    const parts = input.value.split(',');
+    parts[parts.length - 1] = ' ' + tag;
+    input.value = parts.map((p, i) => p.trim()).join(', ') + ', ';
     input.focus();
-    input.setSelectionRange(tag.length, tag.length);
+    input.setSelectionRange(input.value.length, input.value.length);
+    showTagSuggestions(input); // proposer la saisie du tag suivant
   }
-  const box = document.getElementById('tagSuggestions');
-  if (box) box.style.display = 'none';
 }
 
 document.addEventListener('click', e => {
