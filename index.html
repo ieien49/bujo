@@ -3538,11 +3538,7 @@ function setTagFilter(tag) {
   if (tb) {
     tb.innerHTML = buildTagBar(colItems);
     tb.querySelectorAll('.col-tag-pill').forEach(pill => {
-      if (col.theme === 'couleurs') {
-        pill.addEventListener('click', () => setTagFilter(pill.dataset.tag));
-      } else {
-        pill.addEventListener('click', (e) => e.shiftKey ? setTagFilter(pill.dataset.tag) : goToGlobalTag(pill.dataset.tag));
-      }
+      pill.addEventListener('click', () => setTagFilter(pill.dataset.tag));
     });
   }
   const vue = col.vue || ((col.theme==='listes'||col.theme==='liens')?'liste':'cards');
@@ -3660,11 +3656,7 @@ function renderColMain() {
   const tagBar = main.querySelector('#colTagBar');
   if (tagBar) {
     tagBar.querySelectorAll('.col-tag-pill').forEach(pill => {
-      if (col.theme === 'couleurs') {
-        pill.addEventListener('click', () => setTagFilter(pill.dataset.tag));
-      } else {
-        pill.addEventListener('click', (e) => e.shiftKey ? setTagFilter(pill.dataset.tag) : goToGlobalTag(pill.dataset.tag));
-      }
+      pill.addEventListener('click', () => setTagFilter(pill.dataset.tag));
     });
   }
   if (vue === 'cards') initItemsSortable();
@@ -4226,19 +4218,6 @@ function clearColSearch() {
   } else {
     document.getElementById('colEmpty').style.display = 'block';
   }
-}
-
-function goToGlobalTag(tag) {
-  colSearchQuery = '#' + tag;
-  const inp = document.getElementById('colSearchInput');
-  if (inp) inp.value = colSearchQuery;
-  const clr = document.getElementById('colSearchClear');
-  if (clr) clr.style.display = 'block';
-  activeTagFilter = '';
-  const main = document.getElementById('colMain');
-  main.querySelectorAll('.col-content, .col-search-results-wrap').forEach(el => el.remove());
-  document.getElementById('colEmpty').style.display = 'none';
-  renderColSearchResults();
 }
 
 function renderColSearchResults() {
