@@ -917,9 +917,9 @@ select.cfilt { cursor: pointer; }
 }
 /* ── Couvertures (colonne "cover" des Items) ── */
 .item-cover-card {
-  display: block; width: calc(100% + 32px); height: 130px;
-  object-fit: cover; border-radius: 8px 8px 0 0;
-  margin: -14px -16px 10px -16px;
+  display: block; width: 90px; min-width: 90px; height: auto; min-height: 84px;
+  align-self: stretch; object-fit: cover; border-radius: 8px 0 0 8px;
+  margin: -14px 0 -14px -16px;
 }
 .item-cover-thumb {
   width: 34px; height: 34px; border-radius: 6px; object-fit: cover;
@@ -968,8 +968,10 @@ select.cfilt { cursor: pointer; }
   padding: 14px 16px; margin-bottom: 9px;
   background: var(--bg); transition: box-shadow .15s, border-color .15s;
   cursor: pointer;
+  display: flex; align-items: stretch; gap: 12px; overflow: hidden;
 }
 .item-fiche:hover { box-shadow: 0 2px 10px rgba(0,0,0,.08); border-color: var(--accent); }
+.item-fiche-body { flex: 1; min-width: 0; display: flex; flex-direction: column; justify-content: center; }
 .item-fiche-title {
   font-family: 'Lora', Georgia, serif;
   font-size: 13.5px; font-weight: 600; color: var(--text); margin-bottom: 5px;
@@ -3742,9 +3744,11 @@ function renderItemsCards(colItems, theme) {
       return `<div class="item-fiche" data-item-idx="${idx}" onclick="openFicheModal(${idx})">
         <span class="card-drag-handle" onclick="event.stopPropagation()">&#8942;&#8942;</span>
         ${coverImg(it.cover, 'item-cover-card')}
-        <div class="item-fiche-title">${esc(it.titre||'Sans titre')}</div>
-        ${preview ? `<div class="item-fiche-preview">${esc(preview)}…</div>` : ''}
-        <div class="item-fiche-meta">${tagHtml}<div style="flex:1"></div><button class="item-act-btn" onclick="event.stopPropagation();openItemMod(${idx},'fiches')" title="Modifier">&#9998;</button></div>
+        <div class="item-fiche-body">
+          <div class="item-fiche-title">${esc(it.titre||'Sans titre')}</div>
+          ${preview ? `<div class="item-fiche-preview">${esc(preview)}…</div>` : ''}
+          <div class="item-fiche-meta">${tagHtml}<div style="flex:1"></div><button class="item-act-btn" onclick="event.stopPropagation();openItemMod(${idx},'fiches')" title="Modifier">&#9998;</button></div>
+        </div>
       </div>`;
     }).join('');
     return `<div class="fiches-grid" id="cardsGrid">${html}</div>`;
@@ -3771,11 +3775,13 @@ function renderItemsCards(colItems, theme) {
       return `<div class="item-fiche" data-item-idx="${idx}">
         <span class="card-drag-handle" onclick="event.stopPropagation()">&#8942;&#8942;</span>
         ${coverImg(it.cover, 'item-cover-card')}
-        <div style="display:flex;align-items:flex-start;gap:8px">
-          <div class="item-chk${it.fait?' done':''}" onclick="toggleItem(${idx})"></div>
-          <div class="item-fiche-title" style="${it.fait?'text-decoration:line-through;color:var(--muted)':''}">${esc(it.titre)}</div>
+        <div class="item-fiche-body">
+          <div style="display:flex;align-items:flex-start;gap:8px">
+            <div class="item-chk${it.fait?' done':''}" onclick="toggleItem(${idx})"></div>
+            <div class="item-fiche-title" style="${it.fait?'text-decoration:line-through;color:var(--muted)':''}">${esc(it.titre)}</div>
+          </div>
+          <div class="item-fiche-meta">${tagHtml}<div style="flex:1"></div><button class="item-act-btn" onclick="openItemMod(${idx},'listes')" title="Modifier">&#9998;</button></div>
         </div>
-        <div class="item-fiche-meta">${tagHtml}<div style="flex:1"></div><button class="item-act-btn" onclick="openItemMod(${idx},'listes')" title="Modifier">&#9998;</button></div>
       </div>`;
     }).join('');
     return `<div class="fiches-grid" id="cardsGrid">${html}</div>`;
@@ -3788,9 +3794,11 @@ function renderItemsCards(colItems, theme) {
       return `<div class="item-fiche" data-item-idx="${idx}" onclick="openLienCard(${idx})">
         <span class="card-drag-handle" onclick="event.stopPropagation()">&#8942;&#8942;</span>
         ${coverImg(it.cover, 'item-cover-card')}
-        <div class="item-fiche-title">${esc(it.titre||it.url||'Sans titre')}</div>
-        ${it.url ? `<div class="item-fiche-url"><a href="${esc(it.url)}" target="_blank" onclick="event.stopPropagation()">${esc(urlDisplay)}</a></div>` : ''}
-        <div class="item-fiche-meta">${tagHtml}<div style="flex:1"></div><button class="item-act-btn" onclick="event.stopPropagation();openItemMod(${idx},'liens')" title="Modifier">&#9998;</button></div>
+        <div class="item-fiche-body">
+          <div class="item-fiche-title">${esc(it.titre||it.url||'Sans titre')}</div>
+          ${it.url ? `<div class="item-fiche-url"><a href="${esc(it.url)}" target="_blank" onclick="event.stopPropagation()">${esc(urlDisplay)}</a></div>` : ''}
+          <div class="item-fiche-meta">${tagHtml}<div style="flex:1"></div><button class="item-act-btn" onclick="event.stopPropagation();openItemMod(${idx},'liens')" title="Modifier">&#9998;</button></div>
+        </div>
       </div>`;
     }).join('');
     return `<div class="fiches-grid" id="cardsGrid">${html}</div>`;
