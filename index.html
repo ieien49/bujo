@@ -3766,38 +3766,44 @@ document.addEventListener('keydown', (e) => {
 //  INIT GRIST / DEMO
 // ══════════════════════════════════════════════════════
 if(typeof grist!=='undefined'){
-  grist.ready({
-    requiredAccess:'full',
-    columns:[
-      {name:'tache',       title:'Tâche',       type:'Text'},
-      {name:'date',        title:'Date',        type:'Text'},
-      {name:'termine',     title:'Terminé',     type:'Bool'},
-      {name:'anniversaire',title:'Anniversaire',type:'Bool'},
-      {name:'projet',      title:'Projet',      type:'Bool'},
-      {name:'archive',     title:'Archivé',     type:'Bool'},
-      {name:'urgent',      title:'Urgent',      type:'Bool'}
-    ]
-  });
-  const cachedTasks = cacheGet('tasks');
-  if (cachedTasks) { tasks = cachedTasks; renderMain(); }
-  loadConfig();  
-  try {
-    const savedTab = localStorage.getItem('bujoWidget_lastTab_' + CACHE_NS);
-    if (savedTab && ['bujo','lectures','collections','outliner','mindmap'].includes(savedTab) && savedTab !== 'bujo') {
-      currentTabStored = savedTab;
-      switchTab(savedTab);
-    }
-  } catch(e) {}
   grist.onOptions((options) => {
-  if (options?.outZoomId !== undefined) outFocusRootId = options.outZoomId || null;
-});
+    if (options?.outZoomId !== undefined) outFocusRootId = options.outZoomId || null;
+  });
   // onRecords est appelé à chaque modification de la table Bujo
   grist.onRecords(records=>{
     tasks = records.map(r => ({id:r.id, name:r.tache||'', date:r.date||'', done:!!r.termine, bday:!!r.anniversaire, projet:!!r.projet, archive:!!r.archive, urgent:!!r.urgent}));
     cacheSet('tasks', tasks);
     renderMain();
   });
-  loadLectures();
+  const cachedTasks = cacheGet('tasks');
+  if (cachedTasks) { tasks = cachedTasks; renderMain(); }
+  (async () => {
+    // On attend que la négociation d'accès avec Grist soit vraiment terminée
+    // avant de lancer le moindre fetchTable — sinon les appels one-shot
+    // (Collections, Items...) peuvent tomber dans une fenêtre de course
+    // et échouer silencieusement au premier chargement.
+    await grist.ready({
+      requiredAccess:'full',
+      columns:[
+        {name:'tache',       title:'Tâche',       type:'Text'},
+        {name:'date',        title:'Date',        type:'Text'},
+        {name:'termine',     title:'Terminé',     type:'Bool'},
+        {name:'anniversaire',title:'Anniversaire',type:'Bool'},
+        {name:'projet',      title:'Projet',      type:'Bool'},
+        {name:'archive',     title:'Archivé',     type:'Bool'},
+        {name:'urgent',      title:'Urgent',      type:'Bool'}
+      ]
+    });
+    loadConfig();
+    try {
+      const savedTab = localStorage.getItem('bujoWidget_lastTab_' + CACHE_NS);
+      if (savedTab && ['bujo','lectures','collections','outliner','mindmap'].includes(savedTab) && savedTab !== 'bujo') {
+        currentTabStored = savedTab;
+        switchTab(savedTab);
+      }
+    } catch(e) {}
+    loadLectures();
+  })();
 } else {
   // Démo
   const dO=n=>{const x=new Date(today);x.setDate(x.getDate()+n);return `${x.getFullYear()}-${pad(x.getMonth()+1)}-${pad(x.getDate())}`;};
