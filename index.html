@@ -2270,7 +2270,7 @@ document.getElementById('wcfgLabelOutliner').addEventListener('input', e => { CF
 document.getElementById('wcfgLabelMindmap').addEventListener('input', e => { CFG.label_mindmap = e.target.value; });
 
 async function wcfgSaveConfig() {
-  if (typeof grist === 'undefined') { applyConfigValues(); wcfgFlashSaved(); return; }
+  if (typeof grist === 'undefined') { applyConfigValues(); wcfgFlashSaved(); setTimeout(closeConfigModal, 700); return; }
   const actions = WCFG_ALL_KEYS.map(cle => {
     const valeur = String(CFG[cle] ?? '');
     return wcfgRowIds[cle] !== undefined
@@ -2281,6 +2281,7 @@ async function wcfgSaveConfig() {
     await grist.docApi.applyUserActions(actions);
     await loadConfig(); // recharge CFG + wcfgRowIds, applique et met à jour le cache
     wcfgFlashSaved();
+    setTimeout(closeConfigModal, 700);
   } catch (e) {
     alert('Erreur lors de l\'enregistrement : ' + e.message);
   }
