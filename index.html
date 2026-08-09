@@ -3926,6 +3926,7 @@ function setTagFilter(tag) {
   }
   const vue = col.vue || ((col.theme==='listes'||col.theme==='liens')?'liste':'cards');
   if (ct) ct.innerHTML = renderItems(filteredByTag(colItems), col.theme, vue);
+  if (vue === 'cards') initItemsSortable();
 }
 
 function setColVue(vue) {
