@@ -1915,11 +1915,45 @@ body.presentation #exitPresentBtn{ display:flex; }
 // ══════════════════════════════════════════════
 let CFG = {};
 
+// ══════════════════════════════════════════════════════
+//  CACHE LOCAL (accélère l'affichage initial pendant que
+//  Grist recharge les vraies données en arrière-plan)
+//  Namespacé par document Grist pour ne pas mélanger le
+//  cache si ce widget est utilisé dans plusieurs docs
+//  depuis le même navigateur.
+// ══════════════════════════════════════════════════════
+function getDocCacheNamespace() {
+  try {
+    if (document.referrer) {
+      const u = new URL(document.referrer);
+      // Le chemin Grist contient l'id unique du doc, ex: /o/xxx/aBcD1234efGh/NomDuDoc/p/6
+      const parts = u.pathname.split('/').filter(Boolean).slice(0, 3).join('_');
+      if (parts) return parts;
+    }
+  } catch (e) { /* referrer indisponible : on retombe sur le namespace par défaut */ }
+  return 'default';
+}
+const CACHE_NS = getDocCacheNamespace();
+
+function cacheGet(key) {
+  try {
+    const raw = localStorage.getItem('bujoWidget_cache_' + CACHE_NS + '_' + key);
+    return raw ? JSON.parse(raw) : null;
+  } catch (e) { return null; }
+}
+function cacheSet(key, data) {
+  try { localStorage.setItem('bujoWidget_cache_' + CACHE_NS + '_' + key, JSON.stringify(data)); }
+  catch (e) { /* quota dépassé ou localStorage indisponible : on ignore */ }
+}
+
 async function loadConfig() {
   if (typeof grist === 'undefined') { applyConfigValues(); return; }
+  const cached = cacheGet('cfg');
+  if (cached) { Object.assign(CFG, cached); applyConfigValues(); }
   try {
     const raw = await grist.docApi.fetchTable('Config');
     (raw.cle || []).forEach((k, i) => { CFG[k] = String(raw.valeur?.[i] ?? ''); });
+    cacheSet('cfg', CFG);
   } catch (e) {
     console.warn('Config: table introuvable —', e);
   }
@@ -2040,7 +2074,7 @@ function switchTab(tab) {
   }
   if (typeof grist !== 'undefined' && tab !== currentTabStored) {
     currentTabStored = tab;
-    try { localStorage.setItem('bujoWidget_lastTab', tab); } catch(e) {}
+    try { localStorage.setItem('bujoWidget_lastTab_' + CACHE_NS, tab); } catch(e) {}
   }
 }
 
@@ -2912,6 +2946,12 @@ document.getElementById('btnLecNew').addEventListener('click',()=>{
 // ══════════════════════════════════════════════════════
 async function loadLectures(){
   if(typeof grist==='undefined')return;
+  const cached = cacheGet('lectures');
+  if (cached) {
+    lecRecs = cached;
+    lecFilter2();
+    document.getElementById('badge-lectures').textContent=lecRecs.length||'';
+  }
   try{
     const raw=await grist.docApi.fetchTable('Lectures');
     lecRecs=(raw.id||[]).map((id,i)=>({
@@ -2927,6 +2967,7 @@ async function loadLectures(){
       cover:       String(raw.cover?.[i]       ??''),
       statut:      String(raw.statut?.[i]      ??''),
     }));
+    cacheSet('lectures', lecRecs);
     lecFilter2();
     document.getElementById('badge-lectures').textContent=lecRecs.length||'';
   }catch(e){console.warn('Lectures:',e);}
@@ -2955,6 +2996,8 @@ function outMoveCursorToEnd(el) { const l = el.value.length; el.setSelectionRang
 
 // ── Chargement (fetchTable, pas de flux live — la table n'est pas la table liée du widget) ──
 async function loadOutliner() {
+  const cached = cacheGet('outliner');
+  if (cached) { outRecords = cached; outRender(); }
   try {
     const raw = await grist.docApi.fetchTable(OUT_TABLE_ID);
     const ids = raw.id || [];
@@ -2966,6 +3009,7 @@ async function loadOutliner() {
       collapsed: !!raw.collapsed?.[i],
       checked: !!raw.checked?.[i],
     }));
+    cacheSet('outliner', outRecords);
   } catch (e) {
     console.warn('Outliner (table Data introuvable) :', e);
     outRecords = [];
@@ -3445,9 +3489,11 @@ if(typeof grist!=='undefined'){
       {name:'urgent',      title:'Urgent',      type:'Bool'}
     ]
   });
+  const cachedTasks = cacheGet('tasks');
+  if (cachedTasks) { tasks = cachedTasks; renderMain(); }
   loadConfig();  
   try {
-    const savedTab = localStorage.getItem('bujoWidget_lastTab');
+    const savedTab = localStorage.getItem('bujoWidget_lastTab_' + CACHE_NS);
     if (savedTab && ['bujo','lectures','collections','outliner','mindmap'].includes(savedTab) && savedTab !== 'bujo') {
       currentTabStored = savedTab;
       switchTab(savedTab);
@@ -3459,6 +3505,7 @@ if(typeof grist!=='undefined'){
   // onRecords est appelé à chaque modification de la table Bujo
   grist.onRecords(records=>{
     tasks = records.map(r => ({id:r.id, name:r.tache||'', date:r.date||'', done:!!r.termine, bday:!!r.anniversaire, projet:!!r.projet, archive:!!r.archive, urgent:!!r.urgent}));
+    cacheSet('tasks', tasks);
     renderMain();
   });
   loadLectures();
@@ -4466,11 +4513,23 @@ async function loadGristTags() {
 // ── Chargement depuis Grist ──
 async function loadCollections() {
   if(typeof grist==='undefined')return;
+  const cachedCols = cacheGet('cols');
+  const cachedItems = cacheGet('items');
+  const cachedTags = cacheGet('tags');
+  if (cachedCols) cols = cachedCols;
+  if (cachedItems) items = cachedItems;
+  if (cachedTags) gristAllTags = cachedTags;
+  if (cachedCols || cachedItems) {
+    if (!selColId && cols.length) selColId = cols[0].id;
+    renderColSidebar();
+    if (selColId) renderColMain();
+  }
   const [_, rc, ri] = await Promise.all([
     loadGristTags(),
     grist.docApi.fetchTable('Collections').catch(e=>{console.warn('Collections:',e);return null;}),
     grist.docApi.fetchTable('Items').catch(e=>{console.warn('Items:',e);return null;})
   ]);
+  cacheSet('tags', gristAllTags);
   if (rc) {
     cols = (rc.id||[]).map((id,i)=>{
       const theme = String(rc.theme?.[i] ||'listes');
@@ -4481,6 +4540,7 @@ async function loadCollections() {
         ordre: Number(rc.ordre?.[i] ?? i) };
     });
     cols.sort((a,b) => a.ordre - b.ordre);
+    cacheSet('cols', cols);
   }
   if (ri) {
     items = (ri.id||[]).map((id,i)=>({
@@ -4494,6 +4554,7 @@ async function loadCollections() {
       fait:   !!ri.fait?.[i],
       ordre:  Number(ri.ordre?.[i] ?? i),
     }));
+    cacheSet('items', items);
   }
   if (!selColId && cols.length) selColId = cols[0].id;
   renderColSidebar();
@@ -4561,7 +4622,18 @@ const LEVEL_GAP_MARGIN = 50, SIB_GAP = 14;
 
 
 async function loadCartes(){
+  const cachedCartes = cacheGet('mm_cartes');
+  if (cachedCartes) {
+    cartes = cachedCartes;
+    populateMapSelect();
+    if (!currentMapId && cartes.length) currentMapId = cartes[0].id;
+    if (currentMapId) {
+      const cachedNoeuds = cacheGet('mm_noeuds');
+      if (cachedNoeuds) { noeuds = cachedNoeuds.filter(n => n.MapId === currentMapId); render(); }
+    } else showEmptyState();
+  }
   cartes = toRows(await grist.docApi.fetchTable(TABLE_CARTES));
+  cacheSet('mm_cartes', cartes);
   populateMapSelect();
   if (!currentMapId && cartes.length) currentMapId = cartes[0].id;
   if (currentMapId) await loadNoeuds();
@@ -4570,6 +4642,7 @@ async function loadCartes(){
 
 async function loadNoeuds(){
   const all = toRows(await grist.docApi.fetchTable(TABLE_NOEUDS));
+  cacheSet('mm_noeuds', all);
   noeuds = all.filter(n => n.MapId === currentMapId);
   render();
 }
