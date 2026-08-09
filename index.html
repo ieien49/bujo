@@ -547,6 +547,18 @@ select.cfilt { cursor: pointer; }
 }
 .wcfg-color-row input[type=text] { font-family: monospace; }
 .wcfg-label-grid { display: flex; flex-direction: column; gap: 8px; }
+.wcfg-tabrow {
+  display: flex; align-items: center; gap: 8px;
+  padding: 6px 9px; border: 1px solid var(--border); border-radius: var(--radius);
+  margin-bottom: 7px;
+}
+.wcfg-tabrow-key { font-size: 11px; color: var(--muted); width: 62px; flex-shrink: 0; }
+.wcfg-tabrow-input {
+  flex: 1; min-width: 0; padding: 6px 9px; border: 1px solid var(--border);
+  border-radius: var(--radius); font-size: 12.5px; color: var(--text);
+  background: var(--bg); outline: none; font-family: inherit; transition: border-color .12s;
+}
+.wcfg-tabrow-input:focus { border-color: var(--accent); }
 .wcfg-tog-row {
   display: flex; align-items: center; justify-content: space-between;
   padding: 7px 9px; border: 1px solid var(--border); border-radius: var(--radius);
@@ -554,7 +566,7 @@ select.cfilt { cursor: pointer; }
 }
 .wcfg-tog-row:hover { background: var(--bg-soft); }
 .wcfg-tog-label { font-size: 12px; color: var(--text); }
-.wcfg-tog-sw { width: 26px; height: 15px; border-radius: 8px; background: var(--border); position: relative; transition: background .2s; flex-shrink: 0; }
+.wcfg-tog-sw { width: 26px; height: 15px; border-radius: 8px; background: var(--border); position: relative; transition: background .2s; flex-shrink: 0; cursor: pointer; }
 .wcfg-tog-sw.on { background: var(--accent); }
 .wcfg-tog-sw::after { content: ''; position: absolute; width: 11px; height: 11px; border-radius: 50%; background: #fff; top: 2px; left: 2px; transition: transform .2s; }
 .wcfg-tog-sw.on::after { transform: translateX(11px); }
@@ -1972,50 +1984,32 @@ body.presentation #exitPresentBtn{ display:flex; }
     </div>
 
     <div class="wcfg-section-title">Onglets</div>
-    <div class="wcfg-tog-row" onclick="wcfgToggle('bujo_on')">
-      <span class="wcfg-tog-label">Bujo</span>
-      <div class="wcfg-tog-sw" id="wcfg-tog-bujo_on"></div>
+    <div class="wcfg-tabrow">
+      <span class="wcfg-tabrow-key">Bujo</span>
+      <input type="text" class="wcfg-tabrow-input" id="wcfgLabelBujo" placeholder="Bujo">
+      <div class="wcfg-tog-sw" id="wcfg-tog-bujo_on" onclick="wcfgToggle('bujo_on')"></div>
     </div>
-    <div class="wcfg-tog-row" onclick="wcfgToggle('lectures_on')">
-      <span class="wcfg-tog-label">Lectures</span>
-      <div class="wcfg-tog-sw" id="wcfg-tog-lectures_on"></div>
+    <div class="wcfg-tabrow">
+      <span class="wcfg-tabrow-key">Lectures</span>
+      <input type="text" class="wcfg-tabrow-input" id="wcfgLabelLectures" placeholder="Lectures">
+      <div class="wcfg-tog-sw" id="wcfg-tog-lectures_on" onclick="wcfgToggle('lectures_on')"></div>
     </div>
-    <div class="wcfg-tog-row" onclick="wcfgToggle('collections_on')">
-      <span class="wcfg-tog-label">Collections</span>
-      <div class="wcfg-tog-sw" id="wcfg-tog-collections_on"></div>
+    <div class="wcfg-tabrow">
+      <span class="wcfg-tabrow-key">Collections</span>
+      <input type="text" class="wcfg-tabrow-input" id="wcfgLabelCollections" placeholder="Collections">
+      <div class="wcfg-tog-sw" id="wcfg-tog-collections_on" onclick="wcfgToggle('collections_on')"></div>
     </div>
-    <div class="wcfg-tog-row" onclick="wcfgToggle('outliner_on')">
-      <span class="wcfg-tog-label">Outliner</span>
-      <div class="wcfg-tog-sw" id="wcfg-tog-outliner_on"></div>
+    <div class="wcfg-tabrow">
+      <span class="wcfg-tabrow-key">Outliner</span>
+      <input type="text" class="wcfg-tabrow-input" id="wcfgLabelOutliner" placeholder="Outliner">
+      <div class="wcfg-tog-sw" id="wcfg-tog-outliner_on" onclick="wcfgToggle('outliner_on')"></div>
     </div>
-    <div class="wcfg-tog-row" onclick="wcfgToggle('mindmap_on')">
-      <span class="wcfg-tog-label">Mind Map</span>
-      <div class="wcfg-tog-sw" id="wcfg-tog-mindmap_on"></div>
+    <div class="wcfg-tabrow">
+      <span class="wcfg-tabrow-key">Mind Map</span>
+      <input type="text" class="wcfg-tabrow-input" id="wcfgLabelMindmap" placeholder="Mind Map">
+      <div class="wcfg-tog-sw" id="wcfg-tog-mindmap_on" onclick="wcfgToggle('mindmap_on')"></div>
     </div>
-    <div class="wcfg-hint" style="margin-bottom:12px">Activé = onglet visible dans le Journal.</div>
-
-    <div class="wcfg-label-grid">
-      <div class="wcfg-cf">
-        <label>Libellé onglet Bujo</label>
-        <input type="text" id="wcfgLabelBujo" placeholder="Bujo">
-      </div>
-      <div class="wcfg-cf">
-        <label>Libellé onglet Lectures</label>
-        <input type="text" id="wcfgLabelLectures" placeholder="Lectures">
-      </div>
-      <div class="wcfg-cf">
-        <label>Libellé onglet Collections</label>
-        <input type="text" id="wcfgLabelCollections" placeholder="Collections">
-      </div>
-      <div class="wcfg-cf">
-        <label>Libellé onglet Outliner</label>
-        <input type="text" id="wcfgLabelOutliner" placeholder="Outliner">
-      </div>
-      <div class="wcfg-cf">
-        <label>Libellé onglet Mind Map</label>
-        <input type="text" id="wcfgLabelMindmap" placeholder="Mind Map">
-      </div>
-    </div>
+    <div class="wcfg-hint" style="margin-bottom:12px">Le libellé personnalise le nom affiché ; l'interrupteur active ou masque l'onglet.</div>
 
     <div class="wcfg-section-title">Modules Bujo</div>
     <div class="wcfg-tog-row" onclick="wcfgToggle('bday_on')">
