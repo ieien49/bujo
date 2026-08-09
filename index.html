@@ -235,6 +235,39 @@ body {
 .sec-label.s-late { color: var(--accent); border-color: var(--accent-soft); }
 .day-group { margin-bottom: 10px; }
 
+/* Titres proéminents "En retard" / "Aujourd'hui" dans la vue Bujo */
+.sec-hero {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text);
+  letter-spacing: 0;
+  text-transform: none;
+  margin-bottom: 10px;
+}
+.sec-hero.s-today {
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--border);
+}
+.sec-hero.s-late {
+  display: flex; align-items: center; justify-content: space-between;
+  cursor: pointer; user-select: none;
+  color: var(--accent);
+  background: var(--accent-soft);
+  border-radius: 10px;
+  padding: 10px 12px;
+  transition: filter .12s;
+}
+.sec-hero.s-late:hover { filter: brightness(0.96); }
+.sec-hero-title { display: flex; align-items: center; gap: 8px; }
+.sec-hero .chevron { font-size: 11px; width: 12px; display: inline-block; color: var(--accent); }
+.late-count-badge {
+  background: var(--accent); color: #fff;
+  font-size: 12px; font-weight: 700;
+  border-radius: 999px; padding: 2px 10px; min-width: 24px; text-align: center;
+  line-height: 1.5;
+}
+
 .day-hdr.dh-late { color: var(--accent); }
 
 /* Tâches */
@@ -2024,7 +2057,7 @@ const DFR = ['Dimanche','Lundi','Mardi','Mercredi','Jeudi','Vendredi','Samedi'];
 // ══════════════════════════════════════════════════════
 let isProjet = false;
 let isUrgent = false;
-let lateOpen = true; // ouvert par défaut
+let lateOpen = false; // replié par défaut
 let tasks       = [];   // données bujo
 let lecRecs     = [];   // données lectures
 let lecFiltered = [];
@@ -2457,9 +2490,9 @@ const todayB = cfgOn('bday_on') ? tasks.filter(t=>t.bday&&bdayNext(t)?.ds===toda
     if(late.length){
       const isOpen = lateOpen !== false;
       html+=`<div class="section">
-        <div class="sec-label s-late" style="cursor:pointer;display:flex;align-items:center;justify-content:space-between" onclick="toggleLate()">
-          <span>En retard (${late.length})</span>
-          <span style="font-size:11px;opacity:.7">${isOpen ? '▲' : '▼'}</span>
+        <div class="sec-hero s-late" onclick="toggleLate()">
+          <span class="sec-hero-title"><span class="chevron">${isOpen ? '▾' : '▸'}</span>En retard</span>
+          <span class="late-count-badge">${late.length}</span>
         </div>`;
       if(isOpen){
         html+=late.map(t=>tHTML(t,tasks.indexOf(t),undefined,dayLabel(t.date).lbl,true)).join('');
@@ -2467,7 +2500,7 @@ const todayB = cfgOn('bday_on') ? tasks.filter(t=>t.bday&&bdayNext(t)?.ds===toda
       html+=`</div>`;
     }
     if(todayT.length||todayB.length){
-      html+=`<div class="section"><div class="sec-label">Aujourd'hui</div>`;
+      html+=`<div class="section"><div class="sec-hero s-today">Aujourd'hui</div>`;
       todayB.forEach(t=>{const o=bdayNext(t);html+=tHTML(t,tasks.indexOf(t),o?.age);});
       html+=todayT.map(t=>tHTML(t,tasks.indexOf(t))).join('');
       html+=`</div>`;
@@ -2479,9 +2512,9 @@ const todayB = cfgOn('bday_on') ? tasks.filter(t=>t.bday&&bdayNext(t)?.ds===toda
     if(late.length){
       const isOpen = lateOpen !== false;
       html+=`<div class="section">
-        <div class="sec-label s-late" style="cursor:pointer;display:flex;align-items:center;justify-content:space-between" onclick="toggleLate()">
-          <span>En retard (${late.length})</span>
-          <span style="font-size:11px;opacity:.7">${isOpen ? '▲' : '▼'}</span>
+        <div class="sec-hero s-late" onclick="toggleLate()">
+          <span class="sec-hero-title"><span class="chevron">${isOpen ? '▾' : '▸'}</span>En retard</span>
+          <span class="late-count-badge">${late.length}</span>
         </div>`;
       if(isOpen){
         html+=late.map(t=>tHTML(t,tasks.indexOf(t),undefined,dayLabel(t.date).lbl,true)).join('');
