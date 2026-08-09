@@ -505,12 +505,17 @@ select.cfilt { cursor: pointer; }
 .bd:hover { background: #fff5f5; }
 
 /* Bouton icône réglages (app-tabs, haut droit) */
-.app-tabs { position: relative; }
+.app-tabs { position: relative; padding-right: 40px; }
+.app-tabs-scroll {
+  display: flex; align-items: stretch; gap: 4px;
+  overflow-x: auto; scrollbar-width: none; height: 100%;
+}
+.app-tabs-scroll::-webkit-scrollbar { display: none; }
 .wcfg-gear-btn {
-  margin-left: auto; align-self: center;
+  position: absolute; right: 8px; top: 50%; transform: translateY(-50%);
   width: 28px; height: 28px; display: flex; align-items: center; justify-content: center;
   border: none; background: none; color: var(--light); cursor: pointer;
-  border-radius: 8px; transition: color .12s, background .12s; flex-shrink: 0;
+  border-radius: 8px; transition: color .12s, background .12s; flex-shrink: 0; z-index: 1;
 }
 .wcfg-gear-btn:hover { color: var(--text); background: var(--bg-hover); }
 
