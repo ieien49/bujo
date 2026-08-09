@@ -504,6 +504,71 @@ select.cfilt { cursor: pointer; }
 .bd { padding: 6px 13px; border: 1px solid #f0d0d0; border-radius: var(--radius); background: var(--bg); color: #c06060; font-size: 12px; cursor: pointer; font-family: inherit; margin-right: auto; }
 .bd:hover { background: #fff5f5; }
 
+/* Bouton icône réglages (app-tabs, haut droit) */
+.app-tabs { position: relative; padding-right: 40px; }
+.app-tabs-scroll {
+  display: flex; align-items: stretch; gap: 4px;
+  overflow-x: auto; scrollbar-width: none; height: 100%;
+}
+.app-tabs-scroll::-webkit-scrollbar { display: none; }
+.wcfg-gear-btn {
+  position: absolute; right: 8px; top: 50%; transform: translateY(-50%);
+  width: 28px; height: 28px; display: flex; align-items: center; justify-content: center;
+  border: none; background: none; color: var(--light); cursor: pointer;
+  border-radius: 8px; transition: color .12s, background .12s; flex-shrink: 0; z-index: 1;
+}
+.wcfg-gear-btn:hover { color: var(--text); background: var(--bg-hover); }
+
+/* ── Modale de configuration du widget (scopée .wcfg-*) ── */
+.wcfg-box { max-height: 86vh; overflow-y: auto; }
+.wcfg-title { font-size: 13px; font-weight: 500; margin-bottom: 4px; }
+.wcfg-section-title {
+  font-size: 10px; font-weight: 700; letter-spacing: .08em;
+  text-transform: uppercase; color: var(--light); margin: 18px 0 8px;
+  padding-bottom: 5px; border-bottom: 1px solid var(--border);
+}
+.wcfg-section-title:first-of-type { margin-top: 14px; }
+.wcfg-cf { margin-bottom: 11px; }
+.wcfg-cf label {
+  display: block; font-size: 9.5px; font-weight: 500; letter-spacing: .07em;
+  text-transform: uppercase; color: var(--muted); margin-bottom: 4px;
+}
+.wcfg-cf input[type=text] {
+  width: 100%; padding: 6px 9px; border: 1px solid var(--border);
+  border-radius: var(--radius); font-size: 12.5px; color: var(--text);
+  background: var(--bg); outline: none; font-family: inherit; transition: border-color .12s;
+}
+.wcfg-cf input[type=text]:focus { border-color: var(--accent); }
+.wcfg-hint { font-size: 10px; color: var(--light); margin-top: 3px; }
+.wcfg-color-row { display: flex; align-items: center; gap: 8px; }
+.wcfg-color-row input[type=color] {
+  width: 32px; height: 32px; border: 1px solid var(--border);
+  border-radius: 8px; padding: 2px; cursor: pointer; background: var(--bg); flex-shrink: 0;
+}
+.wcfg-color-row input[type=text] { font-family: monospace; }
+.wcfg-label-grid { display: flex; flex-direction: column; gap: 8px; }
+.wcfg-tog-row {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 7px 9px; border: 1px solid var(--border); border-radius: var(--radius);
+  cursor: pointer; transition: background .12s; margin-bottom: 7px;
+}
+.wcfg-tog-row:hover { background: var(--bg-soft); }
+.wcfg-tog-label { font-size: 12px; color: var(--text); }
+.wcfg-tog-sw { width: 26px; height: 15px; border-radius: 8px; background: var(--border); position: relative; transition: background .2s; flex-shrink: 0; }
+.wcfg-tog-sw.on { background: var(--accent); }
+.wcfg-tog-sw::after { content: ''; position: absolute; width: 11px; height: 11px; border-radius: 50%; background: #fff; top: 2px; left: 2px; transition: transform .2s; }
+.wcfg-tog-sw.on::after { transform: translateX(11px); }
+.wcfg-save-bar {
+  display: flex; align-items: center; gap: 10px; margin-top: 18px;
+  position: sticky; bottom: 0; background: var(--bg); padding-top: 6px;
+}
+.wcfg-save-ind {
+  font-size: 11.5px; color: var(--muted); display: flex; align-items: center; gap: 5px;
+  opacity: 0; transition: opacity .3s;
+}
+.wcfg-save-ind.vis { opacity: 1; }
+.wcfg-save-dot { width: 6px; height: 6px; border-radius: 50%; background: #27ae60; }
+
 
 /* ── Colonne agenda semaine (droite bujo) ── */
 .bujo-week-col {
@@ -1484,6 +1549,7 @@ body.presentation #exitPresentBtn{ display:flex; }
      ONGLETS
      ══════════════════════════════════════════ -->
 <div class="app-tabs">
+<div class="app-tabs-scroll">
   <button class="app-tab active" data-tab="bujo" onclick="switchTab('bujo')">
     <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8"/><path d="M3 10a2 2 0 0 1 .709-1.528l7-6a2 2 0 0 1 2.582 0l7 6A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
     <span class="tab-label">Bujo</span>
@@ -1506,6 +1572,10 @@ body.presentation #exitPresentBtn{ display:flex; }
   <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="5" cy="12" r="2.5"/><circle cx="19" cy="6" r="2.5"/><circle cx="19" cy="18" r="2.5"/><path d="M7.3 10.8 16.7 7.2M7.3 13.2 16.7 16.8"/></svg>
   <span class="tab-label">Mind Map</span>
 </button>
+</div>
+  <button class="wcfg-gear-btn" onclick="openConfigModal()" title="Réglages du widget">
+    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
+  </button>
 </div>
 
 <!-- ══════════════════════════════════════════
@@ -1882,6 +1952,103 @@ body.presentation #exitPresentBtn{ display:flex; }
   </div>
 </div>
 
+<!-- ══ MODALE RÉGLAGES WIDGET ══ -->
+<div class="bmod-ov" id="wcfgOv" onclick="wcfgHandleOvClick(event)">
+  <div class="bmod wcfg-box">
+    <div class="wcfg-title">Réglages du widget</div>
+
+    <div class="wcfg-cf">
+      <label>Titre du document</label>
+      <input type="text" id="wcfgTitre" placeholder="Journal">
+      <div class="wcfg-hint">Affiché dans l'onglet du navigateur.</div>
+    </div>
+
+    <div class="wcfg-cf">
+      <label>Couleur d'accent</label>
+      <div class="wcfg-color-row">
+        <input type="color" id="wcfgAccentPicker" value="#e8a020">
+        <input type="text" id="wcfgAccentHex" placeholder="#e8a020">
+      </div>
+    </div>
+
+    <div class="wcfg-section-title">Onglets</div>
+    <div class="wcfg-tog-row" onclick="wcfgToggle('bujo_on')">
+      <span class="wcfg-tog-label">Bujo</span>
+      <div class="wcfg-tog-sw" id="wcfg-tog-bujo_on"></div>
+    </div>
+    <div class="wcfg-tog-row" onclick="wcfgToggle('lectures_on')">
+      <span class="wcfg-tog-label">Lectures</span>
+      <div class="wcfg-tog-sw" id="wcfg-tog-lectures_on"></div>
+    </div>
+    <div class="wcfg-tog-row" onclick="wcfgToggle('collections_on')">
+      <span class="wcfg-tog-label">Collections</span>
+      <div class="wcfg-tog-sw" id="wcfg-tog-collections_on"></div>
+    </div>
+    <div class="wcfg-tog-row" onclick="wcfgToggle('outliner_on')">
+      <span class="wcfg-tog-label">Outliner</span>
+      <div class="wcfg-tog-sw" id="wcfg-tog-outliner_on"></div>
+    </div>
+    <div class="wcfg-tog-row" onclick="wcfgToggle('mindmap_on')">
+      <span class="wcfg-tog-label">Mind Map</span>
+      <div class="wcfg-tog-sw" id="wcfg-tog-mindmap_on"></div>
+    </div>
+    <div class="wcfg-hint" style="margin-bottom:12px">Activé = onglet visible dans le Journal.</div>
+
+    <div class="wcfg-label-grid">
+      <div class="wcfg-cf">
+        <label>Libellé onglet Bujo</label>
+        <input type="text" id="wcfgLabelBujo" placeholder="Bujo">
+      </div>
+      <div class="wcfg-cf">
+        <label>Libellé onglet Lectures</label>
+        <input type="text" id="wcfgLabelLectures" placeholder="Lectures">
+      </div>
+      <div class="wcfg-cf">
+        <label>Libellé onglet Collections</label>
+        <input type="text" id="wcfgLabelCollections" placeholder="Collections">
+      </div>
+      <div class="wcfg-cf">
+        <label>Libellé onglet Outliner</label>
+        <input type="text" id="wcfgLabelOutliner" placeholder="Outliner">
+      </div>
+      <div class="wcfg-cf">
+        <label>Libellé onglet Mind Map</label>
+        <input type="text" id="wcfgLabelMindmap" placeholder="Mind Map">
+      </div>
+    </div>
+
+    <div class="wcfg-section-title">Modules Bujo</div>
+    <div class="wcfg-tog-row" onclick="wcfgToggle('bday_on')">
+      <span class="wcfg-tog-label">Anniversaires</span>
+      <div class="wcfg-tog-sw" id="wcfg-tog-bday_on"></div>
+    </div>
+    <div class="wcfg-tog-row" onclick="wcfgToggle('projet_on')">
+      <span class="wcfg-tog-label">Projets</span>
+      <div class="wcfg-tog-sw" id="wcfg-tog-projet_on"></div>
+    </div>
+
+    <div class="wcfg-section-title">Colonnes Bujo</div>
+    <div class="wcfg-tog-row" onclick="wcfgToggle('col_cal_on')">
+      <span class="wcfg-tog-label">Mini calendrier (sidebar)</span>
+      <div class="wcfg-tog-sw" id="wcfg-tog-col_cal_on"></div>
+    </div>
+    <div class="wcfg-tog-row" onclick="wcfgToggle('col_futurelogs_on')">
+      <span class="wcfg-tog-label">Future logs (navigation mois/année)</span>
+      <div class="wcfg-tog-sw" id="wcfg-tog-col_futurelogs_on"></div>
+    </div>
+    <div class="wcfg-tog-row" onclick="wcfgToggle('col_week_on')">
+      <span class="wcfg-tog-label">Agenda semaine (colonne droite)</span>
+      <div class="wcfg-tog-sw" id="wcfg-tog-col_week_on"></div>
+    </div>
+
+    <div class="wcfg-save-bar">
+      <button class="bs" onclick="wcfgSaveConfig()">Enregistrer</button>
+      <button class="bc" onclick="closeConfigModal()">Fermer</button>
+      <div class="wcfg-save-ind" id="wcfgSaveInd"><div class="wcfg-save-dot"></div> Sauvegardé</div>
+    </div>
+  </div>
+</div>
+
 <!-- ══ MODALE BUJO ══ -->
 <div class="bmod-ov" id="bmodOv" onclick="handleBmodClick(event)">
   <div class="bmod">
@@ -1985,7 +2152,11 @@ async function loadConfig() {
   if (cached) { Object.assign(CFG, cached); applyConfigValues(); }
   try {
     const raw = await grist.docApi.fetchTable('Config');
-    (raw.cle || []).forEach((k, i) => { CFG[k] = String(raw.valeur?.[i] ?? ''); });
+    wcfgRowIds = {};
+    (raw.cle || []).forEach((k, i) => {
+      CFG[k] = String(raw.valeur?.[i] ?? '');
+      wcfgRowIds[k] = raw.id[i];
+    });
     cacheSet('cfg', CFG);
   } catch (e) {
     console.warn('Config: table introuvable —', e);
@@ -2037,6 +2208,95 @@ function applyConfigValues() {
   }
 
   renderMain();
+}
+
+// ══════════════════════════════════════════════════════
+//  MODALE RÉGLAGES DU WIDGET (config in-widget, table Config)
+// ══════════════════════════════════════════════════════
+let wcfgRowIds = {};
+let wcfgSaveT = null;
+const WCFG_TOGGLE_KEYS = ['bujo_on','lectures_on','collections_on','outliner_on','mindmap_on','bday_on','projet_on','col_cal_on','col_futurelogs_on','col_week_on'];
+const WCFG_ALL_KEYS = ['titre','accent','label_bujo','label_lectures','label_collections','label_outliner','label_mindmap', ...WCFG_TOGGLE_KEYS];
+
+function wcfgToggle(key) {
+  CFG[key] = (CFG[key] === 'false') ? 'true' : 'false';
+  wcfgRefreshToggles();
+}
+function wcfgRefreshToggles() {
+  WCFG_TOGGLE_KEYS.forEach(key => {
+    const el = document.getElementById('wcfg-tog-' + key);
+    if (el) el.classList.toggle('on', cfgOn(key));
+  });
+}
+function wcfgRefreshFields() {
+  document.getElementById('wcfgTitre').value = CFG.titre || '';
+  document.getElementById('wcfgLabelBujo').value = CFG.label_bujo || '';
+  document.getElementById('wcfgLabelLectures').value = CFG.label_lectures || '';
+  document.getElementById('wcfgLabelCollections').value = CFG.label_collections || '';
+  document.getElementById('wcfgLabelOutliner').value = CFG.label_outliner || '';
+  document.getElementById('wcfgLabelMindmap').value = CFG.label_mindmap || '';
+  const hex = CFG.accent || '#e8a020';
+  document.getElementById('wcfgAccentHex').value = hex;
+  document.getElementById('wcfgAccentPicker').value = /^#[0-9a-fA-F]{6}$/.test(hex) ? hex : '#e8a020';
+  wcfgRefreshToggles();
+}
+
+function openConfigModal() {
+  wcfgRefreshFields();
+  document.getElementById('wcfgOv').classList.add('open');
+}
+function closeConfigModal() {
+  document.getElementById('wcfgOv').classList.remove('open');
+}
+function wcfgHandleOvClick(e) {
+  if (e.target === document.getElementById('wcfgOv')) closeConfigModal();
+}
+
+document.getElementById('wcfgAccentPicker').addEventListener('input', e => {
+  CFG.accent = e.target.value;
+  document.getElementById('wcfgAccentHex').value = e.target.value;
+  document.documentElement.style.setProperty('--accent', e.target.value);
+  document.documentElement.style.setProperty('--accent-soft', e.target.value + '33');
+});
+document.getElementById('wcfgAccentHex').addEventListener('input', e => {
+  let v = e.target.value.trim();
+  if (v && !v.startsWith('#')) v = '#' + v;
+  CFG.accent = v;
+  if (/^#[0-9a-fA-F]{6}$/.test(v)) {
+    document.getElementById('wcfgAccentPicker').value = v;
+    document.documentElement.style.setProperty('--accent', v);
+    document.documentElement.style.setProperty('--accent-soft', v + '33');
+  }
+});
+document.getElementById('wcfgTitre').addEventListener('input', e => { CFG.titre = e.target.value; });
+document.getElementById('wcfgLabelBujo').addEventListener('input', e => { CFG.label_bujo = e.target.value; });
+document.getElementById('wcfgLabelLectures').addEventListener('input', e => { CFG.label_lectures = e.target.value; });
+document.getElementById('wcfgLabelCollections').addEventListener('input', e => { CFG.label_collections = e.target.value; });
+document.getElementById('wcfgLabelOutliner').addEventListener('input', e => { CFG.label_outliner = e.target.value; });
+document.getElementById('wcfgLabelMindmap').addEventListener('input', e => { CFG.label_mindmap = e.target.value; });
+
+async function wcfgSaveConfig() {
+  if (typeof grist === 'undefined') { applyConfigValues(); wcfgFlashSaved(); return; }
+  const actions = WCFG_ALL_KEYS.map(cle => {
+    const valeur = String(CFG[cle] ?? '');
+    return wcfgRowIds[cle] !== undefined
+      ? ['UpdateRecord', 'Config', wcfgRowIds[cle], { cle, valeur }]
+      : ['AddRecord', 'Config', null, { cle, valeur }];
+  });
+  try {
+    await grist.docApi.applyUserActions(actions);
+    await loadConfig(); // recharge CFG + wcfgRowIds, applique et met à jour le cache
+    wcfgFlashSaved();
+  } catch (e) {
+    alert('Erreur lors de l\'enregistrement : ' + e.message);
+  }
+}
+
+function wcfgFlashSaved() {
+  const ind = document.getElementById('wcfgSaveInd');
+  ind.classList.add('vis');
+  clearTimeout(wcfgSaveT);
+  wcfgSaveT = setTimeout(() => ind.classList.remove('vis'), 2200);
 }
 
 
