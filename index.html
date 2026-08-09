@@ -3912,7 +3912,7 @@ function buildTagBar(colItems) {
 }
 
 function setTagFilter(tag) {
-  activeTagFilter = tag;
+  activeTagFilter = (activeTagFilter === tag) ? '' : tag;
   const col = cols.find(c2 => c2.id === selColId); if (!col) return;
   const colItems = items.filter(it => it.col_id === selColId);
   const tb = document.getElementById('colTagBar');
