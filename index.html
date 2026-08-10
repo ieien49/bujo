@@ -1346,6 +1346,7 @@ select.cfilt { cursor: pointer; }
 .out-crumb-link:hover { color: var(--out-accent); }
 .out-crumb-sep { font-size: 11px; color: var(--out-text-dim); user-select: none; }
 .out-crumb-current { color: var(--out-text); font-weight: 400; }
+.out-crumb-home { font-size: 16px; line-height: 1; }
 
 .out-zoom-title { font-size: 18px; font-weight: 500; color: var(--out-text); padding: 4px 0 18px; line-height: 1.4; letter-spacing: -0.01em; }
 
@@ -3287,6 +3288,10 @@ function outMoveCursorToEnd(el) { const l = el.value.length; el.setSelectionRang
 
 // ── Chargement (fetchTable, pas de flux live — la table n'est pas la table liée du widget) ──
 async function loadOutliner() {
+  try {
+    const savedZoom = localStorage.getItem('bujoWidget_outZoom_' + CACHE_NS);
+    if (savedZoom) outFocusRootId = Number(savedZoom) || null;
+  } catch(e) {}
   const cached = cacheGet('outliner');
   if (cached) { outRecords = cached; outRender(); }
   try {
@@ -3429,8 +3434,8 @@ async function outMoveNode(dragId, targetId, position) {
 }
 
 // ── Zoom ──
-async function outZoomInto(id) { outFocusRootId = id;       await grist.setOption('outZoomId', id);       outRender(); }
-async function outZoomTo(id)   { outFocusRootId = id||null; await grist.setOption('outZoomId', id||null); outRender(); }
+async function outZoomInto(id) { outFocusRootId = id;       try { localStorage.setItem('bujoWidget_outZoom_' + CACHE_NS, id); } catch(e) {}       outRender(); }
+async function outZoomTo(id)   { outFocusRootId = id||null; try { id ? localStorage.setItem('bujoWidget_outZoom_' + CACHE_NS, id) : localStorage.removeItem('bujoWidget_outZoom_' + CACHE_NS); } catch(e) {} outRender(); }
 
 // ── Breadcrumb ──
 function outRenderBreadcrumb() {
@@ -3438,13 +3443,13 @@ function outRenderBreadcrumb() {
   bc.innerHTML = '';
   if (!outFocusRootId) { bc.style.display = 'none'; return; }
   bc.style.display = 'flex';
-  bc.appendChild(outMakeCrumb('⌂', null));
+  bc.appendChild(outMakeCrumb('⌂', null, 'out-crumb-home'));
   outGetAncestors(outFocusRootId).forEach(r => { bc.appendChild(outMakeSep()); bc.appendChild(outMakeCrumb(r.title || '…', r.id)); });
   const cur = outGetRecord(outFocusRootId);
   if (cur) { bc.appendChild(outMakeSep()); const s = document.createElement('span'); s.className = 'out-crumb out-crumb-current'; s.textContent = cur.title || '…'; bc.appendChild(s); }
 }
-function outMakeCrumb(label, id) {
-  const b = document.createElement('button'); b.className = 'out-crumb out-crumb-link'; b.textContent = label; b.onclick = () => outZoomTo(id); return b;
+function outMakeCrumb(label, id, extraClass) {
+  const b = document.createElement('button'); b.className = 'out-crumb out-crumb-link' + (extraClass ? ' ' + extraClass : ''); b.textContent = label; b.onclick = () => outZoomTo(id); return b;
 }
 function outMakeSep() { const s = document.createElement('span'); s.className = 'out-crumb-sep'; s.textContent = '/'; return s; }
 
@@ -3769,9 +3774,6 @@ document.addEventListener('keydown', (e) => {
 //  INIT GRIST / DEMO
 // ══════════════════════════════════════════════════════
 if(typeof grist!=='undefined'){
-  grist.onOptions((options) => {
-    if (options?.outZoomId !== undefined) outFocusRootId = options.outZoomId || null;
-  });
   // onRecords est appelé à chaque modification de la table Bujo
   grist.onRecords(records=>{
     tasks = records.map(r => ({id:r.id, name:r.tache||'', date:r.date||'', done:!!r.termine, bday:!!r.anniversaire, projet:!!r.projet, archive:!!r.archive, urgent:!!r.urgent}));
