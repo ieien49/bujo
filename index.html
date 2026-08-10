@@ -1143,6 +1143,11 @@ select.cfilt { cursor: pointer; }
   background: var(--bg); outline: none; font-family: inherit;
   transition: border-color .12s;
 }
+.cf label a {
+  text-transform: none; letter-spacing: normal; font-weight: 600;
+  color: var(--accent); text-decoration: none;
+}
+.cf label a:hover { text-decoration: underline; }
 .cf input:focus, .cf select:focus, .cf textarea:focus { border-color: var(--accent); }
 .cf textarea { min-height: 90px; resize: vertical; line-height: 1.6; }
 .cf select { cursor: pointer; }
@@ -1897,10 +1902,10 @@ body.presentation #exitPresentBtn{ display:flex; }
         </div>
       </div>
       <div class="cf">
-        <label>Icône (code SVG)</label>
+        <label>Icône (code SVG) — <a href="https://remixicon.com" target="_blank" rel="noopener">remixicon.com</a></label>
         <div class="svg-input-wrap">
-          <textarea id="colIconSvg" placeholder='<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">…</svg>' oninput="updateSvgPreview()"></textarea>
-          <div class="svg-preview" id="svgPreview">
+          <textarea id="colIconSvg" oninput="updateSvgPreview()"></textarea>
+          <div class="svg-preview" id="svgPreview" style="display:none">
             <div class="svg-preview-icon" id="svgPreviewIcon"></div>
             <span class="svg-preview-label" id="svgPreviewLabel">Aperçu de l'icône</span>
           </div>
@@ -4545,13 +4550,15 @@ function updateSvgPreview() {
   colIconSel = val;
   const iconEl = document.getElementById('svgPreviewIcon');
   const labelEl = document.getElementById('svgPreviewLabel');
+  const previewEl = document.getElementById('svgPreview');
+  if (previewEl) previewEl.style.display = val ? 'flex' : 'none';
   if (iconEl) {
     if (val && val.startsWith('<svg')) {
       iconEl.innerHTML = renderColIcon(val, 20);
       if (labelEl) labelEl.textContent = "Aperçu de l'icône";
     } else {
       iconEl.innerHTML = '';
-      if (labelEl) labelEl.textContent = val ? 'Code SVG invalide' : 'Collez ici un code SVG';
+      if (labelEl) labelEl.textContent = 'Code SVG invalide';
     }
   }
 }
