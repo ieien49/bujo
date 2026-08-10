@@ -1400,6 +1400,16 @@ select.cfilt { cursor: pointer; }
 }
 .out-highlight-overlay mark { background: var(--out-mark-bg); color: transparent; border-radius: 2px; }
 
+.out-md-overlay {
+  position: absolute; top: 0; left: 0; right: 0;
+  padding: 4px 4px 4px 3px;
+  font-family: var(--out-font); font-size: 14px; font-weight: 300; line-height: 1.65;
+  word-break: break-word; white-space: pre-wrap; overflow: hidden;
+  color: transparent; pointer-events: none; z-index: 2;
+  border: 1px solid transparent;
+}
+.out-md-overlay .out-md-marker { color: var(--out-accent); opacity: 0.55; }
+
 .out-node-content {
   position: relative; z-index: 1; display: block; width: 100%;
   padding: 4px 4px 4px 3px;
@@ -3619,7 +3629,12 @@ function outRender() {
   } else {
     outGetChildren(0).forEach(r => tree.appendChild(outCreateNodeEl(r)));
   }
-  requestAnimationFrame(() => document.querySelectorAll('.out-node-content').forEach(outAutoResize));
+  requestAnimationFrame(() => document.querySelectorAll('.out-node-content').forEach(ta => {
+    outAutoResize(ta);
+    const wrap = ta.closest('.out-content-wrap');
+    const md = wrap?.querySelector('.out-md-overlay');
+    if (md) outSyncOverlaySize(md, ta);
+  }));
   if (outSearchOpen && outSearchQuery) outRunSearch(outSearchQuery);
 }
 
@@ -3677,6 +3692,10 @@ function outCreateNodeEl(rec) {
   const overlay = document.createElement('div');
   overlay.className = 'out-highlight-overlay';
 
+  const mdOverlay = document.createElement('div');
+  mdOverlay.className = 'out-md-overlay';
+  mdOverlay.innerHTML = outHighlightMdMarkers(rec.title || '');
+
   const content = document.createElement('textarea');
   content.className = 'out-node-content' + (isChecked ? ' checked' : '');
   content.value = rec.title || '';
@@ -3686,8 +3705,12 @@ function outCreateNodeEl(rec) {
   let saveTimer = null;
   const scheduleSave = () => { clearTimeout(saveTimer); saveTimer = setTimeout(() => outUpdateTitle(rec.id, content.value), 1000); };
 
-  content.addEventListener('input', () => { outAutoResize(content); scheduleSave(); });
-  content.addEventListener('scroll', () => { overlay.scrollTop = content.scrollTop; });
+  content.addEventListener('input', () => {
+    outAutoResize(content); scheduleSave();
+    mdOverlay.innerHTML = outHighlightMdMarkers(content.value);
+    outSyncOverlaySize(mdOverlay, content);
+  });
+  content.addEventListener('scroll', () => { overlay.scrollTop = content.scrollTop; mdOverlay.scrollTop = content.scrollTop; });
 
   content.addEventListener('keydown', async (e) => {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -3716,6 +3739,7 @@ function outCreateNodeEl(rec) {
   content.addEventListener('blur',  () => { row.classList.remove('editing'); clearTimeout(saveTimer); outUpdateTitle(rec.id, content.value); });
 
   contentWrap.appendChild(overlay);
+  contentWrap.appendChild(mdOverlay);
   contentWrap.appendChild(content);
 
   const actions = document.createElement('div');
@@ -3900,6 +3924,16 @@ function outApplyOverlayHighlight(nodeEl, title, query) {
 }
 function outEscapeRe(s)   { return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }
 function outEscapeHtml(s) { return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+// Colore légèrement les marqueurs markdown (**gras**, _italique_, `code`) sans
+// toucher au texte réel : ne rend que le sous-ensemble **, _ et ` — pas de
+// parsing complet, volontairement limité pour rester simple à maintenir.
+function outHighlightMdMarkers(text) {
+  let h = outEscapeHtml(text || '');
+  h = h.replace(/\*\*([^\n*]+)\*\*/g, '<span class="out-md-marker">**</span>$1<span class="out-md-marker">**</span>');
+  h = h.replace(/`([^`\n]+)`/g, '<span class="out-md-marker">`</span>$1<span class="out-md-marker">`</span>');
+  h = h.replace(/_([^\n_]+)_/g, '<span class="out-md-marker">_</span>$1<span class="out-md-marker">_</span>');
+  return h;
+}
 
 document.getElementById('out-search-toggle').addEventListener('click', () => { outSearchOpen ? outCloseSearch() : outOpenSearch(); });
 document.getElementById('out-search-input').addEventListener('input', (e) => {
