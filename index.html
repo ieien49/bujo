@@ -1379,10 +1379,12 @@ select.cfilt { cursor: pointer; }
 .out-bullet-btn {
   width: 24px; height: 28px; display: flex; align-items: center; justify-content: center;
   flex-shrink: 0; background: none; border: none; cursor: pointer;
-  color: var(--out-bullet); transition: color 0.15s; border-radius: 3px; padding: 4px; z-index: 2;
+  color: var(--out-bullet); transition: color 0.15s, opacity 0.15s; border-radius: 3px; padding: 4px; z-index: 2;
+  opacity: 0.4;
 }
+.out-node-row:hover .out-bullet-btn { opacity: 1; }
 .out-bullet-btn:hover { color: var(--out-accent); }
-.out-bullet-btn.checked { color: var(--out-check-color); }
+.out-bullet-btn.checked { color: var(--out-check-color); opacity: 1; }
 .out-bullet-btn.checked:hover { color: var(--out-check-color-hover); }
 .out-bullet-btn svg { display: block; flex-shrink: 0; }
 
