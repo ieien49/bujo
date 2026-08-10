@@ -2041,6 +2041,13 @@ body.presentation #exitPresentBtn{ display:flex; }
       <div class="wcfg-tog-sw" id="wcfg-tog-col_week_on"></div>
     </div>
 
+    <div class="wcfg-section-title">Structure du document</div>
+    <div class="wcfg-hint" style="margin-bottom:8px">
+      Vérifie que les tables Grist nécessaires au widget existent dans ce document, et crée automatiquement celles qui manquent (sans jamais toucher aux tables déjà présentes).
+    </div>
+    <button class="bs" style="width:100%;margin-bottom:8px" onclick="wcfgCheckTables()">Vérifier les tables</button>
+    <div id="wcfgTablesStatus" class="wcfg-hint" style="margin-bottom:4px"></div>
+
     <div class="wcfg-save-bar">
       <button class="bs" onclick="wcfgSaveConfig()">Enregistrer</button>
       <button class="bc" onclick="closeConfigModal()">Fermer</button>
@@ -2298,6 +2305,120 @@ function wcfgFlashSaved() {
   ind.classList.add('vis');
   clearTimeout(wcfgSaveT);
   wcfgSaveT = setTimeout(() => ind.classList.remove('vis'), 2200);
+}
+
+// ══════════════════════════════════════════════════════
+//  INSTALLATION AUTOMATIQUE DES TABLES GRIST MANQUANTES
+//  N'ajoute jamais de colonne à une table déjà présente,
+//  ne touche jamais aux tables/colonnes existantes.
+// ══════════════════════════════════════════════════════
+const WCFG_REQUIRED_TABLES = [
+  { id: 'Config', cols: [
+    { id: 'cle',    type: 'Text' },
+    { id: 'valeur', type: 'Text' },
+  ]},
+  { id: 'Lectures', cols: [
+    { id: 'titre',        type: 'Text' },
+    { id: 'auteur',       type: 'Text' },
+    { id: 'resume',       type: 'Text' },
+    { id: 'incipit',      type: 'Text' },
+    { id: 'personnages',  type: 'Text' },
+    { id: 'citations',    type: 'Text' },
+    { id: 'date_edition', type: 'Date' },
+    { id: 'date_lecture', type: 'Date' },
+    { id: 'cover',        type: 'Text' },
+    { id: 'statut',       type: 'Text' },
+  ]},
+  { id: 'Data', label: 'Data (Outliner)', cols: [
+    { id: 'title',     type: 'Text' },
+    { id: 'parent_id', type: 'Int' },
+    { id: 'position',  type: 'Int' },
+    { id: 'collapsed', type: 'Bool' },
+    { id: 'checked',   type: 'Bool' },
+  ]},
+  { id: 'Collections', cols: [
+    { id: 'nom',   type: 'Text' },
+    { id: 'theme', type: 'Text' },
+    { id: 'icone', type: 'Text' },
+    { id: 'vue',   type: 'Text' },
+    { id: 'ordre', type: 'Int' },
+  ]},
+  { id: 'Items', cols: [
+    { id: 'collection', type: 'Ref:Collections' },
+    { id: 'titre',      type: 'Text' },
+    { id: 'texte',      type: 'Text' },
+    { id: 'url',        type: 'Text' },
+    { id: 'cover',      type: 'Text' },
+    { id: 'tag',        type: 'Text' },
+    { id: 'fait',       type: 'Bool' },
+    { id: 'ordre',      type: 'Int' },
+    { id: 'type',       type: 'Text' },
+  ]},
+  { id: 'MindMap_Cartes', cols: [
+    { id: 'Titre', type: 'Text' },
+  ]},
+  { id: 'MindMap_Noeuds', cols: [
+    { id: 'Label',    type: 'Text' },
+    { id: 'ParentId', type: 'Int' },
+    { id: 'Ordre',    type: 'Int' },
+    { id: 'MapId',    type: 'Ref:MindMap_Cartes' },
+    { id: 'Url',      type: 'Text' },
+    { id: 'Notes',    type: 'Text' },
+  ]},
+];
+// Note : la table Bujo n'est pas listée ici — Grist propose déjà
+// nativement de la créer (avec les bonnes colonnes) au moment où
+// on associe le widget à une table vide, via le mapping de colonnes
+// déclaré dans grist.ready().
+
+function wcfgSetTablesStatus(html) {
+  const el = document.getElementById('wcfgTablesStatus');
+  if (el) el.innerHTML = html;
+}
+
+async function wcfgCheckTables() {
+  if (typeof grist === 'undefined') { wcfgSetTablesStatus('Indisponible hors de Grist (mode démo).'); return; }
+  wcfgSetTablesStatus('Vérification en cours…');
+  let existing;
+  try {
+    existing = await grist.docApi.listTables();
+  } catch (e) {
+    wcfgSetTablesStatus('Erreur lors de la lecture des tables : ' + e.message);
+    return;
+  }
+  const missing = WCFG_REQUIRED_TABLES.filter(t => !existing.includes(t.id));
+  if (!missing.length) {
+    wcfgSetTablesStatus('✓ Toutes les tables nécessaires sont déjà présentes.');
+    return;
+  }
+  const names = missing.map(t => t.label || t.id).join(', ');
+  wcfgSetTablesStatus(
+    `Tables manquantes : ${names}.<br>` +
+    `<button class="bs" style="margin-top:6px" onclick="wcfgInstallTables()">Créer ces ${missing.length} table${missing.length>1?'s':''}</button>`
+  );
+}
+
+async function wcfgInstallTables() {
+  wcfgSetTablesStatus('Création en cours…');
+  let existing;
+  try {
+    existing = await grist.docApi.listTables();
+  } catch (e) {
+    wcfgSetTablesStatus('Erreur lors de la lecture des tables : ' + e.message);
+    return;
+  }
+  const missing = WCFG_REQUIRED_TABLES.filter(t => !existing.includes(t.id));
+  if (!missing.length) {
+    wcfgSetTablesStatus('✓ Toutes les tables nécessaires sont déjà présentes.');
+    return;
+  }
+  const actions = missing.map(t => ['AddTable', t.id, t.cols]);
+  try {
+    await grist.docApi.applyUserActions(actions);
+    wcfgSetTablesStatus(`✓ Table${missing.length>1?'s':''} créée${missing.length>1?'s':''} : ${missing.map(t=>t.label||t.id).join(', ')}.<br>Recharge le widget pour que les nouveaux onglets se peuplent.`);
+  } catch (e) {
+    wcfgSetTablesStatus('Erreur lors de la création : ' + e.message + '<br>Aucune table déjà existante n\'a été modifiée.');
+  }
 }
 
 
