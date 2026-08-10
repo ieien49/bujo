@@ -4537,6 +4537,12 @@ function openColMod(idx) {
 }
 function closeColMod() { document.getElementById('colModOv').classList.remove('open'); editColIdx=null; }
 function handleCmodClick(e) { if(e.target===document.getElementById('colModOv'))closeColMod(); }
+document.getElementById('colModOv').addEventListener('keydown', (e) => {
+  if (e.key !== 'Enter' || e.shiftKey || e.isComposing) return;
+  if (e.target.tagName === 'TEXTAREA' || e.target.isContentEditable) return;
+  e.preventDefault();
+  saveCol();
+});
 
 function selTheme(t) {
   colTheme = t;
@@ -4612,6 +4618,12 @@ function openItemMod(idx, theme) {
 }
 function closeItemMod() { document.getElementById('itemModOv').classList.remove('open'); editItemIdx=null; }
 function handleItemModClick(e) { if(e.target===document.getElementById('itemModOv'))closeItemMod(); }
+document.getElementById('itemModOv').addEventListener('keydown', (e) => {
+  if (e.key !== 'Enter' || e.shiftKey || e.isComposing) return;
+  if (e.target.tagName === 'TEXTAREA' || e.target.isContentEditable) return;
+  e.preventDefault();
+  saveItem();
+});
 
 function renderItemModFields(theme, it) {
   const v = f => it ? (it[f]||'') : '';
