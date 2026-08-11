@@ -5447,7 +5447,7 @@ function drawNodes(){
     .select('text.toggle-count').text(d => d.data.collapsedView ? d.data.children.length : '−');
 
   merged.select('g.detail-btn')
-    .attr('transform', d => `translate(${nodeWidth(d) - 13},13)`)
+    .attr('transform', d => `translate(13,13)`)
     .on('click', (ev, d) => { ev.stopPropagation(); openDetailPopup(d.data); });
 
   merged.call(d3.drag()
