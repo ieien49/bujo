@@ -1491,6 +1491,11 @@ select.cfilt { cursor: pointer; }
   border-radius:8px; padding:6px 10px; cursor:pointer; transition:.15s; white-space:nowrap;
 }
 #page-mindmap .topbar button:hover{ background:var(--mm-paper-dim); }
+#page-mindmap .topbar button.icon-btn{
+  display:flex; align-items:center; justify-content:center;
+  padding:6px; width:30px; height:30px;
+}
+#page-mindmap .topbar button.icon-btn svg{ width:15px; height:15px; stroke:currentColor; flex-shrink:0; }
 #page-mindmap .topbar .sep{ width:1px; align-self:stretch; background:var(--mm-line); margin:0 2px; }
 #page-mindmap .topbar input#searchInput{
   font-family:'Inter',sans-serif; font-size:12.5px;
@@ -1839,9 +1844,15 @@ body.presentation #exitPresentBtn{ display:flex; }
     <button id="newMapBtn">+ Nouvelle carte</button>
     <button id="renameMapBtn">Renommer</button>
     <div class="sep"></div>
-    <button id="collapseAllBtn">Replier tout</button>
-    <button id="expandAllBtn">Déplier tout</button>
-    <button id="recenterBtn">Recentrer</button>
+    <button id="collapseAllBtn" class="icon-btn" title="Replier tout">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m7 4 5 5 5-5"/><path d="m7 20 5-5 5 5"/></svg>
+    </button>
+    <button id="expandAllBtn" class="icon-btn" title="Déplier tout">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m7 9 5-5 5 5"/><path d="m7 15 5 5 5-5"/></svg>
+    </button>
+    <button id="recenterBtn" class="icon-btn" title="Recentrer">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 2v4"/><path d="M12 18v4"/><path d="M2 12h4"/><path d="M18 12h4"/></svg>
+    </button>
     <div class="sep"></div>
     <input id="searchInput" type="text" placeholder="Rechercher…">
     <div class="sep"></div>
@@ -1849,7 +1860,9 @@ body.presentation #exitPresentBtn{ display:flex; }
     <button id="exportPngBtn">Export PNG</button>
     <button id="exportMdBtn">Export Markdown</button>
     <div class="sep"></div>
-    <button id="presentBtn">Plein écran</button>
+    <button id="presentBtn" class="icon-btn" title="Plein écran">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H5a2 2 0 0 0-2 2v3"/><path d="M21 8V5a2 2 0 0 0-2-2h-3"/><path d="M3 16v3a2 2 0 0 0 2 2h3"/><path d="M16 21h3a2 2 0 0 0 2-2v-3"/></svg>
+    </button>
     <div class="hint">
       <span><kbd>Tab</kbd> enfant</span>
       <span><kbd>Entrée</kbd> frère</span>
@@ -5339,8 +5352,12 @@ function render(){
 }
 
 function recenterView(animate){
-  const bbox = document.getElementById('canvas-wrap').getBoundingClientRect();
-  const target = d3.zoomIdentity.translate(60, bbox.height/2).scale(0.95);
+  const box = document.getElementById('canvas-wrap').getBoundingClientRect();
+  const treeBox = g.node().getBBox();
+  const scale = 0.95;
+  const tx = box.width / 2 - (treeBox.x + treeBox.width / 2) * scale;
+  const ty = box.height / 2 - (treeBox.y + treeBox.height / 2) * scale;
+  const target = d3.zoomIdentity.translate(tx, ty).scale(scale);
   if (animate) svg.transition().duration(300).call(zoomBehavior.transform, target);
   else svg.call(zoomBehavior.transform, target);
 }
