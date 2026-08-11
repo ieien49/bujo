@@ -1502,17 +1502,24 @@ select.cfilt { cursor: pointer; }
   border:1px solid var(--mm-line); border-radius:8px; padding:6px 10px;
   width:150px; background:#fff; color:var(--mm-ink);
 }
-#page-mindmap .topbar .hint{ margin-left:auto; font-size:11px; color:var(--mm-ink-dim); display:flex; gap:12px; }
-#page-mindmap .topbar .hint kbd{
-  font-family:'Inter',sans-serif; font-size:10.5px; font-weight:600;
-  background:var(--mm-paper-dim); border:1px solid var(--mm-line);
-  border-radius:4px; padding:1px 5px; color:var(--mm-ink);
-}
 #page-mindmap #canvas-wrap{ position:absolute; inset:68px 0 0 0; }
 body.presentation #page-mindmap #canvas-wrap{ inset:0; }
 body.presentation #page-mindmap .topbar{ display:none; }
+body.presentation #page-mindmap .mm-footer-hint{ display:none; }
 body.presentation .app-tabs{ display:none; }
 body.presentation #page-mindmap{ position:fixed; inset:0; z-index:1000; display:flex; }
+#page-mindmap .mm-footer-hint{
+  position:absolute; left:0; right:0; bottom:0; z-index:10;
+  display:flex; justify-content:center; gap:14px; padding:5px 14px;
+  font-size:10.5px; color:var(--mm-ink-dim);
+  background:rgba(250,250,248,.85); backdrop-filter:blur(4px);
+  border-top:1px solid var(--mm-line); flex-wrap:wrap;
+}
+#page-mindmap .mm-footer-hint kbd{
+  font-family:'Inter',sans-serif; font-size:9.5px; font-weight:600;
+  background:var(--mm-paper-dim); border:1px solid var(--mm-line);
+  border-radius:4px; padding:1px 5px; color:var(--mm-ink);
+}
 #page-mindmap svg{ width:100%; height:100%; display:block; cursor:grab; }
 #page-mindmap svg:active{ cursor:grabbing; }
 #exitPresentBtn{
@@ -1862,13 +1869,13 @@ body.presentation #exitPresentBtn{ display:flex; }
     <button id="exportSvgBtn">Export SVG</button>
     <button id="exportPngBtn">Export PNG</button>
     <button id="exportMdBtn">Export Markdown</button>
-    <div class="sep"></div>
-    <div class="hint">
-      <span><kbd>Tab</kbd> enfant</span>
-      <span><kbd>Entrée</kbd> frère</span>
-      <span><kbd>Suppr</kbd> supprimer</span>
-      <span><kbd>Double-clic</kbd> éditer</span>
-    </div>
+  </div>
+
+  <div class="mm-footer-hint">
+    <span><kbd>Tab</kbd> enfant</span>
+    <span><kbd>Entrée</kbd> frère</span>
+    <span><kbd>Suppr</kbd> supprimer</span>
+    <span><kbd>Double-clic</kbd> éditer</span>
   </div>
 
   <button id="exitPresentBtn">✕ Quitter le plein écran</button>
@@ -5786,7 +5793,7 @@ function buildExportSvgClone(){
   const bg = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
   bg.setAttribute('x', bbox.x-pad); bg.setAttribute('y', bbox.y-pad);
   bg.setAttribute('width', bbox.width+pad*2); bg.setAttribute('height', bbox.height+pad*2);
-  bg.setAttribute('fill', getVar('--mm-paper'));
+  bg.setAttribute('fill', '#fff');
   viewportClone.insertBefore(bg, viewportClone.firstChild);
 
   return clone;
