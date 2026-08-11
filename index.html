@@ -1506,7 +1506,6 @@ select.cfilt { cursor: pointer; }
 #page-mindmap #canvas-wrap{ position:absolute; inset:68px 0 0 0; }
 body.presentation #page-mindmap #canvas-wrap{ inset:0; }
 body.presentation #page-mindmap .topbar{ display:none; }
-body.presentation #page-mindmap .side-panel{ top: 0; }
 body.presentation .app-tabs{ display:none; }
 body.presentation #page-mindmap{ position:fixed; inset:0; z-index:1000; display:flex; }
 #page-mindmap svg{ width:100%; height:100%; display:block; cursor:grab; }
@@ -1533,6 +1532,10 @@ body.presentation #exitPresentBtn{ display:flex; }
 #page-mindmap .node.is-root .node-label{ font-family:'Fraunces',serif; font-size:16px; font-weight:600; }
 #page-mindmap .toggle-circle{ fill:#fff; stroke:var(--mm-line); stroke-width:1.3px; cursor:pointer; }
 #page-mindmap .toggle-count{ font-family:'Inter',sans-serif; font-size:9.5px; font-weight:600; fill:var(--mm-ink-dim); pointer-events:none; }
+#page-mindmap .detail-btn{ opacity:0; cursor:pointer; transition:opacity .12s; }
+#page-mindmap .node:hover .detail-btn{ opacity:1; }
+#page-mindmap .detail-circle{ fill:#fff; stroke:var(--mm-line); stroke-width:1.3px; }
+#page-mindmap .detail-icon{ font-family:'Inter',sans-serif; font-size:10px; font-weight:700; fill:var(--mm-ink-dim); pointer-events:none; }
 #page-mindmap .link-indicator{ pointer-events:none; }
 #page-mindmap .edit-input{
   font-family:'Inter',sans-serif; font-size:13px; font-weight:500;
@@ -1551,25 +1554,29 @@ body.presentation #exitPresentBtn{ display:flex; }
 #page-mindmap .node:not(.is-root) rect.node-card{ cursor:grab; }
 #page-mindmap .node.dragging rect.node-card{ cursor:grabbing; }
 #page-mindmap rect.node-card.drop-target{ stroke:var(--mm-ink); stroke-width:2px; stroke-dasharray:4 3; }
-#page-mindmap .side-panel{
-  position:absolute; top:68px; right:0; bottom:0; width:280px;
-  background:#fff; border-left:1px solid var(--mm-line); z-index:9;
-  padding:16px; display:none; flex-direction:column; gap:10px;
-  box-shadow:-4px 0 14px rgba(31,36,48,.05);
+#page-mindmap .mm-popup-ov{
+  position:fixed; inset:0; background:rgba(31,36,48,.16); z-index:80;
+  display:none; align-items:center; justify-content:center; backdrop-filter:blur(2px);
 }
-#page-mindmap .side-panel-header{ display:flex; justify-content:space-between; align-items:center; }
-#page-mindmap .side-panel-header span{
+#page-mindmap .mm-popup-ov.open{ display:flex; }
+#page-mindmap .mm-popup{
+  background:#fff; border:1px solid var(--mm-line); border-radius:12px;
+  padding:18px 20px; width:min(360px,90vw); max-height:80vh; overflow-y:auto;
+  box-shadow:0 10px 40px rgba(0,0,0,.16); display:flex; flex-direction:column; gap:10px;
+}
+#page-mindmap .mm-popup-header{ display:flex; justify-content:space-between; align-items:center; }
+#page-mindmap .mm-popup-header span{
   font-family:'Fraunces',serif; font-weight:600; font-size:15px;
   overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
 }
-#page-mindmap .side-panel-header button{ border:none; background:none; cursor:pointer; font-size:15px; color:var(--mm-ink-dim); flex:none; }
-#page-mindmap .side-panel-label{ font-size:10.5px; font-weight:600; color:var(--mm-ink-dim); text-transform:uppercase; letter-spacing:.04em; margin-top:2px; }
-#page-mindmap .side-panel input, #page-mindmap .side-panel textarea{
+#page-mindmap .mm-popup-header button{ border:none; background:none; cursor:pointer; font-size:15px; color:var(--mm-ink-dim); flex:none; }
+#page-mindmap .mm-popup-label{ font-size:10.5px; font-weight:600; color:var(--mm-ink-dim); text-transform:uppercase; letter-spacing:.04em; margin-top:2px; }
+#page-mindmap .mm-popup input, #page-mindmap .mm-popup textarea{
   font-family:'Inter',sans-serif; font-size:13px; color:var(--mm-ink);
   border:1px solid var(--mm-line); border-radius:8px; padding:8px 10px; width:100%;
 }
-#page-mindmap .side-panel textarea{ flex:1; resize:none; min-height:120px; }
-#page-mindmap #panelOpenUrlBtn{
+#page-mindmap .mm-popup textarea{ min-height:120px; resize:vertical; }
+#page-mindmap #popupOpenUrlBtn{
   font-family:'Inter',sans-serif; font-size:12px; font-weight:600; color:var(--mm-ink);
   background:var(--mm-paper-dim); border:1px solid var(--mm-line); border-radius:8px;
   padding:6px 10px; cursor:pointer; align-self:flex-start;
@@ -1861,16 +1868,18 @@ body.presentation #exitPresentBtn{ display:flex; }
     </div>
   </div>
 
-  <div id="sidePanel" class="side-panel">
-    <div class="side-panel-header">
-      <span id="panelNodeLabel"></span>
-      <button id="closePanelBtn">✕</button>
+  <div id="mmPopupOv" class="mm-popup-ov" onclick="if(event.target===this) closeDetailPopup()">
+    <div class="mm-popup">
+      <div class="mm-popup-header">
+        <span id="panelNodeLabel"></span>
+        <button id="closePanelBtn">✕</button>
+      </div>
+      <label class="mm-popup-label">Lien externe</label>
+      <input id="panelUrlInput" type="text" placeholder="https://…">
+      <button id="panelOpenUrlBtn" type="button">Ouvrir le lien ↗</button>
+      <label class="mm-popup-label">Notes</label>
+      <textarea id="panelNotesInput" placeholder="Notes détaillées pour ce nœud…"></textarea>
     </div>
-    <label class="side-panel-label">Lien externe</label>
-    <input id="panelUrlInput" type="text" placeholder="https://…">
-    <button id="panelOpenUrlBtn" type="button">Ouvrir le lien ↗</button>
-    <label class="side-panel-label">Notes</label>
-    <textarea id="panelNotesInput" placeholder="Notes détaillées pour ce nœud…"></textarea>
   </div>
 </div>
 
@@ -5231,15 +5240,9 @@ document.getElementById('renameMapBtn').addEventListener('click', async () => {
 
 
 
-/* ---------- Sélection (garde le panneau latéral synchronisé) ---------- */
+/* ---------- Sélection (surbrillance uniquement, indépendante de la popup) ---------- */
 function setSelectedNode(id){
   selectedNodeId = id;
-  if (id){
-    const n = noeuds.find(x => x.id === id);
-    if (n) openSidePanel(n); else closeSidePanel();
-  } else {
-    closeSidePanel();
-  }
 }
 
 /* ---------- Construction hiérarchie ---------- */
@@ -5400,6 +5403,9 @@ function drawNodes(){
   enter.append('g').attr('class', 'toggle-group').style('display', 'none')
     .call(tg => { tg.append('circle').attr('class', 'toggle-circle').attr('r', 8);
                   tg.append('text').attr('class', 'toggle-count').attr('text-anchor','middle').attr('dy', 3); });
+  enter.append('g').attr('class', 'detail-btn')
+    .call(db => { db.append('circle').attr('class', 'detail-circle').attr('r', 7);
+                  db.append('text').attr('class', 'detail-icon').attr('text-anchor','middle').attr('dy', 3).text('i'); });
 
   const merged = enter.merge(sel);
 
@@ -5440,9 +5446,13 @@ function drawNodes(){
     .on('click', (ev, d) => { ev.stopPropagation(); toggleCollapse(d.data); })
     .select('text.toggle-count').text(d => d.data.collapsedView ? d.data.children.length : '−');
 
+  merged.select('g.detail-btn')
+    .attr('transform', d => `translate(${nodeWidth(d) - 13},13)`)
+    .on('click', (ev, d) => { ev.stopPropagation(); openDetailPopup(d.data); });
+
   merged.call(d3.drag()
     .clickDistance(6)
-    .filter(ev => !ev.target.closest('.toggle-group'))
+    .filter(ev => !ev.target.closest('.toggle-group') && !ev.target.closest('.detail-btn'))
     .on('start', dragStarted)
     .on('drag', dragged)
     .on('end', dragEnded));
@@ -5679,21 +5689,20 @@ function collectSubtreeIds(id){
   return [id, ...children.flatMap(collectSubtreeIds)];
 }
 
-/* ---------- Panneau latéral (Notes + Lien) ---------- */
-function openSidePanel(nodeData){
-  const panel = document.getElementById('sidePanel');
-  panel.style.display = 'flex';
+/* ---------- Popup de détail (Notes + Lien), ouverte via l'icône du nœud ---------- */
+let detailPopupNodeId = null;
+function openDetailPopup(nodeData){
+  detailPopupNodeId = nodeData.id;
+  document.getElementById('mmPopupOv').classList.add('open');
   document.getElementById('panelNodeLabel').textContent = nodeData.Label || '(sans titre)';
   document.getElementById('panelUrlInput').value = nodeData.Url || '';
   document.getElementById('panelNotesInput').value = nodeData.Notes || '';
 }
-function closeSidePanel(){
-  document.getElementById('sidePanel').style.display = 'none';
+function closeDetailPopup(){
+  document.getElementById('mmPopupOv').classList.remove('open');
+  detailPopupNodeId = null;
 }
-document.getElementById('closePanelBtn').addEventListener('click', () => {
-  setSelectedNode(null);
-  render();
-});
+document.getElementById('closePanelBtn').addEventListener('click', closeDetailPopup);
 document.getElementById('panelOpenUrlBtn').addEventListener('click', () => {
   const url = document.getElementById('panelUrlInput').value.trim();
   if (url) window.open(url, '_blank', 'noopener');
@@ -5702,7 +5711,7 @@ document.getElementById('panelOpenUrlBtn').addEventListener('click', () => {
 let panelSaveTimer = null;
 function schedulePanelSave(){
   clearTimeout(panelSaveTimer);
-  const idAtEdit = selectedNodeId;
+  const idAtEdit = detailPopupNodeId;
   panelSaveTimer = setTimeout(async () => {
     if (!idAtEdit) return;
     const url = document.getElementById('panelUrlInput').value.trim();
