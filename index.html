@@ -5777,7 +5777,10 @@ function buildExportSvgClone(){
   clone.querySelectorAll('.drop-target, foreignObject').forEach(el => el.remove());
 
   const styleEl = document.createElement('style');
-  styleEl.textContent = document.querySelector('style').textContent;
+  // Le CSS source est scopé "#page-mindmap ..." ; ce conteneur n'existe plus dans le
+  // fichier exporté (seul le <svg> est cloné), donc on reporte le scope sur l'id du
+  // <svg> lui-même pour que les règles (fill, stroke, couleurs…) continuent de matcher.
+  styleEl.textContent = document.querySelector('style').textContent.replace(/#page-mindmap/g, '#svg');
   clone.insertBefore(styleEl, clone.firstChild);
 
   const bg = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
