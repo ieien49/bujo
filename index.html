@@ -5107,7 +5107,7 @@ let noeuds = [];
 let currentMapId = null;
 let selectedNodeId = null;
 let root;
-let svg, g, zoomBehavior;
+let svg, g, defs, zoomBehavior;
 let didCenter = false;
 let presentationMode = false;
 let searchQuery = '';
@@ -5274,6 +5274,7 @@ function hideEmptyState(){
 function initSvgOnce(){
   if (svg) return;
   svg = d3.select('#svg');
+  defs = svg.append('defs');
   g = svg.append('g').attr('class', 'viewport');
   g.append('g').attr('class', 'links-layer');
   g.append('g').attr('class', 'nodes-layer');
@@ -5394,6 +5395,16 @@ function drawNodes(){
   const sel = g.select('.nodes-layer').selectAll('g.node').data(nodes, d => d.data.id);
   sel.exit().remove();
 
+  const clipSel = defs.selectAll('clipPath.node-clip').data(nodes, d => d.data.id);
+  clipSel.exit().remove();
+  const clipEnter = clipSel.enter().append('clipPath').attr('class', 'node-clip')
+    .attr('id', d => `bar-clip-${d.data.id}`);
+  clipEnter.append('rect');
+  clipEnter.merge(clipSel).select('rect')
+    .attr('width', d => nodeWidth(d))
+    .attr('height', NODE_H)
+    .attr('rx', 10);
+
   const enter = sel.enter().append('g').attr('class', 'node');
   enter.append('rect').attr('class', 'node-card');
   enter.append('rect').attr('class', 'node-bar');
@@ -5423,7 +5434,7 @@ function drawNodes(){
 
   merged.select('rect.node-bar')
     .attr('x', 0).attr('y', 0).attr('width', 4).attr('height', NODE_H)
-    .attr('rx', 2)
+    .attr('clip-path', d => `url(#bar-clip-${d.data.id})`)
     .attr('fill', d => d.data._colorIdx === -1 ? 'transparent' : nodeColor(d));
 
   merged.select('text.node-label')
