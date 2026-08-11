@@ -5708,6 +5708,8 @@ async function addNode(parentId){
   await loadNoeuds();
   setSelectedNode(newId);
   render();
+  const target = root.descendants().find(n => n.data.id === newId);
+  if (target) startEdit(target);
 }
 
 async function deleteNode(id){
