@@ -889,6 +889,17 @@ select.cfilt { cursor: pointer; }
 .col-add-btn:hover { background: var(--bg-hover); color: var(--text); }
 .col-add-btn svg { flex-shrink: 0; opacity: .7; }
 
+.col-quickcap-wrap { margin-bottom: 10px; }
+.col-quickcap-input {
+  width: 100%; padding: 7px 10px; border-radius: var(--radius);
+  border: .5px solid var(--border); background: var(--bg-soft);
+  font-size: 12px; color: var(--text); font-family: 'DM Sans', sans-serif;
+  outline: none; transition: border-color .12s, background .12s;
+}
+.col-quickcap-input:focus { border-color: var(--accent); background: var(--bg); }
+.col-quickcap-input::placeholder { color: var(--light); }
+.col-item-pin { margin-bottom: 8px; padding-bottom: 8px; border-bottom: .5px solid var(--border); }
+
 .fiches-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
@@ -1771,6 +1782,11 @@ body.presentation #exitPresentBtn{ display:flex; }
         <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 1v10M1 6h10"/></svg>
         Nouvelle collection
       </button>
+      <div class="col-quickcap-wrap">
+        <input type="text" id="colQuickCapInput" class="col-quickcap-input"
+          placeholder="Noter une idée…" autocomplete="off"
+          onkeydown="if(event.key==='Enter'){event.preventDefault();quickCaptureIdea(this);}">
+      </div>
       <div class="lec-search-wrap">
         <span class="lec-search-icon">
           <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
@@ -1781,6 +1797,7 @@ body.presentation #exitPresentBtn{ display:flex; }
           style="padding-left:28px;padding-right:24px;border-radius:999px;font-size:11.5px">
         <button class="col-search-clear" id="colSearchClear" style="display:none;position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--light);font-size:13px;line-height:1;padding:0" onclick="clearColSearch()">✕</button>
       </div>
+      <div id="colInboxPin"></div>
       <div class="nav-div"></div>
       <div id="colList"><!-- items dynamiques --></div>
     </div>
@@ -4061,6 +4078,45 @@ const THEME_LABELS = {listes:'Listes',liens:'Liens',fiches:'Fiches',couleurs:'Co
 let cols = [];    // [{id,nom,theme,icone,couleur}]
 let items = [];   // [{id,col_id,titre,texte,url,tag,fait}]
 let selColId = null;
+const INBOX_COL_NAME = '📥 Boîte de réception';
+function isInboxCol(col) { return !!col && col.nom === INBOX_COL_NAME; }
+const INBOX_ICON_SVG = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-6l-2 3h-4l-2-3H2"/><path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/></svg>';
+function ensureInboxCol() {
+  if (cols.some(isInboxCol)) return;
+  const nc = { id:'inbox_'+Date.now(), nom: INBOX_COL_NAME, theme:'fiches', icone: INBOX_ICON_SVG, vue:'cards', ordre:-1 };
+  cols.unshift(nc);
+  gColAdd(nc);
+}
+function renderColInboxPin() {
+  const holder = document.getElementById('colInboxPin');
+  if (!holder) return;
+  const inbox = cols.find(isInboxCol);
+  if (!inbox) { holder.innerHTML = ''; return; }
+  const count = items.filter(it => it.col_id === inbox.id).length;
+  const active = selColId === inbox.id ? ' active' : '';
+  const iconH = renderColIcon(inbox.icone, 16);
+  holder.innerHTML = `<div class="col-item-wrap col-item-pin">
+    <button class="col-item${active}" onclick="selectCol('${inbox.id}')">
+      <div class="col-item-icon">${iconH}</div>
+      <span class="col-item-label">${esc(inbox.nom)}</span>
+      <span class="col-item-count">${count||''}</span>
+    </button>
+  </div>`;
+}
+function quickCaptureIdea(input) {
+  const titre = (input.value || '').trim();
+  if (!titre) return;
+  ensureInboxCol();
+  const inbox = cols.find(isInboxCol);
+  if (!inbox) return;
+  const ni = { id:'i'+Date.now(), col_id: inbox.id, titre, url:'', cover:'', tag:'', texte:'', fait:false, ordre: items.filter(it=>it.col_id===inbox.id).length };
+  items.push(ni);
+  gItemAdd(ni);
+  input.value = '';
+  renderColSidebar();
+  if (selColId === inbox.id) renderColMain();
+  input.focus();
+}
 let colTableSort = { key: null, dir: 1 };
 
 let editColIdx = null;
@@ -4163,7 +4219,10 @@ function filteredByTag(colItems) {
 function renderColSidebar() {
   const list = document.getElementById('colList');
   if (!list) return;
-  list.innerHTML = cols.map((col,i) => {
+  renderColInboxPin();
+  const otherCols = cols.filter(c => !isInboxCol(c));
+  list.innerHTML = otherCols.map((col) => {
+    const i = cols.indexOf(col);
     const count = items.filter(it => it.col_id === col.id).length;
     const active = selColId === col.id ? ' active' : '';
     
@@ -4191,8 +4250,11 @@ function initColSortable() {
     animation: 150,
     onEnd: () => {
       const ids = [...list.querySelectorAll('.col-item-wrap')].map(el => el.dataset.id);
-      cols.sort((a,b) => ids.indexOf(a.id) - ids.indexOf(b.id));
-      cols.forEach((c,i) => { c.ordre = i; });
+      const inbox = cols.find(isInboxCol);
+      const others = cols.filter(c => !isInboxCol(c));
+      others.sort((a,b) => ids.indexOf(a.id) - ids.indexOf(b.id));
+      cols = inbox ? [inbox, ...others] : others;
+      cols.forEach((c,i) => { c.ordre = isInboxCol(c) ? -1 : i; });
       gColReorderBulk(cols);
       renderColSidebar();
     }
@@ -5061,6 +5123,7 @@ async function loadCollections() {
         ordre: Number(rc.ordre?.[i] ?? i) };
     });
     cols.sort((a,b) => a.ordre - b.ordre);
+    ensureInboxCol();
     cacheSet('cols', cols);
   }
   if (ri) {
