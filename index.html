@@ -505,7 +505,7 @@ select.cfilt { cursor: pointer; }
 .bd:hover { background: #fff5f5; }
 
 /* Bouton icône réglages (app-tabs, haut droit) */
-.app-tabs { position: relative; padding-right: 40px; }
+.app-tabs { position: relative; padding-right: 76px; }
 .app-tabs-scroll {
   display: flex; align-items: stretch; gap: 4px;
   overflow-x: auto; scrollbar-width: none; height: 100%;
@@ -518,6 +518,40 @@ select.cfilt { cursor: pointer; }
   border-radius: 8px; transition: color .12s, background .12s; flex-shrink: 0; z-index: 1;
 }
 .wcfg-gear-btn:hover { color: var(--text); background: var(--bg-hover); }
+.gsearch-btn {
+  position: absolute; right: 40px; top: 50%; transform: translateY(-50%);
+  width: 28px; height: 28px; display: flex; align-items: center; justify-content: center;
+  border: none; background: none; color: var(--light); cursor: pointer;
+  border-radius: 8px; transition: color .12s, background .12s; flex-shrink: 0; z-index: 1;
+}
+.gsearch-btn:hover { color: var(--text); background: var(--bg-hover); }
+
+/* ── Modale de recherche globale ── */
+.gsearch-box { width: 480px; max-width: 92vw; max-height: 76vh; display: flex; flex-direction: column; padding: 0; overflow: hidden; }
+.gsearch-input-wrap { position: relative; padding: 14px 16px; border-bottom: .5px solid var(--border); flex-shrink: 0; }
+.gsearch-input-icon { position: absolute; left: 28px; top: 50%; transform: translateY(-50%); color: var(--light); display: flex; }
+.gsearch-input {
+  width: 100%; padding: 9px 12px 9px 30px; border-radius: var(--radius);
+  border: .5px solid var(--border); background: var(--bg-soft);
+  font-size: 13px; color: var(--text); font-family: 'DM Sans', sans-serif;
+  outline: none; transition: border-color .12s, background .12s;
+}
+.gsearch-input:focus { border-color: var(--accent); background: var(--bg); }
+.gsearch-input::placeholder { color: var(--light); }
+.gsearch-results { flex: 1; overflow-y: auto; padding: 6px 10px 14px; }
+.gsearch-group { margin-bottom: 14px; }
+.gsearch-group-title {
+  font-size: 10px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase;
+  color: var(--muted); margin: 10px 6px 6px; font-family: 'DM Sans', sans-serif;
+}
+.gsearch-item {
+  display: flex; flex-direction: column; gap: 1px;
+  padding: 7px 8px; border-radius: var(--radius); cursor: pointer; transition: background .1s;
+}
+.gsearch-item:hover { background: var(--bg-soft); }
+.gsearch-item-title { font-size: 12.5px; color: var(--text); font-family: 'DM Sans', sans-serif; }
+.gsearch-item-sub { font-size: 11px; color: var(--muted); font-family: 'DM Sans', sans-serif; }
+.gsearch-empty { text-align: center; padding: 2.2rem 1rem; color: var(--light); font-size: 12.5px; font-family: 'DM Sans', sans-serif; }
 
 /* ── Modale de configuration du widget (scopée .wcfg-*) ── */
 .wcfg-box { max-height: 86vh; overflow-y: auto; }
@@ -1638,6 +1672,9 @@ body.presentation #exitPresentBtn{ display:flex; }
   <span class="tab-label">Mind Map</span>
 </button>
 </div>
+  <button class="gsearch-btn" onclick="openGlobalSearch()" title="Rechercher partout">
+    <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+  </button>
   <button class="wcfg-gear-btn" onclick="openConfigModal()" title="Réglages du widget">
     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
   </button>
@@ -2560,6 +2597,109 @@ function switchTab(tab) {
     currentTabStored = tab;
     try { localStorage.setItem('bujoWidget_lastTab_' + CACHE_NS, tab); } catch(e) {}
   }
+}
+
+// ══════════════════════════════════════════════════════
+//  RECHERCHE GLOBALE (tous onglets)
+// ══════════════════════════════════════════════════════
+function ensureGlobalSearchData() {
+  const proms = [];
+  if (!colsLoaded) {
+    colsLoaded = true;
+    proms.push(Promise.resolve(typeof grist !== 'undefined' ? loadCollections() : initColDemo()));
+  }
+  if (!outlinerLoaded) {
+    outlinerLoaded = true;
+    proms.push(Promise.resolve(typeof grist !== 'undefined' ? loadOutliner() : null));
+  }
+  return Promise.all(proms);
+}
+
+function openGlobalSearch() {
+  const ov = document.getElementById('gsearchOv');
+  const input = document.getElementById('gsearchInput');
+  if (!ov || !input) return;
+  ov.classList.add('open');
+  input.value = '';
+  renderGlobalSearchResults('');
+  ensureGlobalSearchData().then(() => renderGlobalSearchResults(document.getElementById('gsearchInput').value));
+  setTimeout(() => input.focus(), 60);
+}
+function closeGlobalSearch() {
+  const ov = document.getElementById('gsearchOv');
+  if (ov) ov.classList.remove('open');
+}
+function handleGsearchClick(e) {
+  if (e.target === document.getElementById('gsearchOv')) closeGlobalSearch();
+}
+
+function renderGlobalSearchResults(qRaw) {
+  const box = document.getElementById('gsearchResults');
+  if (!box) return;
+  const q = (qRaw || '').trim().toLowerCase();
+  if (!q) { box.innerHTML = '<div class="gsearch-empty">Tapez pour chercher dans tous les onglets…</div>'; return; }
+
+  const groups = [];
+
+  const bujoHits = tasks.map((t, i) => ({ t, i })).filter(({t}) => (t.name || '').toLowerCase().includes(q)).slice(0, 8);
+  if (bujoHits.length) groups.push({ label: 'Bujo', items: bujoHits.map(({t, i}) => ({
+    title: t.name || '(sans titre)', sub: t.date || '', onclick: `gsearchGoBujo(${i})`
+  })) });
+
+  const lecHits = lecRecs.filter(r => (r.titre||'').toLowerCase().includes(q) || (r.auteur||'').toLowerCase().includes(q)).slice(0, 8);
+  if (lecHits.length) groups.push({ label: 'Lectures', items: lecHits.map(r => ({
+    title: r.titre || '(sans titre)', sub: r.auteur || '', onclick: `gsearchGoLecture(${r.id})`
+  })) });
+
+  const itemHits = items.filter(it => {
+    const texte = (it.texte||'').replace(/<[^>]+>/g,' ');
+    return (it.titre||'').toLowerCase().includes(q) || texte.toLowerCase().includes(q) || (it.tag||'').toLowerCase().includes(q);
+  }).slice(0, 8);
+  if (itemHits.length) groups.push({ label: 'Collections', items: itemHits.map(it => {
+    const col = cols.find(c => c.id === it.col_id);
+    const idx = items.indexOf(it);
+    return { title: it.titre || '(sans titre)', sub: col ? colDisplayName(col) : '', onclick: `gsearchGoCollection(${idx})` };
+  }) });
+
+  const outHits = outRecords.filter(r => (r.title||'').toLowerCase().includes(q)).slice(0, 8);
+  if (outHits.length) groups.push({ label: 'Outliner', items: outHits.map(r => ({
+    title: r.title || '(sans titre)', sub: '', onclick: `gsearchGoOutliner(${r.id})`
+  })) });
+
+  if (!groups.length) { box.innerHTML = `<div class="gsearch-empty">Aucun résultat pour « ${esc(qRaw)} »</div>`; return; }
+
+  box.innerHTML = groups.map(g => `
+    <div class="gsearch-group">
+      <div class="gsearch-group-title">${esc(g.label)}</div>
+      ${g.items.map(it => `<div class="gsearch-item" onclick="${it.onclick}">
+        <div class="gsearch-item-title">${esc(it.title)}</div>
+        ${it.sub ? `<div class="gsearch-item-sub">${esc(it.sub)}</div>` : ''}
+      </div>`).join('')}
+    </div>`).join('');
+}
+
+function gsearchGoBujo(idx) {
+  closeGlobalSearch();
+  switchTab('bujo');
+  setTimeout(() => openBmod(idx), 80);
+}
+function gsearchGoLecture(id) {
+  closeGlobalSearch();
+  switchTab('lectures');
+  setTimeout(() => lecOpenPanel(id), 80);
+}
+function gsearchGoCollection(idx) {
+  closeGlobalSearch();
+  const it = items[idx];
+  if (!it) return;
+  switchTab('collections');
+  selectCol(it.col_id);
+  setTimeout(() => openFicheModal(idx), 120);
+}
+function gsearchGoOutliner(id) {
+  closeGlobalSearch();
+  switchTab('outliner');
+  setTimeout(() => outZoomTo(id), 80);
 }
 
 // ══════════════════════════════════════════════════════
@@ -5174,7 +5314,7 @@ function initColDemo() {
   if (selColId) renderColMain();
 }
 document.addEventListener('keydown',e=>{
-  if(e.key==='Escape'){lecClosePanel();closeBmod();closeColMod();closeItemMod();closeFicheModal();document.getElementById('modDel').style.display='none';}
+  if(e.key==='Escape'){lecClosePanel();closeBmod();closeColMod();closeItemMod();closeFicheModal();closeGlobalSearch();document.getElementById('modDel').style.display='none';}
   if(e.key==='Enter'&&document.getElementById('bmodOv').classList.contains('open')){const a=document.activeElement;if(!a||a.tagName!=='BUTTON')saveBTask();}
 });
 (function(){
@@ -5981,5 +6121,21 @@ async function mmBootDemo(){
 })();
 </script>
 <div id="calPop" class="cal-pop" style="display:none"></div>
+
+  <!-- ── MODALE RECHERCHE GLOBALE ── -->
+  <div class="cmod-ov" id="gsearchOv" onclick="handleGsearchClick(event)">
+    <div class="cmod gsearch-box">
+      <div class="gsearch-input-wrap">
+        <span class="gsearch-input-icon">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+        </span>
+        <input type="text" id="gsearchInput" class="gsearch-input"
+          placeholder="Rechercher dans Bujo, Lectures, Collections, Outliner…"
+          autocomplete="off" oninput="renderGlobalSearchResults(this.value)">
+      </div>
+      <div class="gsearch-results" id="gsearchResults"></div>
+    </div>
+  </div>
+
 </body>
 </html>
