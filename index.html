@@ -4079,6 +4079,9 @@ const THEME_LABELS = {listes:'Listes',liens:'Liens',fiches:'Fiches',couleurs:'Co
 let cols = [];    // [{id,nom,theme,icone,couleur}]
 let items = [];   // [{id,col_id,titre,texte,url,tag,fait}]
 let selColId = null;
+function colDisplayName(col) {
+  return isInboxCol(col) ? col.nom.replace(/^📥\s*/, '') : col.nom;
+}
 const INBOX_COL_NAME = '📥 Boîte de réception';
 function isInboxCol(col) { return !!col && col.nom === INBOX_COL_NAME; }
 const INBOX_ICON_SVG = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-6l-2 3h-4l-2-3H2"/><path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/></svg>';
@@ -4096,11 +4099,10 @@ function renderColInboxPin() {
   const count = items.filter(it => it.col_id === inbox.id).length;
   const active = selColId === inbox.id ? ' active' : '';
   const iconH = renderColIcon(inbox.icone, 16);
-  const labelText = inbox.nom.replace(/^📥\s*/, '');
   holder.innerHTML = `<div class="col-item-wrap col-item-pin">
     <button class="col-item${active}" onclick="selectCol('${inbox.id}')">
       <div class="col-item-icon">${iconH}</div>
-      <span class="col-item-label">${esc(labelText)}</span>
+      <span class="col-item-label">${esc(colDisplayName(inbox))}</span>
       <span class="col-item-count">${count||''}</span>
     </button>
   </div>`;
@@ -4300,7 +4302,7 @@ function renderColMain() {
   wrap.innerHTML = `
     <div class="col-main-header">
       <div class="col-main-icon">${iconHTML}</div>
-      <div class="col-main-name">${esc(col.nom)}</div>
+      <div class="col-main-name">${esc(colDisplayName(col))}</div>
       <span class="col-main-type">${THEME_LABELS[col.theme]||col.theme}</span>
       <div class="fd-prec">
         <button class="fd-pb${vue==='liste'?' active':''}" onclick="setColVue('liste')">Liste</button>
@@ -4767,7 +4769,7 @@ function renderItemModFields(theme, it) {
       <input type="text" id="imoTag" value="${esc(v('tag'))}" placeholder="tags séparés par virgule…" oninput="showTagSuggestions(this)" onfocus="showTagSuggestions(this)" autocomplete="off"><div class="tag-suggestions-box" id="tagSuggestions"></div></div>`;
   }
   const colOptions = cols.map(c =>
-    `<option value="${esc(c.id)}" ${c.id === (it ? it.col_id : selColId) ? 'selected' : ''}>${esc(c.nom)}</option>`
+    `<option value="${esc(c.id)}" ${c.id === (it ? it.col_id : selColId) ? 'selected' : ''}>${esc(colDisplayName(c))}</option>`
   ).join('');
   html += `<div class="cf"><label>Collection</label>
     <select id="imoColId">${colOptions}</select>
