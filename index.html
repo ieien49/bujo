@@ -2165,6 +2165,15 @@ body.presentation #exitPresentBtn{ display:flex; }
       <label>Nom</label>
       <input type="text" id="bmodName" placeholder="Description…">
     </div>
+    <div class="bf" id="doneTogWrap" style="display:none">
+      <div class="tog-row" onclick="toggleBmodDone()">
+        <span class="tog-label">
+          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+          Terminé
+        </span>
+        <div class="tog-sw" id="doneTog"></div>
+      </div>
+    </div>
     <div class="bf" id="bdayTogWrap">
   <div class="tog-row" onclick="toggleBday()">
         <span class="tog-label">
@@ -3233,10 +3242,22 @@ document.getElementById('bdayTogWrap').style.display = showBdayToggle ? 'block' 
 document.getElementById('urgentTogWrap').style.display = (t && t.bday && cfgOn('bday_on')) ? 'none' : 'block';
   document.getElementById('bmodDate').value=t?formatDateForInput(t.date):'';
   document.getElementById('bmodOv').classList.add('open');
+  document.getElementById('doneTogWrap').style.display = (t && !t.bday) ? 'block' : 'none';
+  refreshDoneUI();
   setTimeout(()=>document.getElementById('bmodName').focus(),60);
 }
 function closeBmod(){document.getElementById('bmodOv').classList.remove('open');editIdx=null;isBday=false;isUrgent=false;}
 function handleBmodClick(e){if(e.target===document.getElementById('bmodOv'))closeBmod();}
+function toggleBmodDone(){
+  if(editIdx===null||editIdx===undefined) return;
+  toggleT(editIdx);
+  refreshDoneUI();
+}
+function refreshDoneUI(){
+  const t = (editIdx!==null&&editIdx!==undefined) ? tasks[editIdx] : null;
+  const el = document.getElementById('doneTog');
+  if (el) el.classList.toggle('on', !!(t && t.done));
+}
 
 function toggleBday(){
   isBday=!isBday; refreshBdayUI();
