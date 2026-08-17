@@ -2621,6 +2621,10 @@ function ensureGlobalSearchData() {
     outlinerLoaded = true;
     proms.push(Promise.resolve(typeof grist !== 'undefined' ? loadOutliner() : null));
   }
+  if (!mindmapLoaded) {
+    mindmapLoaded = true;
+    proms.push(Promise.resolve(typeof grist !== 'undefined' ? window.mmBoot() : null));
+  }
   return Promise.all(proms);
 }
 
@@ -2675,6 +2679,13 @@ function renderGlobalSearchResults(qRaw) {
     title: r.title || '(sans titre)', sub: '', onclick: `gsearchGoOutliner(${r.id})`
   })) });
 
+  const mmData = (typeof window.mmGetSearchData === 'function') ? window.mmGetSearchData() : { cartes: [], noeuds: [] };
+  const mmHits = mmData.noeuds.filter(n => (n.Label||'').toLowerCase().includes(q) || (n.Notes||'').toLowerCase().includes(q)).slice(0, 8);
+  if (mmHits.length) groups.push({ label: 'Mind Map', items: mmHits.map(n => {
+    const carte = mmData.cartes.find(c => c.id === n.MapId);
+    return { title: n.Label || '(sans titre)', sub: carte ? (carte.Titre || '') : '', onclick: `gsearchGoMindmap(${n.id}, ${n.MapId})` };
+  }) });
+
   if (!groups.length) { box.innerHTML = `<div class="gsearch-empty">Aucun résultat pour « ${esc(qRaw)} »</div>`; return; }
 
   box.innerHTML = groups.map(g => `
@@ -2709,6 +2720,11 @@ function gsearchGoOutliner(id) {
   closeGlobalSearch();
   switchTab('outliner');
   setTimeout(() => outZoomTo(id), 80);
+}
+function gsearchGoMindmap(nodeId, mapId) {
+  closeGlobalSearch();
+  switchTab('mindmap');
+  setTimeout(() => { if (window.mmGoToNode) window.mmGoToNode(nodeId, mapId); }, 150);
 }
 
 // ══════════════════════════════════════════════════════
@@ -5352,6 +5368,7 @@ function getVar(name){
 
 let cartes = [];
 let noeuds = [];
+let allNoeuds = [];
 let currentMapId = null;
 let selectedNodeId = null;
 let root;
@@ -5378,7 +5395,7 @@ async function loadCartes(){
     if (!currentMapId && cartes.length) currentMapId = cartes[0].id;
     if (currentMapId) {
       const cachedNoeuds = cacheGet('mm_noeuds');
-      if (cachedNoeuds) { noeuds = cachedNoeuds.filter(n => n.MapId === currentMapId); render(); }
+      if (cachedNoeuds) { allNoeuds = cachedNoeuds; noeuds = cachedNoeuds.filter(n => n.MapId === currentMapId); render(); }
     } else showEmptyState();
   }
   cartes = toRows(await grist.docApi.fetchTable(TABLE_CARTES));
@@ -5392,6 +5409,7 @@ async function loadCartes(){
 async function loadNoeuds(){
   const all = toRows(await grist.docApi.fetchTable(TABLE_NOEUDS));
   cacheSet('mm_noeuds', all);
+  allNoeuds = all;
   noeuds = all.filter(n => n.MapId === currentMapId);
   render();
 }
@@ -5597,6 +5615,36 @@ function recenterView(animate){
   else svg.call(zoomBehavior.transform, target);
 }
 document.getElementById('recenterBtn').addEventListener('click', () => recenterView(true));
+
+function centerOnNode(nodeId, animate){
+  if (!root) return null;
+  const d = root.descendants().find(n => n.data.id === nodeId);
+  if (!d) return null;
+  const box = document.getElementById('canvas-wrap').getBoundingClientRect();
+  const scale = 1;
+  const cx = d.x + nodeWidth(d) / 2;
+  const cy = d.y;
+  const target = d3.zoomIdentity.translate(box.width / 2 - cx * scale, box.height / 2 - cy * scale).scale(scale);
+  if (animate) svg.transition().duration(350).call(zoomBehavior.transform, target);
+  else svg.call(zoomBehavior.transform, target);
+  return d;
+}
+
+/* ---------- API exposée pour la recherche globale ---------- */
+window.mmGetSearchData = function(){
+  return { cartes: cartes.slice(), noeuds: allNoeuds.slice() };
+};
+window.mmGoToNode = async function(nodeId, mapId){
+  if (mapId && mapId !== currentMapId){
+    currentMapId = mapId;
+    const sel = document.getElementById('mapSelect');
+    if (sel) sel.value = mapId;
+    await loadNoeuds();
+  }
+  setSelectedNode(nodeId);
+  render();
+  setTimeout(() => centerOnNode(nodeId, true), 60);
+};
 
 function branchColorIndex(d){
   if (!d.parent) return -1;
@@ -6125,8 +6173,7 @@ document.getElementById('exitPresentBtn').addEventListener('click', togglePresen
 
 /* ---------- Boot ---------- */
 window.mmBoot = function(){
-  if (typeof grist !== 'undefined') loadCartes();
-  else mmBootDemo();
+  return (typeof grist !== 'undefined') ? loadCartes() : mmBootDemo();
 };
 async function mmBootDemo(){
   cartes = [{ id: 1, Titre: 'Exemple' }];
