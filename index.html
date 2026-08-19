@@ -2890,10 +2890,10 @@ function classify(t) {
 function isLate(t)  { return !t.bday && classify(t)==='full' && t.date<todayStr && !t.done; }
 function isWeek(t)  {
   if(t.bday||classify(t)!=='full') return false;
-  const tm=new Date(today); tm.setDate(today.getDate()+1);
-  const nw=new Date(today); nw.setDate(today.getDate()+8);
+  const mon=new Date(today); mon.setDate(today.getDate()-((today.getDay()+6)%7));
+  const nextMon=new Date(mon); nextMon.setDate(mon.getDate()+7);
   const dt=new Date(t.date+'T00:00:00');
-  return dt>=tm && dt<nw;
+  return dt>=mon && dt<nextMon;
 }
 function bdayNext(t) {
   const mx=t.date.match(/^(\d{4})-(\d{2})-(\d{2})$/); if(!mx) return null;
@@ -3141,8 +3141,8 @@ function renderMain() {
   const el=document.getElementById('bujoMain');
   const v=currentView;
   let html='';
-  const tm=new Date(today); tm.setDate(today.getDate()+1);
-  const nw=new Date(today); nw.setDate(today.getDate()+8);
+  const tm=new Date(today); tm.setDate(today.getDate()-((today.getDay()+6)%7));
+  const nw=new Date(tm); nw.setDate(tm.getDate()+7);
 
   if(v==='today'){
 const late  = tasks.filter(t => isLate(t) && (!t.projet || !cfgOn('projet_on'))).sort((a,b)=>a.date.localeCompare(b.date));
@@ -3249,6 +3249,11 @@ const todayB = cfgOn('bday_on') ? tasks.filter(t=>t.bday&&bdayNext(t)?.ds===toda
 
   const quickAddHTML = `<div class="qadd-wrap"><input type="text" id="quickAddInput" class="qadd-input" placeholder="Nouvelle tâche pour aujourd'hui…" onkeydown="if(event.key==='Enter')quickAddTask(this)"></div>`;
   el.innerHTML = quickAddHTML + html;
+
+  const kanbanFull = (v==='week' && bujoWeekMode==='kanban');
+  document.getElementById('bujoProjetCol').style.display = kanbanFull ? 'none' : (cfgOn('projet_on') ? '' : 'none');
+  document.getElementById('bujoWeekCol').style.display = kanbanFull ? 'none' : (cfgOn('col_week_on') ? '' : 'none');
+
   if (v==='week' && bujoWeekMode==='kanban') initWeekKanbanSortable();
 }
 
@@ -3259,10 +3264,10 @@ function setBujoWeekMode(mode){
 }
 
 function renderWeekKanban(){
-  const tm=new Date(today); tm.setDate(today.getDate()+1);
+  const mon=new Date(today); mon.setDate(today.getDate()-((today.getDay()+6)%7));
   let html = `<div class="wk-kanban">`;
   for (let d=0; d<7; d++){
-    const day = new Date(tm); day.setDate(tm.getDate()+d);
+    const day = new Date(mon); day.setDate(mon.getDate()+d);
     const ds = `${day.getFullYear()}-${pad(day.getMonth()+1)}-${pad(day.getDate())}`;
     const {lbl} = dayLabel(ds);
     const dayTasks = tasks.filter(t=>!t.bday && t.date===ds && (!t.projet || !cfgOn('projet_on')));
