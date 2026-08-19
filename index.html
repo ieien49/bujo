@@ -701,6 +701,7 @@ select.cfilt { cursor: pointer; }
 .bday-row-day { font-size: 10.5px; color: var(--muted); width: 16px; flex-shrink: 0; text-align: right; }
 .bday-row svg { flex-shrink: 0; color: var(--accent); }
 .bday-row-name { flex: 1; word-break: break-word; }
+.bday-row-empty { font-size: 11px; color: var(--light); font-style: italic; padding: 2px 0; }
 
 .week-col-title {
   font-size: 9px; font-weight: 600; letter-spacing: .1em;
@@ -3273,27 +3274,33 @@ const todayB = cfgOn('bday_on') ? tasks.filter(t=>t.bday&&bdayNext(t)?.ds===toda
   const o=bdayNext(t)||{ds:'9999-12-31',age:0};
   acc.push({...t,_nd:o.ds,_age:o.age,_idx:i});
   return acc;
-},[]).sort((a,b)=>a._nd.localeCompare(b._nd));
+},[]);
     if(bd.length){
-      const mg={};bd.forEach(t=>{const mk=t._nd.substring(0,7);if(!mg[mk])mg[mk]=[];mg[mk].push(t);});
-      const curMonthKey = `${today.getFullYear()}-${pad(today.getMonth()+1)}`;
+      const monthGroups = Array.from({length:12}, ()=>[]);
+      bd.forEach(t=>{ const mm=parseInt(t.date.slice(5,7),10); monthGroups[mm-1].push(t); });
+      monthGroups.forEach(g=>g.sort((a,b)=>a.date.slice(8,10).localeCompare(b.date.slice(8,10))));
+      const curMonthIdx = today.getMonth();
       html+=`<div class="bday-grid">`;
-      Object.keys(mg).sort().forEach(mk=>{
-        const isCur = mk===curMonthKey;
+      for (let m=0; m<12; m++){
+        const isCur = m===curMonthIdx;
         html+=`<div class="bday-month-card${isCur?' bday-current':''}">
-          <div class="bday-month-hdr">${fmtM(mk)}</div>
+          <div class="bday-month-hdr">${MFR[m]}</div>
           <div class="bday-month-list">`;
-        html+=mg[mk].map(t=>{
-          const day = t._nd.slice(8,10);
-          const a = t._age!==undefined ? `<span class="tage">${t._age} ans</span>` : '';
-          return `<div class="bday-row" ondblclick="openBmod(${t._idx})">
-            <span class="bday-row-day">${day}</span>
-            <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-8a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8"/><path d="M4 16s.5-1 2-1 2.5 2 4 2 2.5-2 4-2 2.5 2 4 2 2-1 2-1"/><path d="M2 21h20"/><path d="M7 8v3"/><path d="M12 8v3"/><path d="M17 8v3"/><path d="M7 4h.01"/><path d="M12 4h.01"/><path d="M17 4h.01"/></svg>
-            <span class="bday-row-name">${esc(t.name)}${a}</span>
-          </div>`;
-        }).join('');
+        if(monthGroups[m].length){
+          html+=monthGroups[m].map(t=>{
+            const day = t.date.slice(8,10);
+            const a = t._age!==undefined ? `<span class="tage">${t._age} ans</span>` : '';
+            return `<div class="bday-row" ondblclick="openBmod(${t._idx})">
+              <span class="bday-row-day">${day}</span>
+              <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-8a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8"/><path d="M4 16s.5-1 2-1 2.5 2 4 2 2.5-2 4-2 2.5 2 4 2 2-1 2-1"/><path d="M2 21h20"/><path d="M7 8v3"/><path d="M12 8v3"/><path d="M17 8v3"/><path d="M7 4h.01"/><path d="M12 4h.01"/><path d="M17 4h.01"/></svg>
+              <span class="bday-row-name">${esc(t.name)}${a}</span>
+            </div>`;
+          }).join('');
+        } else {
+          html+=`<div class="bday-row-empty">Aucun anniversaire</div>`;
+        }
         html+=`</div></div>`;
-      });
+      }
       html+=`</div>`;
     } else html=`<div class="empty-bujo">Aucun anniversaire enregistré</div>`;
 
