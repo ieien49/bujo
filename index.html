@@ -625,6 +625,41 @@ select.cfilt { cursor: pointer; }
   padding: 14px 10px 12px;
   overflow-y: auto;
 }
+
+/* Vue Kanban semaine (onglet Bujo) */
+.wk-kanban { display: flex; gap: 10px; overflow-x: auto; padding-bottom: 6px; }
+.wk-kanban-col {
+  flex: 1 0 130px; min-width: 130px;
+  background: var(--bg-soft); border: 1px solid var(--border); border-radius: 10px;
+  display: flex; flex-direction: column; max-height: 62vh;
+}
+.wk-kanban-hdr {
+  font-size: 10.5px; font-weight: 600; color: var(--muted);
+  text-transform: uppercase; letter-spacing: .04em;
+  padding: 9px 10px 7px; border-bottom: 1px solid var(--border); flex-shrink: 0;
+}
+.wk-kanban-list {
+  flex: 1; overflow-y: auto; padding: 8px; min-height: 40px;
+  display: flex; flex-direction: column; gap: 6px;
+}
+.wk-kanban-card {
+  display: flex; align-items: flex-start; gap: 6px;
+  background: var(--bg); border: 1px solid var(--border); border-radius: 8px;
+  padding: 7px 8px; font-size: 12px; line-height: 1.35; cursor: grab;
+}
+.wk-kanban-card:active { cursor: grabbing; }
+.wk-kanban-card.sortable-ghost { opacity: .4; }
+.wk-kanban-card.done { opacity: .5; }
+.wk-kanban-card.done .wk-kanban-name { text-decoration: line-through; }
+.wk-kanban-card.urgent { border-color: var(--accent); }
+.wk-kanban-chk {
+  width: 13px; height: 13px; border-radius: 50%; border: 1.5px solid var(--border);
+  flex-shrink: 0; margin-top: 2px; cursor: pointer;
+}
+.wk-kanban-chk.checked { background: var(--accent); border-color: var(--accent); }
+.wk-kanban-name { flex: 1; word-break: break-word; }
+.wk-kanban-hint { font-size: 10.5px; color: var(--muted); margin-top: 8px; }
+
 .week-col-title {
   font-size: 9px; font-weight: 600; letter-spacing: .1em;
   text-transform: uppercase; color: var(--light);
@@ -2570,6 +2605,8 @@ let calY = today.getFullYear(), calM = today.getMonth();
 
 // Vue bujo — valeur courante
 let currentView = 'today';
+let bujoWeekMode = (() => { try { return localStorage.getItem('bujoWidget_weekMode_' + CACHE_NS) || 'liste'; } catch(e) { return 'liste'; } })();
+let weekKanbanSortables = [];
 
 // Modale bujo
 let editIdx  = null;
@@ -3160,8 +3197,14 @@ const todayB = cfgOn('bday_on') ? tasks.filter(t=>t.bday&&bdayNext(t)?.ds===toda
   if(dt>=tm&&dt<nw){if(!wg[o.ds])wg[o.ds]=[];wg[o.ds].push({...t,_age:o.age,_idx:i});}
 });
     const wk=Object.keys(wg).sort();
-    if(wk.length){
-      html+=`<div class="section"><div class="sec-label">Cette semaine</div>`;
+    const toggleHTML = `<div class="fd-prec" style="margin-bottom:10px">
+      <button class="fd-pb${bujoWeekMode==='liste'?' active':''}" onclick="setBujoWeekMode('liste')">Liste</button>
+      <button class="fd-pb${bujoWeekMode==='kanban'?' active':''}" onclick="setBujoWeekMode('kanban')">Kanban</button>
+    </div>`;
+    if(bujoWeekMode==='kanban'){
+      html += toggleHTML + renderWeekKanban();
+    } else if(wk.length){
+      html+=toggleHTML+`<div class="section"><div class="sec-label">Cette semaine</div>`;
       wk.forEach(k=>{
         const {lbl,isT}=dayLabel(k);
         html+=`<div class="day-group"><div class="day-hdr${isT?' dh-today':''}">${lbl}</div>`;
@@ -3169,7 +3212,7 @@ const todayB = cfgOn('bday_on') ? tasks.filter(t=>t.bday&&bdayNext(t)?.ds===toda
         html+=`</div>`;
       });
       html+=`</div>`;
-    } else html=`<div class="empty-bujo">Aucune tâche cette semaine</div>`;
+    } else html=toggleHTML+`<div class="empty-bujo">Aucune tâche cette semaine</div>`;
 
   } else if(v==='bdays'){
     const bd=tasks.reduce((acc,t,i)=>{
@@ -3206,6 +3249,58 @@ const todayB = cfgOn('bday_on') ? tasks.filter(t=>t.bday&&bdayNext(t)?.ds===toda
 
   const quickAddHTML = `<div class="qadd-wrap"><input type="text" id="quickAddInput" class="qadd-input" placeholder="Nouvelle tâche pour aujourd'hui…" onkeydown="if(event.key==='Enter')quickAddTask(this)"></div>`;
   el.innerHTML = quickAddHTML + html;
+  if (v==='week' && bujoWeekMode==='kanban') initWeekKanbanSortable();
+}
+
+function setBujoWeekMode(mode){
+  bujoWeekMode = mode;
+  try { localStorage.setItem('bujoWidget_weekMode_' + CACHE_NS, mode); } catch(e) {}
+  renderMain();
+}
+
+function renderWeekKanban(){
+  const tm=new Date(today); tm.setDate(today.getDate()+1);
+  let html = `<div class="wk-kanban">`;
+  for (let d=0; d<7; d++){
+    const day = new Date(tm); day.setDate(tm.getDate()+d);
+    const ds = `${day.getFullYear()}-${pad(day.getMonth()+1)}-${pad(day.getDate())}`;
+    const {lbl} = dayLabel(ds);
+    const dayTasks = tasks.filter(t=>!t.bday && t.date===ds && (!t.projet || !cfgOn('projet_on')));
+    html += `<div class="wk-kanban-col">
+      <div class="wk-kanban-hdr">${lbl}</div>
+      <div class="wk-kanban-list" data-date="${ds}">`;
+    html += dayTasks.map(t => {
+      const idx = tasks.indexOf(t);
+      return `<div class="wk-kanban-card${t.done?' done':''}${t.urgent?' urgent':''}" data-task-id="${t.id}" ondblclick="openBmod(${idx})">
+        <div class="wk-kanban-chk${t.done?' checked':''}" onclick="event.stopPropagation();toggleT(${idx})"></div>
+        <div class="wk-kanban-name">${esc(t.name)}</div>
+      </div>`;
+    }).join('');
+    html += `</div></div>`;
+  }
+  html += `</div>
+  <div class="wk-kanban-hint">Anniversaires et tâches liées à un projet ne sont pas affichés ici.</div>`;
+  return html;
+}
+
+function initWeekKanbanSortable(){
+  weekKanbanSortables.forEach(s => s.destroy());
+  weekKanbanSortables = [];
+  document.querySelectorAll('.wk-kanban-list').forEach(listEl => {
+    weekKanbanSortables.push(Sortable.create(listEl, {
+      group: 'bujoWeekKanban',
+      animation: 150,
+      onEnd: (evt) => {
+        if (evt.from === evt.to) return;
+        const taskId = parseInt(evt.item.dataset.taskId);
+        const newDate = evt.to.dataset.date;
+        const t = tasks.find(x => x.id === taskId);
+        if (!t) return;
+        t.date = newDate;
+        gBujoUpdate(t);
+      }
+    }));
+  });
 }
 
 // ══════════════════════════════════════════════════════
