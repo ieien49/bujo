@@ -1754,7 +1754,7 @@ body.presentation #exitPresentBtn{ display:flex; }
           <span class="nbadge" id="b-late"></span>
         </button>
         <button class="nitem" id="n-week" onclick="setView('week')">
-          <span class="nitem-inner"><span class="nitem-label">Cette semaine</span></span>
+          <span class="nitem-inner"><span class="nitem-label">Ma semaine</span></span>
           <span class="nbadge" id="b-week"></span>
         </button>
         <button class="nitem n-bday" id="n-bdays" onclick="setView('bdays')">
@@ -3266,6 +3266,21 @@ function setBujoWeekMode(mode){
 function renderWeekKanban(){
   const mon=new Date(today); mon.setDate(today.getDate()-((today.getDay()+6)%7));
   let html = `<div class="wk-kanban">`;
+
+  const lateTasks = tasks.filter(t => isLate(t) && (!t.projet || !cfgOn('projet_on'))).sort((a,b)=>a.date.localeCompare(b.date));
+  html += `<div class="wk-kanban-col wk-kanban-col-late">
+    <div class="wk-kanban-hdr">En retard</div>
+    <div class="wk-kanban-list" data-date="">`;
+  html += lateTasks.map(t => {
+    const idx = tasks.indexOf(t);
+    return `<div class="wk-kanban-card${t.done?' done':''}${t.urgent?' urgent':''}" data-task-id="${t.id}" ondblclick="openBmod(${idx})">
+      <div class="wk-kanban-chk${t.done?' checked':''}" onclick="event.stopPropagation();toggleT(${idx})"></div>
+      <div class="wk-kanban-name">${esc(t.name)}</div>
+      <span class="tdate-right">${dayLabel(t.date).lbl}</span>
+    </div>`;
+  }).join('');
+  html += `</div></div>`;
+
   for (let d=0; d<7; d++){
     const day = new Date(mon); day.setDate(mon.getDate()+d);
     const ds = `${day.getFullYear()}-${pad(day.getMonth()+1)}-${pad(day.getDate())}`;
@@ -3297,8 +3312,9 @@ function initWeekKanbanSortable(){
       animation: 150,
       onEnd: (evt) => {
         if (evt.from === evt.to) return;
-        const taskId = parseInt(evt.item.dataset.taskId);
         const newDate = evt.to.dataset.date;
+        if (!newDate) { renderMain(); return; } // dépose dans "En retard" : pas de date à assigner, on annule
+        const taskId = parseInt(evt.item.dataset.taskId);
         const t = tasks.find(x => x.id === taskId);
         if (!t) return;
         t.date = newDate;
