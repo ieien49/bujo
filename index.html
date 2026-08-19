@@ -658,6 +658,8 @@ select.cfilt { cursor: pointer; }
 }
 .wk-kanban-chk.checked { background: var(--accent); border-color: var(--accent); }
 .wk-kanban-name { flex: 1; word-break: break-word; }
+.wk-kanban-body { flex: 1; min-width: 0; }
+.wk-kanban-late-date { font-size: 10.5px; color: var(--accent); margin-top: 2px; }
 .wk-kanban-hint { font-size: 10.5px; color: var(--muted); margin-top: 8px; }
 
 .week-col-title {
@@ -2956,7 +2958,7 @@ function renderWeekCol() {
   const thisMonthKey = `${today.getFullYear()}-${pad(today.getMonth()+1)}`;
   const monthTasks = tasks.filter(t => !t.bday && t.date === thisMonthKey);
 
-  let html = `<div class="week-col-title">Cette semaine</div>`;
+  let html = `<div class="week-col-title">Ma semaine</div>`;
 
   for (let d = 0; d < 7; d++) {
     const day = new Date(mon);
@@ -3204,7 +3206,7 @@ const todayB = cfgOn('bday_on') ? tasks.filter(t=>t.bday&&bdayNext(t)?.ds===toda
     if(bujoWeekMode==='kanban'){
       html += toggleHTML + renderWeekKanban();
     } else if(wk.length){
-      html+=toggleHTML+`<div class="section"><div class="sec-label">Cette semaine</div>`;
+      html+=toggleHTML+`<div class="section"><div class="sec-label">Ma semaine</div>`;
       wk.forEach(k=>{
         const {lbl,isT}=dayLabel(k);
         html+=`<div class="day-group"><div class="day-hdr${isT?' dh-today':''}">${lbl}</div>`;
@@ -3275,8 +3277,10 @@ function renderWeekKanban(){
     const idx = tasks.indexOf(t);
     return `<div class="wk-kanban-card${t.done?' done':''}${t.urgent?' urgent':''}" data-task-id="${t.id}" ondblclick="openBmod(${idx})">
       <div class="wk-kanban-chk${t.done?' checked':''}" onclick="event.stopPropagation();toggleT(${idx})"></div>
-      <div class="wk-kanban-name">${esc(t.name)}</div>
-      <span class="tdate-right">${dayLabel(t.date).lbl}</span>
+      <div class="wk-kanban-body">
+        <div class="wk-kanban-name">${esc(t.name)}</div>
+        <div class="wk-kanban-late-date">${dayLabel(t.date).lbl}</div>
+      </div>
     </div>`;
   }).join('');
   html += `</div></div>`;
