@@ -1903,8 +1903,15 @@ body.presentation #exitPresentBtn{ display:flex; }
 <div class="page" id="page-mindmap">
   <div class="topbar">
     <select id="mapSelect"></select>
-    <button id="newMapBtn">+ Nouvelle carte</button>
-    <button id="renameMapBtn">Renommer</button>
+    <button id="newMapBtn" class="icon-btn" title="Nouvelle carte">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14"/><path d="M5 12h14"/></svg>
+    </button>
+    <button id="renameMapBtn" class="icon-btn" title="Renommer la carte">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+    </button>
+    <button id="deleteMapBtn" class="icon-btn" title="Supprimer la carte">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
+    </button>
     <div class="sep"></div>
     <button id="collapseAllBtn" class="icon-btn" title="Replier tout">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m4 7 5 5-5 5"/><path d="m20 7-5 5 5 5"/></svg>
@@ -5501,6 +5508,49 @@ document.getElementById('renameMapBtn').addEventListener('click', async () => {
   await grist.docApi.applyUserActions([
     ['UpdateRecord', TABLE_CARTES, currentMapId, { Titre: titre }]
   ]);
+  await loadCartes();
+});
+
+function mmConfirmModal(title, message){
+  return new Promise(resolve => {
+    const ov = document.createElement('div');
+    ov.className = 'mod-ov';
+    ov.style.zIndex = 2000;
+    ov.innerHTML = `
+      <div class="mod">
+        <h3>${title}</h3>
+        <p>${message}</p>
+        <div class="mod-act">
+          <button class="btn btn-ghost" id="mmConfirmCancel">Annuler</button>
+          <button class="btn btn-danger" id="mmConfirmOk">Supprimer</button>
+        </div>
+      </div>`;
+    document.body.appendChild(ov);
+    const cleanup = (val) => { document.body.removeChild(ov); resolve(val); };
+    ov.querySelector('#mmConfirmOk').onclick = () => cleanup(true);
+    ov.querySelector('#mmConfirmCancel').onclick = () => cleanup(false);
+    document.addEventListener('keydown', function esc(e){
+      if (e.key === 'Escape') { document.removeEventListener('keydown', esc); cleanup(false); }
+    });
+  });
+}
+
+document.getElementById('deleteMapBtn').addEventListener('click', async () => {
+  if (!currentMapId) return;
+  const carte = cartes.find(c => c.id === currentMapId);
+  const ok = await mmConfirmModal(
+    'Supprimer cette carte ?',
+    `« ${carte ? carte.Titre : ''} » et tous ses nœuds seront supprimés définitivement. Cette action est irréversible.`
+  );
+  if (!ok) return;
+  const idsToDelete = allNoeuds.filter(n => n.MapId === currentMapId).map(n => n.id);
+  const actions = [];
+  if (idsToDelete.length) actions.push(['BulkRemoveRecord', TABLE_NOEUDS, idsToDelete]);
+  actions.push(['RemoveRecord', TABLE_CARTES, currentMapId]);
+  await grist.docApi.applyUserActions(actions);
+  currentMapId = null;
+  didCenter = false;
+  setSelectedNode(null);
   await loadCartes();
 });
 
