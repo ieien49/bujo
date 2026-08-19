@@ -573,6 +573,13 @@ select.cfilt { cursor: pointer; }
   background: var(--bg); outline: none; font-family: inherit; transition: border-color .12s;
 }
 .wcfg-cf input[type=text]:focus { border-color: var(--accent); }
+.wcfg-cf select {
+  width: 100%; padding: 6px 9px; border: 1px solid var(--border);
+  border-radius: var(--radius); font-size: 12.5px; color: var(--text);
+  background: var(--bg); outline: none; font-family: inherit; transition: border-color .12s;
+  cursor: pointer;
+}
+.wcfg-cf select:focus { border-color: var(--accent); }
 .wcfg-hint { font-size: 10px; color: var(--light); margin-top: 3px; }
 .wcfg-color-row { display: flex; align-items: center; gap: 8px; }
 .wcfg-color-row input[type=color] {
@@ -2176,6 +2183,15 @@ body.presentation #exitPresentBtn{ display:flex; }
     <div class="wcfg-hint" style="margin-bottom:12px">Le libellé personnalise le nom affiché ; l'interrupteur active ou masque l'onglet.</div>
 
     <div class="wcfg-section-title">Modules Bujo</div>
+    <div class="wcfg-cf">
+      <label>Vue par défaut à l'ouverture de l'onglet Bujo</label>
+      <select id="wcfgDefaultView">
+        <option value="today">Aujourd'hui</option>
+        <option value="late">En retard</option>
+        <option value="week">Ma semaine</option>
+        <option value="bdays">Anniversaires</option>
+      </select>
+    </div>
     <div class="wcfg-tog-row" onclick="wcfgToggle('bday_on')">
       <span class="wcfg-tog-label">Anniversaires</span>
       <div class="wcfg-tog-sw" id="wcfg-tog-bday_on"></div>
@@ -2390,7 +2406,7 @@ function applyConfigValues() {
 let wcfgRowIds = {};
 let wcfgSaveT = null;
 const WCFG_TOGGLE_KEYS = ['bujo_on','lectures_on','collections_on','outliner_on','mindmap_on','bday_on','projet_on','col_cal_on','col_futurelogs_on','col_week_on'];
-const WCFG_ALL_KEYS = ['titre','accent','label_bujo','label_lectures','label_collections','label_outliner','label_mindmap', ...WCFG_TOGGLE_KEYS];
+const WCFG_ALL_KEYS = ['titre','accent','label_bujo','label_lectures','label_collections','label_outliner','label_mindmap','default_bujo_view', ...WCFG_TOGGLE_KEYS];
 
 function wcfgToggle(key) {
   CFG[key] = (CFG[key] === 'false') ? 'true' : 'false';
@@ -2412,6 +2428,7 @@ function wcfgRefreshFields() {
   const hex = CFG.accent || '#e8a020';
   document.getElementById('wcfgAccentHex').value = hex;
   document.getElementById('wcfgAccentPicker').value = /^#[0-9a-fA-F]{6}$/.test(hex) ? hex : '#e8a020';
+  document.getElementById('wcfgDefaultView').value = CFG.default_bujo_view || 'today';
   wcfgRefreshToggles();
 }
 
@@ -2448,6 +2465,7 @@ document.getElementById('wcfgLabelLectures').addEventListener('input', e => { CF
 document.getElementById('wcfgLabelCollections').addEventListener('input', e => { CFG.label_collections = e.target.value; });
 document.getElementById('wcfgLabelOutliner').addEventListener('input', e => { CFG.label_outliner = e.target.value; });
 document.getElementById('wcfgLabelMindmap').addEventListener('input', e => { CFG.label_mindmap = e.target.value; });
+document.getElementById('wcfgDefaultView').addEventListener('change', e => { CFG.default_bujo_view = e.target.value; });
 
 async function wcfgSaveConfig() {
   if (typeof grist === 'undefined') { applyConfigValues(); wcfgFlashSaved(); setTimeout(closeConfigModal, 700); return; }
@@ -2646,7 +2664,7 @@ function switchTab(tab) {
   document.querySelectorAll('.app-tab').forEach(t => t.classList.toggle('active', t.dataset.tab === tab));
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.getElementById('page-' + tab).classList.add('active');
-  if (tab === 'bujo') renderMain();
+  if (tab === 'bujo') setView(CFG.default_bujo_view || 'today');
   if (tab === 'collections' && !colsLoaded) {
     colsLoaded = true;
     if (typeof grist !== 'undefined') loadCollections();
