@@ -3765,8 +3765,20 @@ async function outUpdateTitle(id, title) {
 }
 async function outToggleCollapse(id) {
   const r = outGetRecord(id); if (!r) return;
+  const wasCollapsed = r.collapsed;
   r.collapsed = !r.collapsed;
-  await grist.docApi.applyUserActions([['UpdateRecord', OUT_TABLE_ID, id, { collapsed: r.collapsed }]]);
+  const actions = [['UpdateRecord', OUT_TABLE_ID, id, { collapsed: r.collapsed }]];
+
+  if (wasCollapsed) {
+    // On déplie : les enfants directs qui ont eux-mêmes des enfants repartent pliés par défaut
+    const childrenToFold = outGetChildren(id).filter(c => !c.collapsed && outGetChildren(c.id).length > 0);
+    if (childrenToFold.length) {
+      childrenToFold.forEach(c => { c.collapsed = true; });
+      actions.push(['BulkUpdateRecord', OUT_TABLE_ID, childrenToFold.map(c => c.id), { collapsed: childrenToFold.map(() => true) }]);
+    }
+  }
+
+  await grist.docApi.applyUserActions(actions);
   outRender();
 }
 async function outToggleChecked(id) {
