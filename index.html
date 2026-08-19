@@ -4582,6 +4582,18 @@ function coverImg(url, cls) {
   return `<img class="${cls}" src="${esc(url)}" alt="" loading="lazy" onerror="this.remove()">`;
 }
 
+// ── Aperçu automatique d'une page liée (screenshot via mshots, sans backend) ──
+function mshotUrl(pageUrl) {
+  if (!pageUrl) return '';
+  return `https://s.wordpress.com/mshots/v1/${encodeURIComponent(pageUrl)}?w=400`;
+}
+function autoCoverFromUrl() {
+  const urlField = document.getElementById('imoUrl');
+  const coverField = document.getElementById('imoCover');
+  if (!urlField || !coverField || !urlField.value.trim()) return;
+  coverField.value = mshotUrl(urlField.value.trim());
+}
+
 // ── Multi-tags : un item.tag est une chaîne "tag1, tag2, tag3" ──
 function splitTags(tagStr) {
   if (!tagStr) return [];
@@ -5153,8 +5165,13 @@ function renderItemModFields(theme, it) {
     <div class="cf" style="position:relative"><label>Tag</label><input type="text" id="imoTag" value="${esc(v('tag'))}" placeholder="tags séparés par virgule…" oninput="showTagSuggestions(this)" onfocus="showTagSuggestions(this)" autocomplete="off"><div class="tag-suggestions-box" id="tagSuggestions"></div></div>`;
   } else if (theme === 'liens') {
     html = `<div class="cf"><label>Titre</label><input type="text" id="imoTitre" value="${esc(v('titre'))}" placeholder="Nom du lien…"></div>
-    <div class="cf"><label>URL</label><input type="url" id="imoUrl" value="${esc(v('url'))}" placeholder="https://…"></div>
-    <div class="cf"><label>URL couverture</label><input type="url" id="imoCover" value="${esc(v('cover'))}" placeholder="https://… (optionnel)"></div>
+    <div class="cf"><label>URL</label><input type="url" id="imoUrl" value="${esc(v('url'))}" placeholder="https://…" onblur="if(!document.getElementById('imoCover').value.trim()) autoCoverFromUrl()"></div>
+    <div class="cf"><label>URL couverture</label>
+      <div style="display:flex;gap:6px">
+        <input type="url" id="imoCover" value="${esc(v('cover'))}" placeholder="https://… (optionnel)" style="flex:1">
+        <button type="button" onclick="autoCoverFromUrl()" title="Générer un aperçu depuis l'URL" style="flex-shrink:0;cursor:pointer">🖼️</button>
+      </div>
+    </div>
     <div class="cf" style="position:relative"><label>Tag</label><input type="text" id="imoTag" value="${esc(v('tag'))}" placeholder="tags séparés par virgule…" oninput="showTagSuggestions(this)" onfocus="showTagSuggestions(this)" autocomplete="off"><div class="tag-suggestions-box" id="tagSuggestions"></div></div>`;
   } else if (theme === 'fiches') {
     const texteVal = (it&&it.texte) ? it.texte : '';
