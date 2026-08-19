@@ -5876,11 +5876,10 @@ function dragged(ev, d){
 }
 
 async function dragEnded(ev, d){
-  if (!d.parent) return;
   d3.select(this).classed('dragging', false);
   g.selectAll('rect.node-card').classed('drop-target', false);
 
-  if (presentationMode || !d._dragMoved){   // ← condition modifiée
+  if (!d.parent || presentationMode || !d._dragMoved){   // ← racine toujours cliquable/éditable, jamais déplaçable
     const now = Date.now();
     const isDoubleClick = window._lastClickId === d.data.id && (now - (window._lastClickTime||0)) < 400;
     window._lastClickId = d.data.id;
