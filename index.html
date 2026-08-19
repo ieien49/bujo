@@ -697,7 +697,8 @@ select.cfilt { cursor: pointer; }
 }
 .bday-month-card.bday-current .bday-month-hdr { color: var(--accent); border-bottom-color: var(--accent-soft); }
 .bday-month-list { padding: 8px; display: flex; flex-direction: column; gap: 7px; }
-.bday-row { display: flex; align-items: center; gap: 6px; font-size: 12px; cursor: pointer; color: var(--bday-text); }
+.bday-row { display: flex; align-items: center; gap: 6px; font-size: 12px; cursor: pointer; color: var(--bday-text); padding-bottom: 7px; border-bottom: 1px solid var(--border); }
+.bday-row:last-child { padding-bottom: 0; border-bottom: none; }
 .bday-row-day { font-size: 10.5px; color: var(--muted); width: 16px; flex-shrink: 0; text-align: right; }
 .bday-row svg { flex-shrink: 0; color: var(--accent); }
 .bday-row-name { flex: 1; word-break: break-word; }
