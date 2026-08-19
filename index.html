@@ -3269,15 +3269,16 @@ const todayB = cfgOn('bday_on') ? tasks.filter(t=>t.bday&&bdayNext(t)?.ds===toda
     } else html=toggleHTML+`<div class="empty-bujo">Aucune tâche cette semaine</div>`;
 
   } else if(v==='bdays'){
-    const bd=tasks.reduce((acc,t,i)=>{
-  if(!t.bday) return acc;
-  const o=bdayNext(t)||{ds:'9999-12-31',age:0};
-  acc.push({...t,_nd:o.ds,_age:o.age,_idx:i});
-  return acc;
-},[]);
+    const bd=tasks.filter(t=>t.bday);
     if(bd.length){
       const monthGroups = Array.from({length:12}, ()=>[]);
-      bd.forEach(t=>{ const mm=parseInt(t.date.slice(5,7),10); monthGroups[mm-1].push(t); });
+      bd.forEach(t=>{
+        const mx = (t.date||'').match(/^\d{4}-(\d{2})-(\d{2})$/);
+        if(!mx) return;
+        const mm = parseInt(mx[1],10);
+        const o = bdayNext(t);
+        monthGroups[mm-1].push({...t, _age: o?o.age:undefined, _idx: tasks.indexOf(t)});
+      });
       monthGroups.forEach(g=>g.sort((a,b)=>a.date.slice(8,10).localeCompare(b.date.slice(8,10))));
       const curMonthIdx = today.getMonth();
       html+=`<div class="bday-grid">`;
