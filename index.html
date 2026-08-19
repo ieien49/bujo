@@ -1931,6 +1931,7 @@ body.presentation #exitPresentBtn{ display:flex; }
     <button id="exportSvgBtn">Export SVG</button>
     <button id="exportPngBtn">Export PNG</button>
     <button id="exportMdBtn">Export Markdown</button>
+    <button id="exportOutlinerBtn">Exporter vers Outliner</button>
   </div>
 
   <div class="mm-footer-hint">
@@ -3995,10 +3996,14 @@ function outCreateNodeEl(rec) {
     setTimeout(() => document.querySelector(`.out-node[data-id="${newId}"] .out-node-content`)?.focus(), 100);
   };
 
+  const mmBtn = outMakeActionBtn(`<svg width="10" height="10" viewBox="0 0 10 10" fill="none"><circle cx="2" cy="5" r="1.4" stroke="currentColor" stroke-width="1.1"/><circle cx="8" cy="2" r="1.4" stroke="currentColor" stroke-width="1.1"/><circle cx="8" cy="8" r="1.4" stroke="currentColor" stroke-width="1.1"/><path d="M3.2 4.3L6.8 2.7M3.2 5.7L6.8 7.3" stroke="currentColor" stroke-width="1"/></svg>`, 'Exporter cette branche en Mind Map');
+  mmBtn.onclick = () => window.mmImportOutlinerBranch(rec.id);
+
   const delBtn = outMakeActionBtn(`<svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M2 2l6 6M8 2l-6 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>`, 'Supprimer', true);
   delBtn.onclick = () => outDeleteNode(rec.id);
 
   actions.appendChild(addBtn);
+  actions.appendChild(mmBtn);
   actions.appendChild(delBtn);
 
   dragHandle.addEventListener('dragstart', (e) => { outDragSrcId = rec.id; node.classList.add('dragging'); e.dataTransfer.effectAllowed = 'move'; });
@@ -5553,6 +5558,111 @@ document.getElementById('deleteMapBtn').addEventListener('click', async () => {
   setSelectedNode(null);
   await loadCartes();
 });
+
+/* ---------- Pont avec l'Outliner ---------- */
+
+// Outliner (branche) → nouvelle carte Mind Map
+window.mmImportOutlinerBranch = async function(outlinerRootId){
+  const rootRec = outGetRecord(outlinerRootId);
+  if (!rootRec) return;
+  const titre = await mmPromptModal('Nom de la nouvelle carte Mind Map :', rootRec.title || 'Carte sans titre');
+  if (titre === null) return;
+
+  const flat = [];
+  (function walk(id){
+    outGetChildren(id).forEach(k => { flat.push(k); walk(k.id); });
+  })(outlinerRootId);
+
+  const resCarte = await grist.docApi.applyUserActions([
+    ['AddRecord', TABLE_CARTES, null, { Titre: titre }]
+  ]);
+  const newMapId = resCarte.retValues[0];
+
+  const resRoot = await grist.docApi.applyUserActions([
+    ['AddRecord', TABLE_NOEUDS, null, { Label: titre, ParentId: 0, Ordre: 0, MapId: newMapId }]
+  ]);
+  const newRootId = resRoot.retValues[0];
+
+  const idMap = { [outlinerRootId]: newRootId };
+  if (flat.length){
+    const res = await grist.docApi.applyUserActions([
+      ['BulkAddRecord', TABLE_NOEUDS, flat.map(() => null), {
+        Label: flat.map(r => r.title || '(sans titre)'),
+        ParentId: flat.map(() => 0),
+        Ordre: flat.map(r => r.position || 0),
+        MapId: flat.map(() => newMapId),
+      }]
+    ]);
+    const newIds = res.retValues[0];
+    flat.forEach((r, i) => { idMap[r.id] = newIds[i]; });
+    const updIds = [], updParents = [];
+    flat.forEach((r, i) => {
+      updIds.push(newIds[i]);
+      updParents.push(idMap[r.parent_id] ?? newRootId);
+    });
+    await grist.docApi.applyUserActions([
+      ['BulkUpdateRecord', TABLE_NOEUDS, updIds, { ParentId: updParents }]
+    ]);
+  }
+
+  currentMapId = newMapId;
+  didCenter = false;
+  switchTab('mindmap');
+  await loadCartes();
+};
+
+// Mind Map (carte courante) → nouvelle branche en tête de l'Outliner
+document.getElementById('exportOutlinerBtn').addEventListener('click', async () => {
+  if (!currentMapId) return;
+  const rootRec = noeuds.find(n => !n.ParentId || n.ParentId === 0);
+  if (!rootRec) return;
+
+  const byParent = new Map();
+  noeuds.forEach(n => {
+    const p = n.ParentId || 0;
+    if (!byParent.has(p)) byParent.set(p, []);
+    byParent.get(p).push(n);
+  });
+  byParent.forEach(list => list.sort((a, b) => (a.Ordre||0) - (b.Ordre||0)));
+
+  const flat = [];
+  (function walk(id){
+    (byParent.get(id) || []).forEach(n => { flat.push(n); walk(n.id); });
+  })(rootRec.id);
+
+  const basePos = outMaxPosition(0) + 1;
+  const resRoot = await grist.docApi.applyUserActions([
+    ['AddRecord', OUT_TABLE_ID, null, { title: rootRec.Label || '(sans titre)', parent_id: 0, position: basePos, collapsed: false, checked: false }]
+  ]);
+  const newOutRootId = resRoot.retValues[0];
+
+  const idMap = { [rootRec.id]: newOutRootId };
+  if (flat.length){
+    const res = await grist.docApi.applyUserActions([
+      ['BulkAddRecord', OUT_TABLE_ID, flat.map(() => null), {
+        title: flat.map(n => n.Label || '(sans titre)'),
+        parent_id: flat.map(() => 0),
+        position: flat.map(n => n.Ordre || 0),
+        collapsed: flat.map(() => false),
+        checked: flat.map(() => false),
+      }]
+    ]);
+    const newIds = res.retValues[0];
+    flat.forEach((n, i) => { idMap[n.id] = newIds[i]; });
+    const updIds = [], updParents = [];
+    flat.forEach((n, i) => {
+      updIds.push(newIds[i]);
+      updParents.push(idMap[n.ParentId] ?? newOutRootId);
+    });
+    await grist.docApi.applyUserActions([
+      ['BulkUpdateRecord', OUT_TABLE_ID, updIds, { parent_id: updParents }]
+    ]);
+  }
+
+  await loadOutliner();
+  switchTab('outliner');
+});
+
 
 
 
