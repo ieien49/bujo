@@ -633,6 +633,13 @@ select.cfilt { cursor: pointer; }
   background: var(--bg-soft); border: 1px solid var(--border); border-radius: 10px;
   display: flex; flex-direction: column; max-height: 62vh;
 }
+.wk-kanban-col.wk-kanban-today {
+  border-color: var(--accent); border-width: 1.5px;
+  box-shadow: 0 0 0 1px var(--accent);
+}
+.wk-kanban-col.wk-kanban-today .wk-kanban-hdr {
+  color: var(--accent); border-bottom-color: var(--accent-soft);
+}
 .wk-kanban-hdr {
   font-size: 10.5px; font-weight: 600; color: var(--muted);
   text-transform: uppercase; letter-spacing: .04em;
@@ -3311,7 +3318,8 @@ function renderWeekKanban(){
     const {lbl} = dayLabel(ds);
     const dayTasks = tasks.filter(t=>!t.bday && t.date===ds && (!t.projet || !cfgOn('projet_on')));
     const dayBdays = bdayByDay[ds] || [];
-    html += `<div class="wk-kanban-col">
+    const isToday = ds === todayStr;
+    html += `<div class="wk-kanban-col${isToday?' wk-kanban-today':''}">
       <div class="wk-kanban-hdr">${lbl}</div>
       <div class="wk-kanban-fixed">`;
     html += dayBdays.map(t => {
