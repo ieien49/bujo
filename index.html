@@ -3450,7 +3450,7 @@ function renderMonthView(){
     const ds = `${y}-${pad(m)}-${pad(d)}`;
     const isToday = ds===todayStr;
     const has = tds.has(ds)||bds.has(ds);
-    grid += `<div class="mv-day${isToday?' mv-today':''}${has?' mv-has':''}" onclick="${has?`showCalPop('${ds}',this)`:`openBmod(undefined,'${ds}')`}" title="${has?'Voir le contenu de ce jour':`Ajouter une tâche le ${d}/${pad(m)}`}">
+    grid += `<div class="mv-day${isToday?' mv-today':''}${has?' mv-has':''}" onclick="${has?`event.stopPropagation();showCalPop('${ds}',this)`:`openBmod(undefined,'${ds}')`}" title="${has?'Voir le contenu de ce jour':`Ajouter une tâche le ${d}/${pad(m)}`}">
       <span class="mv-day-num">${d}</span>
       <span class="mv-dots">${tds.has(ds)?'<span class="mv-dot mv-dot-task"></span>':''}${bds.has(ds)?'<span class="mv-dot mv-dot-bday"></span>':''}</span>
     </div>`;
@@ -3536,7 +3536,7 @@ function miniMonthGrid(y,m,todayMonthKey){
     const ds=`${y}-${pad(m+1)}-${pad(d)}`;
     const isToday = ds===todayStr;
     const has = tds.has(ds)||bds.has(ds);
-    html += `<div class="yv-mini-day${isToday?' yv-today':''}${has?' yv-has':''}" onclick="${has?`showCalPop('${ds}',this)`:`goToMonth('${monthKey}')`}" title="${has?'Voir le contenu de ce jour':'Aller au mois'}">
+    html += `<div class="yv-mini-day${isToday?' yv-today':''}${has?' yv-has':''}" onclick="${has?`event.stopPropagation();showCalPop('${ds}',this)`:`goToMonth('${monthKey}')`}" title="${has?'Voir le contenu de ce jour':'Aller au mois'}">
       ${d}
       <button class="yv-add-btn" onclick="event.stopPropagation();openBmod(undefined,'${ds}')" title="Ajouter une tâche">+</button>
     </div>`;
