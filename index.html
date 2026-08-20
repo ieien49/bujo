@@ -765,11 +765,6 @@ select.cfilt { cursor: pointer; }
   content: ''; position: absolute; bottom: 1px; width: 3px; height: 3px; border-radius: 50%; background: var(--accent);
 }
 .yv-mini-day.yv-today.yv-has::after { background: #fff; }
-.yv-add-btn {
-  position: absolute; inset: 0; width: 100%; height: 100%; border: none; background: transparent;
-  color: var(--accent); font-size: 11px; font-weight: 700; cursor: pointer; opacity: 0; border-radius: 3px;
-}
-.yv-mini-day:hover .yv-add-btn { opacity: 1; background: var(--accent-soft); }
 
 /* Panneau global "Sans date" — visible en permanence dans la sidebar */
 .nodate-panel { border-top: 1px solid var(--border); padding-top: 10px; margin-top: 4px; }
@@ -3536,9 +3531,8 @@ function miniMonthGrid(y,m,todayMonthKey){
     const ds=`${y}-${pad(m+1)}-${pad(d)}`;
     const isToday = ds===todayStr;
     const has = tds.has(ds)||bds.has(ds);
-    html += `<div class="yv-mini-day${isToday?' yv-today':''}${has?' yv-has':''}" onclick="${has?`event.stopPropagation();showCalPop('${ds}',this)`:`goToMonth('${monthKey}')`}" title="${has?'Voir le contenu de ce jour':'Aller au mois'}">
+    html += `<div class="yv-mini-day${isToday?' yv-today':''}${has?' yv-has':''}" onclick="${has?`event.stopPropagation();showCalPop('${ds}',this)`:`openBmod(undefined,'${ds}')`}" title="${has?'Voir le contenu de ce jour':`Ajouter une tâche le ${d}/${pad(m+1)}`}">
       ${d}
-      <button class="yv-add-btn" onclick="event.stopPropagation();openBmod(undefined,'${ds}')" title="Ajouter une tâche">+</button>
     </div>`;
   }
   html += `</div></div>`;
