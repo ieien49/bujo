@@ -154,7 +154,9 @@ body {
   display: flex; align-items: center; gap: 7px;
   padding: 4px 2px; font-size: 11.5px; color: var(--text);
   text-transform: uppercase; letter-spacing: .03em;
+  cursor: pointer; border-radius: 5px;
 }
+.cal-pop-item:hover { background: var(--bg-hover); }
 .cal-pop-item + .cal-pop-item { border-top: 1px solid var(--bg-hover); }
 .cal-pop-check {
   width: 11px; height: 11px; border-radius: 50%;
@@ -168,6 +170,8 @@ body {
 .cal-pop-name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .cal-pop-bday-name { color: var(--bday-text); }
 .cal-pop-age { font-size: 9.5px; color: var(--bday-muted); flex-shrink: 0; }
+.cal-pop-add { font-size: 11px; color: var(--accent); cursor: pointer; padding: 7px 2px 2px; border-top: 1px solid var(--bg-hover); margin-top: 4px; text-transform: none; letter-spacing: normal; }
+.cal-pop-add:hover { text-decoration: underline; }
 .cal-day.other { color: var(--light); }
 .cal-day.today { background: var(--text); color: #fff; font-weight: 500; }
 .cal-day.has-task::after { content: ''; position: absolute; bottom: 0; left: 50%; transform: translateX(-50%); width: 3px; height: 3px; border-radius: 50%; background: var(--light); }
@@ -2983,32 +2987,41 @@ function showCalPop(ds, targetEl) {
     const mx = t.date.match(/^(\d{4})-(\d{2})-(\d{2})$/);
     const age = mx ? (parseInt(ds.slice(0,4)) - parseInt(mx[1])) : null;
     const ageStr = age !== null ? `<span class="cal-pop-age">${age} ans</span>` : '';
-    html += `<div class="cal-pop-item">
+    const idx = tasks.indexOf(t);
+    html += `<div class="cal-pop-item" onclick="hideCalPop();openBmod(${idx})" title="Cliquer pour modifier">
       <div class="cal-pop-bday"></div>
       <span class="cal-pop-name cal-pop-bday-name">${esc(t.name)}</span>${ageStr}
     </div>`;
   });
   dayTasks.forEach(t => {
-    html += `<div class="cal-pop-item">
+    const idx = tasks.indexOf(t);
+    html += `<div class="cal-pop-item" onclick="hideCalPop();openBmod(${idx})" title="Cliquer pour modifier">
       <div class="cal-pop-check${t.done?' done':''}"></div>
       <span class="cal-pop-name${t.done?' done':''}" style="${t.done?'text-decoration:line-through;color:var(--muted)':''}">${esc(t.name)}</span>
     </div>`;
   });
+  html += `<div class="cal-pop-add" onclick="hideCalPop();openBmod(undefined,'${ds}')">+ Ajouter une tâche ce jour</div>`;
 
   pop.innerHTML = html;
 
-  // Positionner le popover sous la cellule cliquée
+  // Positionner le popover sous la cellule cliquée (générique, pas seulement dans la sidebar)
   const rect = targetEl.getBoundingClientRect();
-  const sidebar = document.querySelector('.bujo-sidebar').getBoundingClientRect();
   pop.style.display = 'block';
-  const popW = 210;
+  const popW = 220;
   let left = rect.left;
-  // S'assurer que le popover reste dans la sidebar ou au moins visible
-  if (left + popW > sidebar.right + 8) left = sidebar.right - popW - 4;
-  if (left < sidebar.left) left = sidebar.left + 4;
+  if (left + popW > window.innerWidth - 8) left = window.innerWidth - popW - 8;
+  if (left < 8) left = 8;
+  let top = rect.bottom + 4;
   pop.style.left = left + 'px';
-  pop.style.top = (rect.bottom + 4) + 'px';
+  pop.style.top = top + 'px';
   pop.style.width = popW + 'px';
+  // Si le popover dépasse en bas de l'écran, l'afficher au-dessus de la cellule
+  requestAnimationFrame(() => {
+    const popRect = pop.getBoundingClientRect();
+    if (popRect.bottom > window.innerHeight - 8) {
+      pop.style.top = (rect.top - popRect.height - 4) + 'px';
+    }
+  });
 }
 
 function hideCalPop() {
@@ -3437,7 +3450,7 @@ function renderMonthView(){
     const ds = `${y}-${pad(m)}-${pad(d)}`;
     const isToday = ds===todayStr;
     const has = tds.has(ds)||bds.has(ds);
-    grid += `<div class="mv-day${isToday?' mv-today':''}${has?' mv-has':''}" onclick="openBmod(undefined,'${ds}')" title="Ajouter une tâche le ${d}/${pad(m)}">
+    grid += `<div class="mv-day${isToday?' mv-today':''}${has?' mv-has':''}" onclick="${has?`showCalPop('${ds}',this)`:`openBmod(undefined,'${ds}')`}" title="${has?'Voir le contenu de ce jour':`Ajouter une tâche le ${d}/${pad(m)}`}">
       <span class="mv-day-num">${d}</span>
       <span class="mv-dots">${tds.has(ds)?'<span class="mv-dot mv-dot-task"></span>':''}${bds.has(ds)?'<span class="mv-dot mv-dot-bday"></span>':''}</span>
     </div>`;
@@ -3523,7 +3536,7 @@ function miniMonthGrid(y,m,todayMonthKey){
     const ds=`${y}-${pad(m+1)}-${pad(d)}`;
     const isToday = ds===todayStr;
     const has = tds.has(ds)||bds.has(ds);
-    html += `<div class="yv-mini-day${isToday?' yv-today':''}${has?' yv-has':''}" onclick="goToMonth('${monthKey}')">
+    html += `<div class="yv-mini-day${isToday?' yv-today':''}${has?' yv-has':''}" onclick="${has?`showCalPop('${ds}',this)`:`goToMonth('${monthKey}')`}" title="${has?'Voir le contenu de ce jour':'Aller au mois'}">
       ${d}
       <button class="yv-add-btn" onclick="event.stopPropagation();openBmod(undefined,'${ds}')" title="Ajouter une tâche">+</button>
     </div>`;
