@@ -198,9 +198,6 @@ body {
 
 .nbadge { font-size: 10px; color: var(--light); border-radius: 10px; padding: 1px 5px; min-width: 16px; text-align: center; flex-shrink: 0; }
 
-.nitem.n-late { color: var(--accent); }
-.nitem.n-late:hover, .nitem.n-late.active { background: var(--accent-soft); color: var(--accent); }
-.nitem.n-late .nbadge { color: var(--accent); }
 .nitem.n-bday { color: var(--accent); }
 .nitem.n-bday:hover, .nitem.n-bday.active { background: var(--bday-bg); color: var(--accent); }
 .nitem.n-bday .nbadge { color: var(--accent); }
@@ -1873,20 +1870,16 @@ body.presentation #exitPresentBtn{ display:flex; }
           <span class="nitem-inner"><span class="nitem-label">Aujourd'hui</span></span>
           <span class="nbadge" id="b-today"></span>
         </button>
-        <button class="nitem n-late" id="n-late" onclick="setView('late')" style="display:none">
-          <span class="nitem-inner"><span class="nitem-label">En retard</span></span>
-          <span class="nbadge" id="b-late"></span>
-        </button>
         <button class="nitem" id="n-week" onclick="setView('week')">
-          <span class="nitem-inner"><span class="nitem-label">Ma semaine</span></span>
+          <span class="nitem-inner"><span class="nitem-label">Cette semaine</span></span>
           <span class="nbadge" id="b-week"></span>
         </button>
         <button class="nitem" id="n-month" onclick="setView('month')">
-          <span class="nitem-inner"><span class="nitem-label">Ce mois</span></span>
+          <span class="nitem-inner"><span class="nitem-label">Mois en cours</span></span>
           <span class="nbadge" id="b-month"></span>
         </button>
         <button class="nitem" id="n-year" onclick="setView('year')">
-          <span class="nitem-inner"><span class="nitem-label">Cette année</span></span>
+          <span class="nitem-inner"><span class="nitem-label">Année</span></span>
           <span class="nbadge" id="b-year"></span>
         </button>
         <button class="nitem n-bday" id="n-bdays" onclick="setView('bdays')">
@@ -2298,10 +2291,9 @@ body.presentation #exitPresentBtn{ display:flex; }
       <label>Vue par défaut à l'ouverture de l'onglet Bujo</label>
       <select id="wcfgDefaultView">
         <option value="today">Aujourd'hui</option>
-        <option value="late">En retard</option>
-        <option value="week">Ma semaine</option>
-        <option value="month">Ce mois</option>
-        <option value="year">Cette année</option>
+        <option value="week">Cette semaine</option>
+        <option value="month">Mois en cours</option>
+        <option value="year">Année</option>
         <option value="bdays">Anniversaires</option>
       </select>
     </div>
@@ -2537,7 +2529,7 @@ function wcfgRefreshFields() {
   const hex = CFG.accent || '#e8a020';
   document.getElementById('wcfgAccentHex').value = hex;
   document.getElementById('wcfgAccentPicker').value = /^#[0-9a-fA-F]{6}$/.test(hex) ? hex : '#e8a020';
-  document.getElementById('wcfgDefaultView').value = CFG.default_bujo_view || 'today';
+  document.getElementById('wcfgDefaultView').value = (CFG.default_bujo_view === 'late' ? 'today' : CFG.default_bujo_view) || 'today';
   wcfgRefreshToggles();
 }
 
@@ -3235,6 +3227,7 @@ function archiveProjet(i){
 //  setView : change la vue et re-rend TOUJOURS
 // ══════════════════════════════════════════════════════
 function setView(v) {
+  if (v === 'late') v = 'today'; // la vue dédiée "En retard" a été retirée (déjà visible dans Aujourd'hui / Semaine / Mois)
   if (v === 'bdays' && !cfgOn('bday_on')) v = 'today';
   currentView = v;
   // Mettre à jour les boutons nav (y compris ceux générés dynamiquement)
@@ -3250,7 +3243,6 @@ function setView(v) {
 
 function renderSidebar() {
   // Badges
-  const late  = tasks.filter(isLate);
   const todayT = tasks.filter(t=>!t.bday&&t.date===todayStr&&!t.done);
   const todayB = cfgOn('bday_on') ? tasks.filter(t=>t.bday&&bdayNext(t)?.ds===todayStr) : [];
   const weekT  = tasks.filter(t=>isWeek(t)&&!t.done);
@@ -3261,9 +3253,6 @@ function renderSidebar() {
   document.getElementById('b-month').textContent = monthT.length||'';
   document.getElementById('b-year').textContent  = yearT.length||'';
   document.getElementById('b-bdays').textContent = tasks.filter(t=>t.bday).length||'';
-  const nl=document.getElementById('n-late');
-  document.getElementById('b-late').textContent = late.length||'';
-  nl.style.display = late.length?'flex':'none';
 
   renderNodatePanel();
 }
