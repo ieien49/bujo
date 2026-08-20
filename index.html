@@ -487,6 +487,7 @@ select.cfilt { cursor: pointer; }
 .presets { display: flex; flex-wrap: wrap; gap: 3px; margin-top: 5px; }
 .preset { font-size: 10px; padding: 2px 7px; border: 1px solid var(--border); border-radius: 20px; background: var(--bg-soft); color: var(--muted); cursor: pointer; font-family: inherit; transition: background .1s; }
 .preset:hover { background: var(--bg-hover); border-color: var(--accent); }
+.preset.active { background: var(--accent); border-color: var(--accent); color: #fff; }
 .tog-row { display: flex; align-items: center; justify-content: space-between; padding: 7px 9px; border: 1px solid var(--border); border-radius: var(--radius); cursor: pointer; transition: background .12s; }
 .tog-row:hover { background: var(--bday-bg); border-color: var(--bday-border); }
 .tog-label { font-size: 12px; color: var(--muted); display: flex; align-items: center; gap: 7px; }
@@ -704,6 +705,85 @@ select.cfilt { cursor: pointer; }
 .bday-row svg { flex-shrink: 0; color: var(--accent); }
 .bday-row-name { flex: 1; word-break: break-word; }
 .bday-row-empty { font-size: 11px; color: var(--light); font-style: italic; padding: 2px 0; }
+
+/* Vue Mois / Vue Année — en-tête commun avec navigation */
+.mv-hdr { display: flex; align-items: center; gap: 8px; margin-bottom: 14px; }
+.mv-nav {
+  width: 24px; height: 24px; border-radius: 6px; border: 1px solid var(--border);
+  background: var(--bg-soft); color: var(--muted); cursor: pointer; font-size: 14px;
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+}
+.mv-nav:hover { background: var(--bg-hover); border-color: var(--accent); color: var(--accent); }
+.mv-title { font-family: 'Lora', Georgia, serif; font-size: 17px; font-weight: 600; text-transform: capitalize; }
+.mv-today-btn {
+  margin-left: auto; font-size: 10.5px; padding: 4px 9px; border-radius: 20px;
+  border: 1px solid var(--border); background: var(--bg-soft); color: var(--muted); cursor: pointer;
+}
+.mv-today-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+/* Vue Mois — grille calendrier pleine taille */
+.mv-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; margin-bottom: 16px; }
+.mv-day-name { font-size: 9.5px; font-weight: 600; text-transform: uppercase; color: var(--light); text-align: center; padding-bottom: 4px; }
+.mv-day {
+  aspect-ratio: 1; border: 1px solid var(--border); border-radius: 8px; padding: 5px 6px;
+  cursor: pointer; display: flex; flex-direction: column; justify-content: space-between;
+  transition: background .1s, border-color .1s;
+}
+.mv-day:hover { background: var(--bg-hover); border-color: var(--accent); }
+.mv-day.mv-other { visibility: hidden; cursor: default; }
+.mv-day.mv-today { border-color: var(--accent); border-width: 1.5px; }
+.mv-day-num { font-size: 12px; color: var(--text); }
+.mv-day.mv-today .mv-day-num { color: var(--accent); font-weight: 700; }
+.mv-dots { display: flex; gap: 3px; }
+.mv-dot { width: 5px; height: 5px; border-radius: 50%; }
+.mv-dot-task { background: var(--accent); }
+.mv-dot-bday { background: var(--bday-text, #c26fae); }
+
+/* Vue Année — 12 mini calendriers */
+.yv-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 10px; margin-bottom: 16px; }
+.yv-month { background: var(--bg-soft); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
+.yv-month.yv-month-current { border-color: var(--accent); border-width: 1.5px; box-shadow: 0 0 0 1px var(--accent); }
+.yv-month-hdr {
+  font-size: 10.5px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .04em;
+  padding: 8px 10px 6px; border-bottom: 1px solid var(--border); cursor: pointer;
+}
+.yv-month.yv-month-current .yv-month-hdr { color: var(--accent); border-bottom-color: var(--accent-soft); }
+.yv-month-hdr:hover { text-decoration: underline; }
+.yv-mini-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 1px; padding: 6px; }
+.yv-mini-day {
+  position: relative; aspect-ratio: 1; font-size: 9px; color: var(--muted);
+  display: flex; align-items: center; justify-content: center; border-radius: 3px; cursor: pointer;
+}
+.yv-mini-day:hover { background: var(--bg-hover); }
+.yv-mini-day.yv-other { visibility: hidden; cursor: default; }
+.yv-mini-day.yv-today { background: var(--accent); color: #fff; font-weight: 700; }
+.yv-mini-day.yv-has::after {
+  content: ''; position: absolute; bottom: 1px; width: 3px; height: 3px; border-radius: 50%; background: var(--accent);
+}
+.yv-mini-day.yv-today.yv-has::after { background: #fff; }
+.yv-add-btn {
+  position: absolute; inset: 0; width: 100%; height: 100%; border: none; background: transparent;
+  color: var(--accent); font-size: 11px; font-weight: 700; cursor: pointer; opacity: 0; border-radius: 3px;
+}
+.yv-mini-day:hover .yv-add-btn { opacity: 1; background: var(--accent-soft); }
+
+/* Panneau global "Sans date" — visible en permanence dans la sidebar */
+.nodate-panel { border-top: 1px solid var(--border); padding-top: 10px; margin-top: 4px; }
+.nodate-hdr { display: flex; align-items: center; gap: 6px; padding: 0 6px; margin-bottom: 6px; }
+.nodate-title { font-size: 9px; font-weight: 600; letter-spacing: .09em; text-transform: uppercase; color: var(--light); }
+.nodate-add { padding: 0 6px; margin-bottom: 6px; }
+.nodate-add input {
+  width: 100%; font-size: 11.5px; padding: 5px 8px; border: 1px solid var(--border); border-radius: 6px;
+  background: var(--bg); color: var(--text); font-family: inherit;
+}
+.nodate-add input:focus { outline: none; border-color: var(--accent); }
+.nodate-list { display: flex; flex-direction: column; gap: 2px; max-height: 160px; overflow-y: auto; }
+.nodate-item { display: flex; align-items: center; gap: 6px; padding: 4px 6px; border-radius: 6px; cursor: pointer; font-size: 11.5px; }
+.nodate-item:hover { background: var(--bg-hover); }
+.nodate-item.done .nodate-name { text-decoration: line-through; color: var(--muted); }
+.nodate-chk { width: 10px; height: 10px; border-radius: 50%; border: 1.3px solid var(--border); flex-shrink: 0; cursor: pointer; }
+.nodate-chk.checked { background: var(--accent); border-color: var(--accent); }
+.nodate-name { flex: 1; word-break: break-word; }
 
 .week-col-title {
   font-size: 9px; font-weight: 600; letter-spacing: .1em;
@@ -1802,6 +1882,14 @@ body.presentation #exitPresentBtn{ display:flex; }
           <span class="nitem-inner"><span class="nitem-label">Ma semaine</span></span>
           <span class="nbadge" id="b-week"></span>
         </button>
+        <button class="nitem" id="n-month" onclick="setView('month')">
+          <span class="nitem-inner"><span class="nitem-label">Ce mois</span></span>
+          <span class="nbadge" id="b-month"></span>
+        </button>
+        <button class="nitem" id="n-year" onclick="setView('year')">
+          <span class="nitem-inner"><span class="nitem-label">Cette année</span></span>
+          <span class="nbadge" id="b-year"></span>
+        </button>
         <button class="nitem n-bday" id="n-bdays" onclick="setView('bdays')">
           <span class="nitem-inner"><span class="nitem-label">Anniversaires</span></span>
           <span class="nbadge" id="b-bdays"></span>
@@ -1810,8 +1898,8 @@ body.presentation #exitPresentBtn{ display:flex; }
 
       <div class="nav-div"></div>
 
-      <!-- Future logs (dynamique) -->
-      <div id="futureLogs"></div>
+      <!-- Panneau global "Sans date" (toujours visible, quelle que soit la vue) -->
+      <div class="nodate-panel" id="nodatePanel"></div>
 
     </div>
 
@@ -2213,6 +2301,8 @@ body.presentation #exitPresentBtn{ display:flex; }
         <option value="today">Aujourd'hui</option>
         <option value="late">En retard</option>
         <option value="week">Ma semaine</option>
+        <option value="month">Ce mois</option>
+        <option value="year">Cette année</option>
         <option value="bdays">Anniversaires</option>
       </select>
     </div>
@@ -2229,10 +2319,6 @@ body.presentation #exitPresentBtn{ display:flex; }
     <div class="wcfg-tog-row" onclick="wcfgToggle('col_cal_on')">
       <span class="wcfg-tog-label">Mini calendrier (sidebar)</span>
       <div class="wcfg-tog-sw" id="wcfg-tog-col_cal_on"></div>
-    </div>
-    <div class="wcfg-tog-row" onclick="wcfgToggle('col_futurelogs_on')">
-      <span class="wcfg-tog-label">Future logs (navigation mois/année)</span>
-      <div class="wcfg-tog-sw" id="wcfg-tog-col_futurelogs_on"></div>
     </div>
     <div class="wcfg-tog-row" onclick="wcfgToggle('col_week_on')">
       <span class="wcfg-tog-label">Agenda semaine (colonne droite)</span>
@@ -2283,7 +2369,7 @@ body.presentation #exitPresentBtn{ display:flex; }
     </div>
     <div class="bf">
       <label id="bmodDateLbl">Date</label>
-      <input type="text" id="bmodDate" placeholder="2025-04-11 · 2025-04 · 2025">
+      <input type="text" id="bmodDate" placeholder="2025-04-11 · 2025-04 · 2025" oninput="isNoDate=false;refreshNoDateUI()">
       <div class="bhint" id="bmodDateHint">Date complète · mois · année seulement</div>
       <div class="presets" id="bmodPresets">
         <button class="preset" onclick="setPreset('today')">Aujourd'hui</button>
@@ -2293,6 +2379,7 @@ body.presentation #exitPresentBtn{ display:flex; }
         <button class="preset" onclick="setPreset('nextmonth')">Mois prochain</button>
         <button class="preset" onclick="setPreset('thisyear')">Cette année</button>
         <button class="preset" onclick="setPreset('nextyear')">An prochain</button>
+        <button class="preset" id="presetNoDate" onclick="setPreset('nodate')" title="Tâche à planifier plus tard, sans date fixée">Sans date</button>
       </div>
     </div>
     <div class="bf">
@@ -2413,7 +2500,6 @@ function applyConfigValues() {
   document.getElementById('bujoProjetCol').style.display = cfgOn('projet_on') ? '' : 'none';
   document.getElementById('bujoWeekCol').style.display = cfgOn('col_week_on') ? '' : 'none';
   document.querySelector('.cal-wrap').style.display = cfgOn('col_cal_on') ? '' : 'none';
-  document.getElementById('futureLogs').style.display = cfgOn('col_futurelogs_on') ? '' : 'none';
 
   const activeTab = document.querySelector('.app-tab.active');
   if (activeTab && activeTab.style.display === 'none') {
@@ -2429,7 +2515,7 @@ function applyConfigValues() {
 // ══════════════════════════════════════════════════════
 let wcfgRowIds = {};
 let wcfgSaveT = null;
-const WCFG_TOGGLE_KEYS = ['bujo_on','lectures_on','collections_on','outliner_on','mindmap_on','bday_on','projet_on','col_cal_on','col_futurelogs_on','col_week_on'];
+const WCFG_TOGGLE_KEYS = ['bujo_on','lectures_on','collections_on','outliner_on','mindmap_on','bday_on','projet_on','col_cal_on','col_week_on'];
 const WCFG_ALL_KEYS = ['titre','accent','label_bujo','label_lectures','label_collections','label_outliner','label_mindmap','default_bujo_view', ...WCFG_TOGGLE_KEYS];
 
 function wcfgToggle(key) {
@@ -2661,11 +2747,14 @@ let calY = today.getFullYear(), calM = today.getMonth();
 
 // Vue bujo — valeur courante
 let currentView = 'today';
+let currentMonthKey = `${today.getFullYear()}-${pad(today.getMonth()+1)}`; // navigation vue "Mois"
+let currentYearKey  = `${today.getFullYear()}`; // navigation vue "Année"
 let bujoWeekMode = (() => { try { return localStorage.getItem('bujoWidget_weekMode_' + CACHE_NS) || 'kanban'; } catch(e) { return 'kanban'; } })();
 let weekKanbanSortables = [];
 
 // Modale bujo
 let editIdx  = null;
+let isNoDate = false;
 let isBday   = false;
 
 // Lectures
@@ -3157,36 +3246,18 @@ function renderSidebar() {
   const todayT = tasks.filter(t=>!t.bday&&t.date===todayStr&&!t.done);
   const todayB = cfgOn('bday_on') ? tasks.filter(t=>t.bday&&bdayNext(t)?.ds===todayStr) : [];
   const weekT  = tasks.filter(t=>isWeek(t)&&!t.done);
+  const monthT = tasks.filter(t=>!t.bday&&!t.done&&(t.date||'').startsWith(currentMonthKey));
+  const yearT  = tasks.filter(t=>!t.bday&&!t.done&&(t.date||'').startsWith(currentYearKey));
   document.getElementById('b-today').textContent = (todayT.length+todayB.length)||'';
   document.getElementById('b-week').textContent  = weekT.length||'';
+  document.getElementById('b-month').textContent = monthT.length||'';
+  document.getElementById('b-year').textContent  = yearT.length||'';
   document.getElementById('b-bdays').textContent = tasks.filter(t=>t.bday).length||'';
   const nl=document.getElementById('n-late');
   document.getElementById('b-late').textContent = late.length||'';
   nl.style.display = late.length?'flex':'none';
 
-  // Future logs
-  const mKeys=[...new Set(tasks.filter(t=>classify(t)==='monthly').map(t=>t.date))].sort();
-  const yKeys=[...new Set(tasks.filter(t=>classify(t)==='yearly').map(t=>t.date))].sort();
-  let html='';
-  if(mKeys.length||yKeys.length){
-    html+=`<div class="nav-sec-title" style="font-size:9px;font-weight:500;letter-spacing:.09em;text-transform:uppercase;color:var(--light);margin-bottom:3px;padding:0 6px">Future logs</div>`;
-    mKeys.forEach(k=>{
-      const c=tasks.filter(t=>t.date===k&&!t.done).length;
-      const a=currentView===`month:${k}`?' active':'';
-      // data-v sert à retrouver le bon bouton dans setView
-      html+=`<button class="nitem${a}" data-v="month:${k}" onclick="setView('month:${k}')">
-        <span class="nitem-inner"><span class="nitem-label">${fmtM(k)}</span></span>
-        <span class="nbadge">${c||''}</span></button>`;
-    });
-    yKeys.forEach(k=>{
-      const c=tasks.filter(t=>t.date===k&&!t.done).length;
-      const a=currentView===`year:${k}`?' active':'';
-      html+=`<button class="nitem${a}" data-v="year:${k}" onclick="setView('year:${k}')">
-        <span class="nitem-inner"><span class="nitem-label">${k}</span></span>
-        <span class="nbadge">${c||''}</span></button>`;
-    });
-  }
-  document.getElementById('futureLogs').innerHTML=html;
+  renderNodatePanel();
 }
 
 function renderMain() {
@@ -3307,19 +3378,11 @@ const todayB = cfgOn('bday_on') ? tasks.filter(t=>t.bday&&bdayNext(t)?.ds===toda
       html+=`</div>`;
     } else html=`<div class="empty-bujo">Aucun anniversaire enregistré</div>`;
 
-  } else if(v.startsWith('month:')){
-    const k=v.slice(6);
-    const ts=tasks.filter(t=>t.date===k&&!t.bday);
-    html+=`<div class="section"><div class="sec-label">${fmtM(k)}</div>`;
-    html+=ts.length?ts.map(t=>tHTML(t,tasks.indexOf(t))).join(''):`<div class="empty-bujo" style="text-align:left;font-size:11px;padding:8px 0">Aucune tâche</div>`;
-    html+=`</div>`;
+  } else if(v==='month'){
+    html += renderMonthView();
 
-  } else if(v.startsWith('year:')){
-    const k=v.slice(5);
-    const ts=tasks.filter(t=>t.date===k&&!t.bday);
-    html+=`<div class="section"><div class="sec-label">${k}</div>`;
-    html+=ts.length?ts.map(t=>tHTML(t,tasks.indexOf(t))).join(''):`<div class="empty-bujo" style="text-align:left;font-size:11px;padding:8px 0">Aucune tâche</div>`;
-    html+=`</div>`;
+  } else if(v==='year'){
+    html += renderYearView();
   }
 
   const quickAddHTML = `<div class="qadd-wrap"><input type="text" id="quickAddInput" class="qadd-input" placeholder="Nouvelle tâche pour aujourd'hui…" onkeydown="if(event.key==='Enter')quickAddTask(this)"></div>`;
@@ -3336,6 +3399,194 @@ function setBujoWeekMode(mode){
   bujoWeekMode = mode;
   try { localStorage.setItem('bujoWidget_weekMode_' + CACHE_NS, mode); } catch(e) {}
   renderMain();
+}
+
+// ══════════════════════════════════════════════════════
+//  BUJO — VUE MOIS (Monthly Log)
+// ══════════════════════════════════════════════════════
+function monthNav(delta){
+  const [y,m] = currentMonthKey.split('-').map(Number);
+  const d = new Date(y, m-1+delta, 1);
+  currentMonthKey = `${d.getFullYear()}-${pad(d.getMonth()+1)}`;
+  renderMain();
+}
+function monthGoToday(){
+  currentMonthKey = `${today.getFullYear()}-${pad(today.getMonth()+1)}`;
+  renderMain();
+}
+function goToMonth(monthKey){
+  currentMonthKey = monthKey;
+  setView('month');
+}
+function renderMonthView(){
+  const [y,m] = currentMonthKey.split('-').map(Number);
+  const off = (new Date(y,m-1,1).getDay()+6)%7;
+  const dim = new Date(y,m,0).getDate();
+  const tds = new Set(tasks.filter(t=>!t.bday&&classify(t)==='full'&&t.date.startsWith(currentMonthKey)).map(t=>t.date));
+  const bds = new Set();
+  if (cfgOn('bday_on')) {
+    tasks.filter(t=>t.bday).forEach(t=>{
+      const mx = (t.date||'').match(/^(\d{4})-(\d{2})-(\d{2})$/);
+      if (mx && parseInt(mx[2],10)===m) bds.add(`${y}-${pad(m)}-${mx[3]}`);
+    });
+  }
+  let grid = `<div class="mv-grid">`;
+  ['L','M','M','J','V','S','D'].forEach(d=>grid+=`<div class="mv-day-name">${d}</div>`);
+  for(let i=0;i<off;i++) grid+=`<div class="mv-day mv-other"></div>`;
+  for(let d=1; d<=dim; d++){
+    const ds = `${y}-${pad(m)}-${pad(d)}`;
+    const isToday = ds===todayStr;
+    const has = tds.has(ds)||bds.has(ds);
+    grid += `<div class="mv-day${isToday?' mv-today':''}${has?' mv-has':''}" onclick="openBmod(undefined,'${ds}')" title="Ajouter une tâche le ${d}/${pad(m)}">
+      <span class="mv-day-num">${d}</span>
+      <span class="mv-dots">${tds.has(ds)?'<span class="mv-dot mv-dot-task"></span>':''}${bds.has(ds)?'<span class="mv-dot mv-dot-bday"></span>':''}</span>
+    </div>`;
+  }
+  grid += `</div>`;
+
+  // Tâches datées du mois, groupées par jour
+  const wg={};
+  tasks.filter(t=>!t.bday&&classify(t)==='full'&&t.date.startsWith(currentMonthKey)).sort((a,b)=>a.date.localeCompare(b.date)).forEach(t=>{
+    if(!wg[t.date]) wg[t.date]=[]; wg[t.date].push(t);
+  });
+  if (cfgOn('bday_on')) {
+    tasks.forEach((t,i)=>{
+      if(!t.bday) return;
+      const mx=(t.date||'').match(/^(\d{4})-(\d{2})-(\d{2})$/); if(!mx||parseInt(mx[2],10)!==m) return;
+      const ds=`${y}-${pad(m)}-${mx[3]}`;
+      const age = y - parseInt(mx[1],10);
+      if(!wg[ds]) wg[ds]=[]; wg[ds].push({...t,_age:age,_idx:i});
+    });
+  }
+  const dayKeys = Object.keys(wg).sort();
+  let listHTML='';
+  if(dayKeys.length){
+    listHTML += `<div class="section"><div class="sec-label">Tâches datées</div>`;
+    dayKeys.forEach(k=>{
+      const {lbl,isT}=dayLabel(k);
+      listHTML += `<div class="day-group"><div class="day-hdr${isT?' dh-today':''}">${lbl}</div>`;
+      listHTML += wg[k].map(t=>tHTML(t,t._idx!==undefined?t._idx:tasks.indexOf(t),t._age)).join('');
+      listHTML += `</div>`;
+    });
+    listHTML += `</div>`;
+  }
+
+  // Tâches à précision "mois" (Future Log) rattachées à ce mois
+  const monthlyOnly = tasks.filter(t=>!t.bday&&classify(t)==='monthly'&&t.date===currentMonthKey);
+  let monthlyHTML='';
+  if(monthlyOnly.length){
+    monthlyHTML += `<div class="section"><div class="sec-label">Ce mois, sans jour précis</div>`;
+    monthlyHTML += monthlyOnly.map(t=>tHTML(t,tasks.indexOf(t))).join('');
+    monthlyHTML += `</div>`;
+  }
+
+  if(!dayKeys.length && !monthlyOnly.length){
+    listHTML += `<div class="empty-bujo" style="text-align:left;font-size:11px;padding:8px 0">Aucune tâche ce mois-ci — clique sur un jour du calendrier pour en ajouter une.</div>`;
+  }
+
+  return `<div class="mv-hdr">
+      <button class="mv-nav" onclick="monthNav(-1)">&#8249;</button>
+      <div class="mv-title">${fmtM(currentMonthKey)}</div>
+      <button class="mv-nav" onclick="monthNav(1)">&#8250;</button>
+      <button class="mv-today-btn" onclick="monthGoToday()">Aujourd'hui</button>
+    </div>${grid}${monthlyHTML}${listHTML}`;
+}
+
+// ══════════════════════════════════════════════════════
+//  BUJO — VUE ANNÉE (Future Log calendaire)
+// ══════════════════════════════════════════════════════
+function yearNav(delta){
+  currentYearKey = String(parseInt(currentYearKey,10)+delta);
+  renderMain();
+}
+function yearGoToday(){
+  currentYearKey = String(today.getFullYear());
+  renderMain();
+}
+function miniMonthGrid(y,m,todayMonthKey){
+  const off = (new Date(y,m,1).getDay()+6)%7;
+  const dim = new Date(y,m+1,0).getDate();
+  const tds = new Set(tasks.filter(t=>!t.bday&&classify(t)==='full'&&t.date.startsWith(`${y}-${pad(m+1)}`)).map(t=>t.date));
+  const bds = new Set();
+  if (cfgOn('bday_on')) {
+    tasks.filter(t=>t.bday).forEach(t=>{
+      const mx=(t.date||'').match(/^(\d{4})-(\d{2})-(\d{2})$/);
+      if(mx && parseInt(mx[2],10)===m+1) bds.add(`${y}-${pad(m+1)}-${mx[3]}`);
+    });
+  }
+  const monthKey = `${y}-${pad(m+1)}`;
+  let html = `<div class="yv-month${monthKey===todayMonthKey?' yv-month-current':''}">
+    <div class="yv-month-hdr" onclick="goToMonth('${monthKey}')">${MFR[m]}</div>
+    <div class="yv-mini-grid">`;
+  for(let i=0;i<off;i++) html+=`<div class="yv-mini-day yv-other"></div>`;
+  for(let d=1; d<=dim; d++){
+    const ds=`${y}-${pad(m+1)}-${pad(d)}`;
+    const isToday = ds===todayStr;
+    const has = tds.has(ds)||bds.has(ds);
+    html += `<div class="yv-mini-day${isToday?' yv-today':''}${has?' yv-has':''}" onclick="goToMonth('${monthKey}')">
+      ${d}
+      <button class="yv-add-btn" onclick="event.stopPropagation();openBmod(undefined,'${ds}')" title="Ajouter une tâche">+</button>
+    </div>`;
+  }
+  html += `</div></div>`;
+  return html;
+}
+function renderYearView(){
+  const y = parseInt(currentYearKey,10);
+  const todayMonthKey = `${today.getFullYear()}-${pad(today.getMonth()+1)}`;
+  let grid = `<div class="yv-grid">`;
+  for(let m=0;m<12;m++) grid += miniMonthGrid(y,m,todayMonthKey);
+  grid += `</div>`;
+
+  const yearlyOnly = tasks.filter(t=>!t.bday&&classify(t)==='yearly'&&t.date===currentYearKey);
+  let yearlyHTML='';
+  if(yearlyOnly.length){
+    yearlyHTML += `<div class="section"><div class="sec-label">Cette année, sans mois précis</div>`;
+    yearlyHTML += yearlyOnly.map(t=>tHTML(t,tasks.indexOf(t))).join('');
+    yearlyHTML += `</div>`;
+  }
+
+  return `<div class="mv-hdr">
+      <button class="mv-nav" onclick="yearNav(-1)">&#8249;</button>
+      <div class="mv-title">${currentYearKey}</div>
+      <button class="mv-nav" onclick="yearNav(1)">&#8250;</button>
+      <button class="mv-today-btn" onclick="yearGoToday()">Aujourd'hui</button>
+    </div>${grid}${yearlyHTML}`;
+}
+
+// ══════════════════════════════════════════════════════
+//  BUJO — PANNEAU GLOBAL "SANS DATE"
+//  Toujours visible dans la sidebar, quelle que soit la vue.
+// ══════════════════════════════════════════════════════
+function renderNodatePanel(){
+  const el = document.getElementById('nodatePanel');
+  if(!el) return;
+  const nd = tasks.filter(t=>!t.bday&&classify(t)==='none');
+  let html = `<div class="nodate-hdr">
+      <span class="nodate-title">Sans date</span>
+      <span class="nbadge">${nd.length||''}</span>
+    </div>
+    <div class="nodate-add"><input type="text" id="nodateAddInput" placeholder="+ tâche sans date…" onkeydown="if(event.key==='Enter')addNoDateTask(this)"></div>`;
+  if(nd.length){
+    html += `<div class="nodate-list">` + nd.map(t=>{
+      const idx = tasks.indexOf(t);
+      return `<div class="nodate-item${t.done?' done':''}" ondblclick="openBmod(${idx})">
+        <div class="nodate-chk${t.done?' checked':''}" onclick="event.stopPropagation();toggleT(${idx})"></div>
+        <span class="nodate-name">${esc(t.name)}</span>
+      </div>`;
+    }).join('') + `</div>`;
+  }
+  el.innerHTML = html;
+}
+function addNoDateTask(inputEl){
+  const name = inputEl.value.trim();
+  if(!name) return;
+  const nt = {name, date:'', done:false, bday:false, projet:false};
+  tasks.push(nt);
+  gBujoAdd(nt);
+  renderMain();
+  const ni = document.getElementById('nodateAddInput');
+  if(ni) ni.focus();
 }
 
 function renderWeekKanban(){
@@ -3467,29 +3718,31 @@ function openBmodBday() {
   document.getElementById('bdayTogWrap').style.display = 'block'; // on le réaffiche ici
 }
 
-function openBmod(i){
-  editIdx=i!==undefined?i:null;
+function openBmod(i,presetDate){
+  editIdx=i!==undefined&&i!==null?i:null;
   const t=editIdx!==null?tasks[editIdx]:null;
   isBday=t?!!t.bday:false;
   isProjet = t ? !!t.projet : false;
   isUrgent = t ? !!t.urgent : false;
+  isNoDate = t ? classify(t)==='none' : false;
   document.getElementById('bmodTitle').textContent=t?(t.bday?'Modifier l\'anniversaire':'Modifier la tâche'):'Nouvelle tâche';
   document.getElementById('bmodName').value=t?t.name:'';
   document.getElementById('btnBdel').style.display=t?'block':'none';
   refreshBdayUI();
   refreshProjetUI();
   refreshUrgentUI();
+  refreshNoDateUI();
   // Masquer le toggle anniversaire APRES refreshBdayUI pour ne pas être écrasé
   const showBdayToggle = t && t.bday && cfgOn('bday_on');
 document.getElementById('bdayTogWrap').style.display = showBdayToggle ? 'block' : 'none';
 document.getElementById('urgentTogWrap').style.display = (t && t.bday && cfgOn('bday_on')) ? 'none' : 'block';
-  document.getElementById('bmodDate').value=t?formatDateForInput(t.date):'';
+  document.getElementById('bmodDate').value = t ? formatDateForInput(t.date) : (presetDate ? formatDateForInput(presetDate) : '');
   document.getElementById('bmodOv').classList.add('open');
   document.getElementById('doneTogWrap').style.display = (t && !t.bday) ? 'block' : 'none';
   refreshDoneUI();
   setTimeout(()=>document.getElementById('bmodName').focus(),60);
 }
-function closeBmod(){document.getElementById('bmodOv').classList.remove('open');editIdx=null;isBday=false;isUrgent=false;}
+function closeBmod(){document.getElementById('bmodOv').classList.remove('open');editIdx=null;isBday=false;isUrgent=false;isNoDate=false;}
 function handleBmodClick(e){if(e.target===document.getElementById('bmodOv'))closeBmod();}
 function toggleBmodDone(){
   if(editIdx===null||editIdx===undefined) return;
@@ -3532,6 +3785,13 @@ function refreshUrgentUI() {
 
 
 function setPreset(p){
+  if(p==='nodate'){
+    isNoDate=true;
+    document.getElementById('bmodDate').value='';
+    refreshNoDateUI();
+    return;
+  }
+  isNoDate=false;
   const x=new Date(today);let v='';
   if(p==='today')v=todayStr;
   if(p==='tomorrow'){x.setDate(x.getDate()+1);v=`${x.getFullYear()}-${pad(x.getMonth()+1)}-${pad(x.getDate())}`;}
@@ -3543,6 +3803,11 @@ function setPreset(p){
   if(p==='thisyear')v=`${today.getFullYear()}`;
   if(p==='nextyear')v=`${today.getFullYear()+1}`;
   document.getElementById('bmodDate').value=formatDateForInput(v);
+  refreshNoDateUI();
+}
+function refreshNoDateUI(){
+  const el=document.getElementById('presetNoDate');
+  if(el) el.classList.toggle('active', isNoDate);
 }
 
 function formatDateForInput(s) {
@@ -3577,7 +3842,7 @@ function saveBTask(){
   const name=document.getElementById('bmodName').value.trim();
   // Si aucune date saisie et pas un anniversaire → date du jour par défaut
   let date=parseInputDate(document.getElementById('bmodDate').value);
-  if(!date && !isBday) date=todayStr;
+  if(!date && !isBday && !isNoDate) date=todayStr;
   if(!name){document.getElementById('bmodName').focus();return;}
   if(editIdx!==null){
     tasks[editIdx].name=name; tasks[editIdx].date=date; tasks[editIdx].bday=isBday; tasks[editIdx].projet=isProjet; tasks[editIdx].urgent=isUrgent;
