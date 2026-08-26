@@ -119,7 +119,39 @@ body {
   display: flex; flex-direction: column;
   padding: 14px 10px 12px;
   overflow-y: auto; background: var(--bg);
+  transition: width .15s ease;
 }
+
+/* Kanban semaine en pleine largeur : sidebar rétractée par défaut,
+   ré-ouvrable en overlay via le bouton bascule + scrim. */
+#page-bujo.bujo-kanban-full .bujo-sidebar {
+  width: 0; padding-left: 0; padding-right: 0; border-right: none; overflow: hidden;
+}
+#page-bujo.bujo-kanban-full.bujo-sidebar-open .bujo-sidebar {
+  position: fixed; top: var(--tab-h); left: 0; bottom: 0;
+  width: var(--sidebar-w); padding: 14px 10px 12px;
+  border-right: .5px solid var(--border);
+  box-shadow: 4px 0 24px rgba(0,0,0,.18);
+  z-index: 40; overflow-y: auto;
+}
+.bujo-sidebar-scrim {
+  display: none;
+  position: fixed; top: var(--tab-h); left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,.08); z-index: 35;
+}
+#page-bujo.bujo-kanban-full.bujo-sidebar-open .bujo-sidebar-scrim { display: block; }
+.bujo-toggle-btn {
+  display: none;
+  position: fixed; top: calc(var(--tab-h) + 10px); left: 10px; z-index: 45;
+  align-items: center; justify-content: center;
+  width: 30px; height: 30px; border-radius: 8px;
+  border: 1px solid var(--border); background: var(--bg);
+  cursor: pointer; color: var(--muted);
+  box-shadow: 0 2px 8px rgba(0,0,0,.08);
+  transition: color .12s, border-color .12s;
+}
+.bujo-toggle-btn:hover { color: var(--accent); border-color: var(--accent); }
+#page-bujo.bujo-kanban-full .bujo-toggle-btn { display: flex; }
 
 /* Calendrier */
 .cal-wrap { margin-bottom: 14px; }
@@ -1895,6 +1927,12 @@ body.presentation #exitPresentBtn{ display:flex; }
 
     </div>
 
+    <!-- Overlay de fermeture + bouton bascule (visibles uniquement en Kanban plein écran) -->
+    <div class="bujo-sidebar-scrim" onclick="toggleBujoSidebar(false)"></div>
+    <button class="bujo-toggle-btn" onclick="toggleBujoSidebar()" title="Afficher/masquer le menu">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+    </button>
+
     <!-- Contenu bujo -->
     <div class="bujo-main" id="bujoMain"></div>
     <div class="bujo-proj-col" id="bujoProjetCol"></div>
@@ -2741,6 +2779,7 @@ let currentView = 'today';
 let currentMonthKey = `${today.getFullYear()}-${pad(today.getMonth()+1)}`; // navigation vue "Mois"
 let currentYearKey  = `${today.getFullYear()}`; // navigation vue "Année"
 let bujoWeekMode = (() => { try { return localStorage.getItem('bujoWidget_weekMode_' + CACHE_NS) || 'kanban'; } catch(e) { return 'kanban'; } })();
+let bujoSidebarOpen = false;
 let weekKanbanSortables = [];
 
 // Modale bujo
@@ -3389,7 +3428,16 @@ const todayB = cfgOn('bday_on') ? tasks.filter(t=>t.bday&&bdayNext(t)?.ds===toda
   document.getElementById('bujoProjetCol').style.display = kanbanFull ? 'none' : (cfgOn('projet_on') ? '' : 'none');
   document.getElementById('bujoWeekCol').style.display = kanbanFull ? 'none' : (cfgOn('col_week_on') ? '' : 'none');
 
+  const pageBujoEl = document.getElementById('page-bujo');
+  pageBujoEl.classList.toggle('bujo-kanban-full', kanbanFull);
+  if (!kanbanFull && bujoSidebarOpen) { bujoSidebarOpen = false; pageBujoEl.classList.remove('bujo-sidebar-open'); }
+
   if (v==='week' && bujoWeekMode==='kanban') initWeekKanbanSortable();
+}
+
+function toggleBujoSidebar(force) {
+  bujoSidebarOpen = (typeof force === 'boolean') ? force : !bujoSidebarOpen;
+  document.getElementById('page-bujo').classList.toggle('bujo-sidebar-open', bujoSidebarOpen);
 }
 
 function setBujoWeekMode(mode){
