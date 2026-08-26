@@ -4816,6 +4816,11 @@ function colDisplayName(col) {
 }
 const INBOX_COL_NAME = '📥 Boîte de réception';
 function isInboxCol(col) { return !!col && col.nom === INBOX_COL_NAME; }
+// Première collection "normale" (hors Boîte de réception) ; repli sur l'inbox si aucune autre n'existe.
+function firstSelectableCol() {
+  const others = cols.filter(c => !isInboxCol(c));
+  return others[0] || cols[0] || null;
+}
 const INBOX_ICON_SVG = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-6l-2 3h-4l-2-3H2"/><path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/></svg>';
 function ensureInboxCol() {
   if (cols.some(isInboxCol)) return;
@@ -5856,7 +5861,7 @@ async function loadCollections() {
   if (cachedItems) items = cachedItems;
   if (cachedTags) gristAllTags = cachedTags;
   if (cachedCols || cachedItems) {
-    if (!selColId && cols.length) selColId = cols[0].id;
+    if (!selColId && cols.length) { const fc = firstSelectableCol(); if (fc) selColId = fc.id; }
     renderColSidebar();
     if (selColId) renderColMain();
   }
@@ -5893,7 +5898,7 @@ async function loadCollections() {
     }));
     cacheSet('items', items);
   }
-  if (!selColId && cols.length) selColId = cols[0].id;
+  if (!selColId && cols.length) { const fc = firstSelectableCol(); if (fc) selColId = fc.id; }
   renderColSidebar();
   if (selColId) renderColMain();
 }
@@ -5918,7 +5923,7 @@ function initColDemo() {
     {id:'i6',col_id:'c3',titre:'Idées projet', tag:'perso',  texte:'Un espace pour noter les id\u00e9es au fil de l\u2019eau, sans contrainte de structure.\n\nPeut \u00eatre utilis\u00e9 pour les projets personnels ou professionnels.',url:'',fait:false},
     {id:'i7',col_id:'c3',titre:'Recette carbonara',tag:'cuisine',texte:'Spaghetti, lardons, oeufs, pecorino. Pas de cr\u00e8me !',url:'',fait:false},
   ];
-  if (!selColId && cols.length) selColId = cols[0].id;
+  if (!selColId && cols.length) { const fc = firstSelectableCol(); if (fc) selColId = fc.id; }
   renderColSidebar();
   if (selColId) renderColMain();
 }
