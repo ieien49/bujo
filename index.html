@@ -2078,12 +2078,12 @@ body.presentation #exitPresentBtn{ display:flex; }
 
     <!-- Contenu principal -->
   <div class="lec-main">
-    <div class="lec-workspace" id="lecWorkspace">
-      <div class="lec-view-toggle">
-        <button class="lvt-btn active" id="lvtList" onclick="setLecView('list')" title="Vue liste">
+          <div class="lec-workspace view-card" id="lecWorkspace">
+        <div class="lec-view-toggle">
+          <button class="lvt-btn" id="lvtList" onclick="setLecView('list')" title="Vue liste">
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
         </button>
-        <button class="lvt-btn" id="lvtCard" onclick="setLecView('card')" title="Vue cartes">
+                <button class="lvt-btn active" id="lvtCard" onclick="setLecView('card')" title="Vue cartes">
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="7" height="7" rx="1"/><rect x="15" y="3" width="7" height="7" rx="1"/><rect x="2" y="14" width="7" height="7" rx="1"/><rect x="15" y="14" width="7" height="7" rx="1"/></svg>
         </button>
       </div>
@@ -4323,7 +4323,7 @@ function lecRenderCards(rows){
   });
 }
 
-let lecViewMode='list';
+let lecViewMode='card';
 function setLecView(mode){
   lecViewMode=mode;
   document.getElementById('lecWorkspace').classList.toggle('view-card',mode==='card');
