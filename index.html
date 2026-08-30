@@ -634,6 +634,10 @@ select.cfilt { cursor: pointer; }
   background: var(--bg); outline: none; font-family: inherit; transition: border-color .12s;
 }
 .wcfg-tabrow-input:focus { border-color: var(--accent); }
+  .wcfg-tabrow-move { display: flex; flex-direction: column; gap: 1px; margin-right: 2px; }
+.wcfg-tabrow-move button { border: none; background: var(--bg-soft); color: var(--muted); width: 16px; height: 13px; font-size: 9px; line-height: 1; cursor: pointer; border-radius: 3px; padding: 0; }
+.wcfg-tabrow-move button:hover:not(:disabled) { background: var(--accent); color: #fff; }
+.wcfg-tabrow-move button:disabled { opacity: .3; cursor: default; }
 .wcfg-tog-row {
   display: flex; align-items: center; justify-content: space-between;
   padding: 7px 9px; border: 1px solid var(--border); border-radius: var(--radius);
@@ -1918,7 +1922,7 @@ body.presentation #exitPresentBtn{ display:flex; }
      ONGLETS
      ══════════════════════════════════════════ -->
 <div class="app-tabs">
-<div class="app-tabs-scroll">
+<div class="app-tabs-scroll" id="appTabsScroll">
   <button class="app-tab active" data-tab="bujo" onclick="switchTab('bujo')">
     <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8"/><path d="M3 10a2 2 0 0 1 .709-1.528l7-6a2 2 0 0 1 2.582 0l7 6A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
     <span class="tab-label">Bujo</span>
@@ -2456,38 +2460,46 @@ body.presentation #exitPresentBtn{ display:flex; }
       </div>
     </div>
 
-    <div class="wcfg-section-title">Onglets</div>
-    <div class="wcfg-tabrow">
+       <div class="wcfg-section-title">Onglets</div>
+    <div id="wcfgTabsList">
+    <div class="wcfg-tabrow" data-tab="bujo">
+      <div class="wcfg-tabrow-move"><button onclick="wcfgMoveTab('bujo',-1)">▲</button><button onclick="wcfgMoveTab('bujo',1)">▼</button></div>
       <span class="wcfg-tabrow-key">Bujo</span>
       <input type="text" class="wcfg-tabrow-input" id="wcfgLabelBujo" placeholder="Bujo">
       <div class="wcfg-tog-sw" id="wcfg-tog-bujo_on" onclick="wcfgToggle('bujo_on')"></div>
     </div>
-    <div class="wcfg-tabrow">
+    <div class="wcfg-tabrow" data-tab="lectures">
+      <div class="wcfg-tabrow-move"><button onclick="wcfgMoveTab('lectures',-1)">▲</button><button onclick="wcfgMoveTab('lectures',1)">▼</button></div>
       <span class="wcfg-tabrow-key">Lectures</span>
       <input type="text" class="wcfg-tabrow-input" id="wcfgLabelLectures" placeholder="Lectures">
       <div class="wcfg-tog-sw" id="wcfg-tog-lectures_on" onclick="wcfgToggle('lectures_on')"></div>
     </div>
-    <div class="wcfg-tabrow">
+    <div class="wcfg-tabrow" data-tab="collections">
+      <div class="wcfg-tabrow-move"><button onclick="wcfgMoveTab('collections',-1)">▲</button><button onclick="wcfgMoveTab('collections',1)">▼</button></div>
       <span class="wcfg-tabrow-key">Collections</span>
       <input type="text" class="wcfg-tabrow-input" id="wcfgLabelCollections" placeholder="Collections">
       <div class="wcfg-tog-sw" id="wcfg-tog-collections_on" onclick="wcfgToggle('collections_on')"></div>
     </div>
-    <div class="wcfg-tabrow">
+    <div class="wcfg-tabrow" data-tab="outliner">
+      <div class="wcfg-tabrow-move"><button onclick="wcfgMoveTab('outliner',-1)">▲</button><button onclick="wcfgMoveTab('outliner',1)">▼</button></div>
       <span class="wcfg-tabrow-key">Outliner</span>
       <input type="text" class="wcfg-tabrow-input" id="wcfgLabelOutliner" placeholder="Outliner">
       <div class="wcfg-tog-sw" id="wcfg-tog-outliner_on" onclick="wcfgToggle('outliner_on')"></div>
     </div>
-    <div class="wcfg-tabrow">
+    <div class="wcfg-tabrow" data-tab="mindmap">
+      <div class="wcfg-tabrow-move"><button onclick="wcfgMoveTab('mindmap',-1)">▲</button><button onclick="wcfgMoveTab('mindmap',1)">▼</button></div>
       <span class="wcfg-tabrow-key">Mind Map</span>
       <input type="text" class="wcfg-tabrow-input" id="wcfgLabelMindmap" placeholder="Mind Map">
       <div class="wcfg-tog-sw" id="wcfg-tog-mindmap_on" onclick="wcfgToggle('mindmap_on')"></div>
     </div>
-    <div class="wcfg-tabrow">
+    <div class="wcfg-tabrow" data-tab="recettes">
+      <div class="wcfg-tabrow-move"><button onclick="wcfgMoveTab('recettes',-1)">▲</button><button onclick="wcfgMoveTab('recettes',1)">▼</button></div>
       <span class="wcfg-tabrow-key">Recettes</span>
       <input type="text" class="wcfg-tabrow-input" id="wcfgLabelRecettes" placeholder="Recettes">
       <div class="wcfg-tog-sw" id="wcfg-tog-recettes_on" onclick="wcfgToggle('recettes_on')"></div>
     </div>
-    <div class="wcfg-hint" style="margin-bottom:12px">Le libellé personnalise le nom affiché ; l'interrupteur active ou masque l'onglet.</div>
+    </div>
+    <div class="wcfg-hint" style="margin-bottom:12px">Le libellé personnalise le nom affiché ; l'interrupteur active ou masque l'onglet. Les flèches ▲▼ changent l'ordre d'affichage.</div>
 
     <div class="wcfg-section-title">Modules Bujo</div>
     <div class="wcfg-cf">
@@ -2696,6 +2708,7 @@ function applyConfigValues() {
   document.getElementById('bujoWeekCol').style.display = cfgOn('col_week_on') ? '' : 'none';
   document.querySelector('.cal-wrap').style.display = cfgOn('col_cal_on') ? '' : 'none';
 
+    applyTabOrder();
   const activeTab = document.querySelector('.app-tab.active');
   if (activeTab && activeTab.style.display === 'none') {
     const nextTab = ['bujo','lectures','collections','outliner','mindmap','recettes'].find(t => tabVis[t]);
@@ -2711,8 +2724,51 @@ function applyConfigValues() {
 let wcfgRowIds = {};
 let wcfgSaveT = null;
 const WCFG_TOGGLE_KEYS = ['bujo_on','lectures_on','collections_on','outliner_on','mindmap_on','recettes_on','bday_on','projet_on','col_cal_on','col_week_on'];
-const WCFG_ALL_KEYS = ['titre','accent','label_bujo','label_lectures','label_collections','label_outliner','label_mindmap','label_recettes','default_bujo_view', ...WCFG_TOGGLE_KEYS];
+const WCFG_ALL_KEYS = ['titre','accent','label_bujo','label_lectures','label_collections','label_outliner','label_mindmap','label_recettes','default_bujo_view','tab_order', ...WCFG_TOGGLE_KEYS];
+const DEFAULT_TAB_ORDER = ['bujo','lectures','collections','outliner','mindmap','recettes'];
 
+function getTabOrder() {
+  const saved = (CFG.tab_order || '').split(',').map(s => s.trim()).filter(Boolean);
+  const order = saved.filter(t => DEFAULT_TAB_ORDER.includes(t));
+  DEFAULT_TAB_ORDER.forEach(t => { if (!order.includes(t)) order.push(t); });
+  return order;
+}
+
+function applyTabOrder() {
+  const container = document.getElementById('appTabsScroll');
+  if (!container) return;
+  getTabOrder().forEach(tab => {
+    const el = container.querySelector(`[data-tab="${tab}"]`);
+    if (el) container.appendChild(el);
+  });
+}
+
+function wcfgRenderTabOrderUI() {
+  const list = document.getElementById('wcfgTabsList');
+  if (!list) return;
+  const order = getTabOrder();
+  order.forEach(tab => {
+    const row = list.querySelector(`[data-tab="${tab}"]`);
+    if (row) list.appendChild(row);
+  });
+  order.forEach((tab, i) => {
+    const row = list.querySelector(`[data-tab="${tab}"]`);
+    if (!row) return;
+    const btns = row.querySelectorAll('.wcfg-tabrow-move button');
+    btns[0].disabled = (i === 0);
+    btns[1].disabled = (i === order.length - 1);
+  });
+}
+
+function wcfgMoveTab(tab, dir) {
+  const order = getTabOrder();
+  const i = order.indexOf(tab);
+  const j = i + dir;
+  if (j < 0 || j >= order.length) return;
+  [order[i], order[j]] = [order[j], order[i]];
+  CFG.tab_order = order.join(',');
+  wcfgRenderTabOrderUI();
+}
 function wcfgToggle(key) {
   CFG[key] = (CFG[key] === 'false') ? 'true' : 'false';
   wcfgRefreshToggles();
@@ -2735,7 +2791,8 @@ function wcfgRefreshFields() {
   document.getElementById('wcfgAccentHex').value = hex;
   document.getElementById('wcfgAccentPicker').value = /^#[0-9a-fA-F]{6}$/.test(hex) ? hex : '#e8a020';
   document.getElementById('wcfgDefaultView').value = (CFG.default_bujo_view === 'late' ? 'today' : CFG.default_bujo_view) || 'today';
-  wcfgRefreshToggles();
+    wcfgRefreshToggles();
+  wcfgRenderTabOrderUI();
 }
 
 function openConfigModal() {
