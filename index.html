@@ -2644,6 +2644,11 @@ body.presentation #exitPresentBtn{ display:flex; }
         <div class="tog-sw" id="urgentTog"></div>
       </div>
     </div>
+    <div class="bf">
+      <label>Tags</label>
+      <input type="text" id="bmodTag" placeholder="perso, travail…">
+      <div class="bhint">Séparés par des virgules. Utilisés pour limiter certaines tâches à des profils invités.</div>
+    </div>
     <div class="bmod-act">
       <button class="bd" id="btnBdel" style="display:none" onclick="deleteBTask()">Supprimer</button>
       <button class="bc" onclick="closeBmod()">Annuler</button>
@@ -2787,7 +2792,9 @@ function wcfgAddGuest() {
   const profiles = getGuestProfiles();
   let base = 'invite', slug = base, n = 1;
   while (profiles.some(p => p.slug === slug)) { n++; slug = base + '-' + n; }
-  profiles.push({ slug, label: 'Nouvel invité', tabs: DEFAULT_TAB_ORDER.slice(), cols: (cols||[]).map(c => String(c.id)), titre: '', accent: '' });
+  const allBujoTags = bujoDistinctTags();
+  const bujoHasNoTag = tasks.some(t => !splitTags(t.tag).length);
+  profiles.push({ slug, label: 'Nouvel invité', tabs: DEFAULT_TAB_ORDER.slice(), cols: (cols||[]).map(c => String(c.id)), titre: '', accent: '', bujoTags: bujoHasNoTag ? [...allBujoTags, BUJO_NOTAG] : allBujoTags });
   CFG.guest_profiles = JSON.stringify(profiles);
   wcfgRenderGuests();
 }
@@ -2817,6 +2824,16 @@ function wcfgToggleGuestCol(slug, colId) {
   colId = String(colId);
   const i = p.cols.indexOf(colId);
   if (i === -1) p.cols.push(colId); else p.cols.splice(i,1);
+  CFG.guest_profiles = JSON.stringify(profiles);
+  wcfgRenderGuests();
+}
+function wcfgToggleGuestBujoTag(slug, tag) {
+  const profiles = getGuestProfiles();
+  const p = profiles.find(x => x.slug === slug);
+  if (!p) return;
+  if (!Array.isArray(p.bujoTags)) p.bujoTags = [];
+  const i = p.bujoTags.indexOf(tag);
+  if (i === -1) p.bujoTags.push(tag); else p.bujoTags.splice(i,1);
   CFG.guest_profiles = JSON.stringify(profiles);
   wcfgRenderGuests();
 }
@@ -2869,6 +2886,18 @@ function wcfgRenderGuests() {
       const on = p.cols.includes(String(c.id));
       return `<label class="wcfg-guest-chk"><input type="checkbox" ${on?'checked':''} onchange="wcfgToggleGuestCol('${p.slug}','${c.id}')"> ${esc(c.nom)}</label>`;
     }).join('') : '<span class="wcfg-hint">Aucune collection créée.</span>';
+    const allBujoTags = bujoDistinctTags();
+    const bujoHasNoTag = tasks.some(t => !splitTags(t.tag).length);
+    const bujoTagOptions = bujoHasNoTag ? [...allBujoTags, BUJO_NOTAG] : allBujoTags;
+    const pBujoTags = Array.isArray(p.bujoTags) ? p.bujoTags : [];
+    const bujoTagsH = bujoTagOptions.length ? bujoTagOptions.map(tag => {
+      const on = pBujoTags.includes(tag);
+      const lbl = tag === BUJO_NOTAG ? 'Sans tag' : tag;
+      return `<label class="wcfg-guest-chk"><input type="checkbox" ${on?'checked':''} onchange="wcfgToggleGuestBujoTag('${p.slug}','${tag}')"> ${esc(lbl)}</label>`;
+    }).join('') : '<span class="wcfg-hint">Aucun tag utilisé sur des tâches pour l\'instant.</span>';
+    const bujoTagsSection = p.tabs.includes('bujo') ? `
+      <div class="wcfg-guest-sub">Tâches Bujo visibles (par tag)</div>
+      <div class="wcfg-guest-grid">${bujoTagsH}</div>` : '';
     return `<div class="wcfg-guest-card">
       <div class="wcfg-guest-head">
         <input type="text" class="wcfg-tabrow-input" value="${esc(p.label)}" onchange="wcfgRenameGuest('${p.slug}', this.value)">
@@ -2877,7 +2906,7 @@ function wcfgRenderGuests() {
       <div class="wcfg-guest-sub">Onglets visibles</div>
       <div class="wcfg-guest-grid">${tabsH}</div>
       <div class="wcfg-guest-sub">Collections visibles</div>
-      <div class="wcfg-guest-grid">${colsH}</div>
+      <div class="wcfg-guest-grid">${colsH}</div>${bujoTagsSection}
       <div class="wcfg-guest-sub">Titre du document (laisser vide pour garder le titre par défaut)</div>
       <input type="text" class="wcfg-tabrow-input" placeholder="${esc(CFG.titre || 'Titre par défaut')}" value="${esc(p.titre || '')}" onchange="wcfgSetGuestTitre('${p.slug}', this.value)">
       <div class="wcfg-guest-sub">Couleur d'accent (laisser vide pour garder la couleur par défaut)</div>
@@ -3047,6 +3076,7 @@ const WCFG_REQUIRED_TABLES = [
     { id: 'projet',       type: 'Bool' },
     { id: 'archive',      type: 'Bool' },
     { id: 'urgent',       type: 'Bool' },
+    { id: 'tag',          type: 'Text' },
   ]},
   { id: 'Config', cols: [
     { id: 'cle',    type: 'Text' },
@@ -3322,7 +3352,7 @@ function renderGlobalSearchResults(qRaw) {
   const tabAllowed = t => !guestProfile || guestProfile.tabs.includes(t);
 
   if (tabAllowed('bujo')) {
-    const bujoHits = tasks.map((t, i) => ({ t, i })).filter(({t}) => (t.name || '').toLowerCase().includes(q)).slice(0, 8);
+    const bujoHits = tasks.map((t, i) => ({ t, i })).filter(({t}) => (t.name || '').toLowerCase().includes(q) && taskAllowedForGuest(t)).slice(0, 8);
     if (bujoHits.length) groups.push({ label: 'Bujo', items: bujoHits.map(({t, i}) => ({
       title: t.name || '(sans titre)', sub: t.date || '', onclick: `gsearchGoBujo(${i})`
     })) });
@@ -4229,6 +4259,7 @@ function openBmod(i,presetDate){
   isNoDate = t ? classify(t)==='none' : false;
   document.getElementById('bmodTitle').textContent=t?(t.bday?'Modifier l\'anniversaire':'Modifier la tâche'):'Nouvelle tâche';
   document.getElementById('bmodName').value=t?t.name:'';
+  document.getElementById('bmodTag').value=t?(t.tag||''):'';
   document.getElementById('btnBdel').style.display=t?'block':'none';
   refreshBdayUI();
   refreshProjetUI();
@@ -4342,15 +4373,16 @@ function parseInputDate(s) {
 
 function saveBTask(){
   const name=document.getElementById('bmodName').value.trim();
+  const tag=document.getElementById('bmodTag').value.trim();
   // Si aucune date saisie et pas un anniversaire → date du jour par défaut
   let date=parseInputDate(document.getElementById('bmodDate').value);
   if(!date && !isBday && !isNoDate) date=todayStr;
   if(!name){document.getElementById('bmodName').focus();return;}
   if(editIdx!==null){
-    tasks[editIdx].name=name; tasks[editIdx].date=date; tasks[editIdx].bday=isBday; tasks[editIdx].projet=isProjet; tasks[editIdx].urgent=isUrgent;
+    tasks[editIdx].name=name; tasks[editIdx].date=date; tasks[editIdx].bday=isBday; tasks[editIdx].projet=isProjet; tasks[editIdx].urgent=isUrgent; tasks[editIdx].tag=tag;
     gBujoUpdate(tasks[editIdx]);
   } else {
-    const nt = {name, date, done:false, bday:isBday, projet:isProjet, urgent:isUrgent};
+    const nt = {name, date, done:false, bday:isBday, projet:isProjet, urgent:isUrgent, tag};
     tasks.push(nt); gBujoAdd(nt);
   }
   closeBmod(); renderMain();
@@ -4377,7 +4409,7 @@ async function loadBujo(){
   if(typeof grist==='undefined')return;
   try{
     const raw = await grist.docApi.fetchTable('Bujo');
-    tasks = (raw.id||[]).map((id,i)=>({
+    let loaded = (raw.id||[]).map((id,i)=>({
       id,
       name: String(raw.tache?.[i] ?? ''),
       date: String(raw.date?.[i] ?? ''),
@@ -4386,18 +4418,39 @@ async function loadBujo(){
       projet: !!raw.projet?.[i],
       archive: !!raw.archive?.[i],
       urgent: !!raw.urgent?.[i],
+      tag: String(raw.tag?.[i] ?? ''),
     }));
+    // Un profil invité configuré avec des tags Bujo ne doit voir que les
+    // tâches correspondantes. Si le profil n'a jamais été configuré pour
+    // ça (bujoTags absent), on ne filtre rien, par compatibilité avec les
+    // profils créés avant cette fonctionnalité.
+    if (guestProfile && Array.isArray(guestProfile.bujoTags)) {
+      loaded = loaded.filter(t => taskAllowedForGuest(t));
+    }
+    tasks = loaded;
     cacheSet('tasks', tasks);
     renderMain();
   }catch(e){console.warn('Bujo:',e);}
 }
+const BUJO_NOTAG = '__sans_tag__';
+function taskAllowedForGuest(t) {
+  if (!guestProfile || !Array.isArray(guestProfile.bujoTags)) return true;
+  const tags = splitTags(t.tag);
+  if (!tags.length) return guestProfile.bujoTags.includes(BUJO_NOTAG);
+  return tags.some(tag => guestProfile.bujoTags.includes(tag));
+}
+function bujoDistinctTags() {
+  const set = new Set();
+  tasks.forEach(t => splitTags(t.tag).forEach(tag => set.add(tag)));
+  return [...set].sort((a,b) => a.localeCompare(b, 'fr'));
+}
 function gBujoUpdate(t){
   if(typeof grist==='undefined'||!t.id)return;
-  grist.docApi.applyUserActions([['UpdateRecord','Bujo',t.id,{tache:t.name,date:t.date,termine:t.done,anniversaire:!!t.bday,projet:!!t.projet,archive:!!t.archive,urgent:!!t.urgent}]]).then(loadBujo).catch(console.error);
+  grist.docApi.applyUserActions([['UpdateRecord','Bujo',t.id,{tache:t.name,date:t.date,termine:t.done,anniversaire:!!t.bday,projet:!!t.projet,archive:!!t.archive,urgent:!!t.urgent,tag:t.tag||''}]]).then(loadBujo).catch(console.error);
 }
 function gBujoAdd(t){
   if(typeof grist==='undefined')return;
-  grist.docApi.applyUserActions([['AddRecord','Bujo',null,{tache:t.name,date:t.date,termine:false,anniversaire:!!t.bday,projet:!!t.projet,archive:!!t.archive,urgent:!!t.urgent}]]).then(loadBujo).catch(console.error);
+  grist.docApi.applyUserActions([['AddRecord','Bujo',null,{tache:t.name,date:t.date,termine:false,anniversaire:!!t.bday,projet:!!t.projet,archive:!!t.archive,urgent:!!t.urgent,tag:t.tag||''}]]).then(loadBujo).catch(console.error);
 }
 function gBujoDelete(t){
   if(typeof grist==='undefined'||!t.id)return;
