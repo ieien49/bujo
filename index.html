@@ -2936,9 +2936,18 @@ function wcfgRefreshFields() {
   wcfgRenderGuests();
 }
 
-function openConfigModal() {
+async function openConfigModal() {
   wcfgRefreshFields();
   document.getElementById('wcfgOv').classList.add('open');
+  // Les collections ne sont chargées qu'à la première visite de l'onglet
+  // Collections : si on ouvre les réglages avant, `cols` est vide et la
+  // liste de sélection des profils invités apparaît à tort comme vide.
+  if (!colsLoaded) {
+    colsLoaded = true;
+    if (typeof grist !== 'undefined') await loadCollections();
+    else initColDemo();
+    wcfgRenderGuests();
+  }
 }
 function closeConfigModal() {
   document.getElementById('wcfgOv').classList.remove('open');
@@ -3280,38 +3289,53 @@ function renderGlobalSearchResults(qRaw) {
   if (!q) { box.innerHTML = '<div class="gsearch-empty">Tapez pour chercher dans tous les onglets…</div>'; return; }
 
   const groups = [];
+  // Un profil invité ne doit voir, même dans la recherche globale, que les
+  // onglets et collections auxquels il a accès — sinon le filtrage des
+  // onglets/collections ne sert à rien puisque tout reste cherchable ici.
+  const tabAllowed = t => !guestProfile || guestProfile.tabs.includes(t);
 
-  const bujoHits = tasks.map((t, i) => ({ t, i })).filter(({t}) => (t.name || '').toLowerCase().includes(q)).slice(0, 8);
-  if (bujoHits.length) groups.push({ label: 'Bujo', items: bujoHits.map(({t, i}) => ({
-    title: t.name || '(sans titre)', sub: t.date || '', onclick: `gsearchGoBujo(${i})`
-  })) });
+  if (tabAllowed('bujo')) {
+    const bujoHits = tasks.map((t, i) => ({ t, i })).filter(({t}) => (t.name || '').toLowerCase().includes(q)).slice(0, 8);
+    if (bujoHits.length) groups.push({ label: 'Bujo', items: bujoHits.map(({t, i}) => ({
+      title: t.name || '(sans titre)', sub: t.date || '', onclick: `gsearchGoBujo(${i})`
+    })) });
+  }
 
-  const lecHits = lecRecs.filter(r => (r.titre||'').toLowerCase().includes(q) || (r.auteur||'').toLowerCase().includes(q)).slice(0, 8);
-  if (lecHits.length) groups.push({ label: 'Lectures', items: lecHits.map(r => ({
-    title: r.titre || '(sans titre)', sub: r.auteur || '', onclick: `gsearchGoLecture(${r.id})`
-  })) });
+  if (tabAllowed('lectures')) {
+    const lecHits = lecRecs.filter(r => (r.titre||'').toLowerCase().includes(q) || (r.auteur||'').toLowerCase().includes(q)).slice(0, 8);
+    if (lecHits.length) groups.push({ label: 'Lectures', items: lecHits.map(r => ({
+      title: r.titre || '(sans titre)', sub: r.auteur || '', onclick: `gsearchGoLecture(${r.id})`
+    })) });
+  }
 
-  const itemHits = items.filter(it => {
-    const texte = (it.texte||'').replace(/<[^>]+>/g,' ');
-    return (it.titre||'').toLowerCase().includes(q) || texte.toLowerCase().includes(q) || (it.tag||'').toLowerCase().includes(q);
-  }).slice(0, 8);
-  if (itemHits.length) groups.push({ label: 'Collections', items: itemHits.map(it => {
-    const col = cols.find(c => c.id === it.col_id);
-    const idx = items.indexOf(it);
-    return { title: it.titre || '(sans titre)', sub: col ? colDisplayName(col) : '', onclick: `gsearchGoCollection(${idx})` };
-  }) });
+  if (tabAllowed('collections')) {
+    const visibleItems = guestProfile ? items.filter(it => guestProfile.cols.includes(String(it.col_id))) : items;
+    const itemHits = visibleItems.filter(it => {
+      const texte = (it.texte||'').replace(/<[^>]+>/g,' ');
+      return (it.titre||'').toLowerCase().includes(q) || texte.toLowerCase().includes(q) || (it.tag||'').toLowerCase().includes(q);
+    }).slice(0, 8);
+    if (itemHits.length) groups.push({ label: 'Collections', items: itemHits.map(it => {
+      const col = cols.find(c => c.id === it.col_id);
+      const idx = items.indexOf(it);
+      return { title: it.titre || '(sans titre)', sub: col ? colDisplayName(col) : '', onclick: `gsearchGoCollection(${idx})` };
+    }) });
+  }
 
-  const outHits = outRecords.filter(r => (r.title||'').toLowerCase().includes(q)).slice(0, 8);
-  if (outHits.length) groups.push({ label: 'Outliner', items: outHits.map(r => ({
-    title: r.title || '(sans titre)', sub: '', onclick: `gsearchGoOutliner(${r.id})`
-  })) });
+  if (tabAllowed('outliner')) {
+    const outHits = outRecords.filter(r => (r.title||'').toLowerCase().includes(q)).slice(0, 8);
+    if (outHits.length) groups.push({ label: 'Outliner', items: outHits.map(r => ({
+      title: r.title || '(sans titre)', sub: '', onclick: `gsearchGoOutliner(${r.id})`
+    })) });
+  }
 
-  const mmData = (typeof window.mmGetSearchData === 'function') ? window.mmGetSearchData() : { cartes: [], noeuds: [] };
-  const mmHits = mmData.noeuds.filter(n => (n.Label||'').toLowerCase().includes(q) || (n.Notes||'').toLowerCase().includes(q)).slice(0, 8);
-  if (mmHits.length) groups.push({ label: 'Mind Map', items: mmHits.map(n => {
-    const carte = mmData.cartes.find(c => c.id === n.MapId);
-    return { title: n.Label || '(sans titre)', sub: carte ? (carte.Titre || '') : '', onclick: `gsearchGoMindmap(${n.id}, ${n.MapId})` };
-  }) });
+  if (tabAllowed('mindmap')) {
+    const mmData = (typeof window.mmGetSearchData === 'function') ? window.mmGetSearchData() : { cartes: [], noeuds: [] };
+    const mmHits = mmData.noeuds.filter(n => (n.Label||'').toLowerCase().includes(q) || (n.Notes||'').toLowerCase().includes(q)).slice(0, 8);
+    if (mmHits.length) groups.push({ label: 'Mind Map', items: mmHits.map(n => {
+      const carte = mmData.cartes.find(c => c.id === n.MapId);
+      return { title: n.Label || '(sans titre)', sub: carte ? (carte.Titre || '') : '', onclick: `gsearchGoMindmap(${n.id}, ${n.MapId})` };
+    }) });
+  }
 
   if (!groups.length) { box.innerHTML = `<div class="gsearch-empty">Aucun résultat pour « ${esc(qRaw)} »</div>`; return; }
 
@@ -5255,8 +5279,10 @@ const INBOX_COL_NAME = '📥 Boîte de réception';
 function isInboxCol(col) { return !!col && col.nom === INBOX_COL_NAME; }
 // Première collection "normale" (hors Boîte de réception) ; repli sur l'inbox si aucune autre n'existe.
 function firstSelectableCol() {
-  const others = cols.filter(c => !isInboxCol(c));
-  return others[0] || cols[0] || null;
+  let candidates = cols;
+  if (guestProfile) candidates = candidates.filter(c => guestProfile.cols.includes(String(c.id)));
+  const others = candidates.filter(c => !isInboxCol(c));
+  return others[0] || candidates[0] || null;
 }
 const INBOX_ICON_SVG = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-6l-2 3h-4l-2-3H2"/><path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/></svg>';
 function ensureInboxCol() {
@@ -5269,7 +5295,10 @@ function renderColInboxPin() {
   const holder = document.getElementById('colInboxPin');
   if (!holder) return;
   const inbox = cols.find(isInboxCol);
-  if (!inbox) { holder.innerHTML = ''; return; }
+  // La Boîte de réception était toujours épinglée, même pour un profil
+  // invité qui n'a pas coché cette collection : elle doit suivre la même
+  // règle de visibilité que les autres collections.
+  if (!inbox || (guestProfile && !guestProfile.cols.includes(String(inbox.id)))) { holder.innerHTML = ''; return; }
   const count = items.filter(it => it.col_id === inbox.id).length;
   const active = selColId === inbox.id ? ' active' : '';
   const iconH = renderColIcon(inbox.icone, 16);
@@ -5428,7 +5457,7 @@ function renderColSidebar() {
       <button class="col-item-more" onclick="event.stopPropagation();openColMod(${i})" title="Options">&#8942;</button>
     </div>`;
   }).join('');
-  document.getElementById('badge-cols').textContent = cols.length || '';
+  document.getElementById('badge-cols').textContent = otherCols.length || '';
   initColSortable();
 }
 
