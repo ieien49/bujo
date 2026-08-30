@@ -2482,6 +2482,11 @@ body.presentation #exitPresentBtn{ display:flex; }
       <input type="text" class="wcfg-tabrow-input" id="wcfgLabelMindmap" placeholder="Mind Map">
       <div class="wcfg-tog-sw" id="wcfg-tog-mindmap_on" onclick="wcfgToggle('mindmap_on')"></div>
     </div>
+    <div class="wcfg-tabrow">
+      <span class="wcfg-tabrow-key">Recettes</span>
+      <input type="text" class="wcfg-tabrow-input" id="wcfgLabelRecettes" placeholder="Recettes">
+      <div class="wcfg-tog-sw" id="wcfg-tog-recettes_on" onclick="wcfgToggle('recettes_on')"></div>
+    </div>
     <div class="wcfg-hint" style="margin-bottom:12px">Le libellé personnalise le nom affiché ; l'interrupteur active ou masque l'onglet.</div>
 
     <div class="wcfg-section-title">Modules Bujo</div>
@@ -2669,7 +2674,7 @@ function applyConfigValues() {
     titleEl.classList.toggle('vis', !!CFG.titre);
   }
 
-  const tabVis = { bujo: cfgOn('bujo_on'), lectures: cfgOn('lectures_on'), collections: cfgOn('collections_on'), outliner: cfgOn('outliner_on'), mindmap: cfgOn('mindmap_on') };
+  const tabVis = { bujo: cfgOn('bujo_on'), lectures: cfgOn('lectures_on'), collections: cfgOn('collections_on'), outliner: cfgOn('outliner_on'), mindmap: cfgOn('mindmap_on'), recettes: cfgOn('recettes_on') };
   Object.keys(tabVis).forEach(tab => {
     const el = document.querySelector(`[data-tab="${tab}"]`);
     if (el) el.style.display = tabVis[tab] ? '' : 'none';
@@ -2684,6 +2689,7 @@ function applyConfigValues() {
   setLabel('collections', CFG.label_collections, 'Collections');
   setLabel('outliner', CFG.label_outliner, 'Outliner');
    setLabel('mindmap', CFG.label_mindmap, 'Mind Map');
+  setLabel('recettes', CFG.label_recettes, 'Recettes');
 
   document.getElementById('n-bdays').style.display = cfgOn('bday_on') ? '' : 'none';
   document.getElementById('bujoProjetCol').style.display = cfgOn('projet_on') ? '' : 'none';
@@ -2692,7 +2698,7 @@ function applyConfigValues() {
 
   const activeTab = document.querySelector('.app-tab.active');
   if (activeTab && activeTab.style.display === 'none') {
-    const nextTab = ['bujo','lectures','collections','outliner','mindmap'].find(t => tabVis[t]);
+    const nextTab = ['bujo','lectures','collections','outliner','mindmap','recettes'].find(t => tabVis[t]);
     if (nextTab) switchTab(nextTab);
   }
 
@@ -2704,8 +2710,8 @@ function applyConfigValues() {
 // ══════════════════════════════════════════════════════
 let wcfgRowIds = {};
 let wcfgSaveT = null;
-const WCFG_TOGGLE_KEYS = ['bujo_on','lectures_on','collections_on','outliner_on','mindmap_on','bday_on','projet_on','col_cal_on','col_week_on'];
-const WCFG_ALL_KEYS = ['titre','accent','label_bujo','label_lectures','label_collections','label_outliner','label_mindmap','default_bujo_view', ...WCFG_TOGGLE_KEYS];
+const WCFG_TOGGLE_KEYS = ['bujo_on','lectures_on','collections_on','outliner_on','mindmap_on','recettes_on','bday_on','projet_on','col_cal_on','col_week_on'];
+const WCFG_ALL_KEYS = ['titre','accent','label_bujo','label_lectures','label_collections','label_outliner','label_mindmap','label_recettes','default_bujo_view', ...WCFG_TOGGLE_KEYS];
 
 function wcfgToggle(key) {
   CFG[key] = (CFG[key] === 'false') ? 'true' : 'false';
@@ -2724,6 +2730,7 @@ function wcfgRefreshFields() {
   document.getElementById('wcfgLabelCollections').value = CFG.label_collections || '';
   document.getElementById('wcfgLabelOutliner').value = CFG.label_outliner || '';
   document.getElementById('wcfgLabelMindmap').value = CFG.label_mindmap || '';
+  document.getElementById('wcfgLabelRecettes').value = CFG.label_recettes || '';
   const hex = CFG.accent || '#e8a020';
   document.getElementById('wcfgAccentHex').value = hex;
   document.getElementById('wcfgAccentPicker').value = /^#[0-9a-fA-F]{6}$/.test(hex) ? hex : '#e8a020';
@@ -2764,6 +2771,7 @@ document.getElementById('wcfgLabelLectures').addEventListener('input', e => { CF
 document.getElementById('wcfgLabelCollections').addEventListener('input', e => { CFG.label_collections = e.target.value; });
 document.getElementById('wcfgLabelOutliner').addEventListener('input', e => { CFG.label_outliner = e.target.value; });
 document.getElementById('wcfgLabelMindmap').addEventListener('input', e => { CFG.label_mindmap = e.target.value; });
+document.getElementById('wcfgLabelRecettes').addEventListener('input', e => { CFG.label_recettes = e.target.value; });
 document.getElementById('wcfgDefaultView').addEventListener('change', e => { CFG.default_bujo_view = e.target.value; });
 
 async function wcfgSaveConfig() {
@@ -2858,6 +2866,19 @@ const WCFG_REQUIRED_TABLES = [
     { id: 'Url',      type: 'Text' },
     { id: 'Notes',    type: 'Text' },
   ]},
+  { id: 'Recettes', cols: [
+    { id: 'Nom',               type: 'Text' },
+    { id: 'Categorie',         type: 'Text' },
+    { id: 'Difficulte',        type: 'Text' },
+    { id: 'Temps_preparation', type: 'Int' },
+    { id: 'Temps_cuisson',     type: 'Int' },
+    { id: 'Nb_personnes',      type: 'Int' },
+    { id: 'Ingredients',       type: 'Text' },
+    { id: 'Instructions',      type: 'Text' },
+    { id: 'Image_url',         type: 'Text' },
+    { id: 'Note',              type: 'Numeric' },
+    { id: 'Tags',              type: 'Text' },
+  ]},
 ];
 
 function wcfgSetTablesStatus(html) {
@@ -2876,15 +2897,37 @@ async function wcfgCheckTables() {
     return;
   }
   const missing = WCFG_REQUIRED_TABLES.filter(t => !existing.includes(t.id));
-  if (!missing.length) {
-    wcfgSetTablesStatus('✓ Toutes les tables nécessaires sont déjà présentes.');
-    return;
+  const present = WCFG_REQUIRED_TABLES.filter(t => existing.includes(t.id));
+
+  // Vérification des colonnes sur les tables déjà présentes (lecture seule,
+  // aucune colonne n'est créée/renommée automatiquement).
+  const colIssues = [];
+  for (const t of present) {
+    try {
+      const data = await grist.docApi.fetchTable(t.id);
+      const cols = Object.keys(data);
+      const missingCols = t.cols.map(c => c.id).filter(cid => !cols.includes(cid));
+      if (missingCols.length) colIssues.push({ table: t.label || t.id, cols: missingCols });
+    } catch (e) {
+      colIssues.push({ table: t.label || t.id, cols: ['(lecture impossible : ' + e.message + ')'] });
+    }
   }
-  const names = missing.map(t => t.label || t.id).join(', ');
-  wcfgSetTablesStatus(
-    `Tables manquantes : ${names}.<br>` +
-    `<button class="bs" style="margin-top:6px" onclick="wcfgInstallTables()">Créer ces ${missing.length} table${missing.length>1?'s':''}</button>`
-  );
+
+  let html = '';
+  if (!missing.length) {
+    html += '✓ Toutes les tables nécessaires sont déjà présentes.<br>';
+  } else {
+    const names = missing.map(t => t.label || t.id).join(', ');
+    html += `Tables manquantes : ${names}.<br>` +
+      `<button class="bs" style="margin-top:6px" onclick="wcfgInstallTables()">Créer ces ${missing.length} table${missing.length>1?'s':''}</button><br>`;
+  }
+  if (colIssues.length) {
+    html += '<br>⚠ Colonnes attendues introuvables (à corriger toi-même dans Grist — nom exact, casse comprise) :<br>';
+    colIssues.forEach(ci => { html += '&nbsp;&nbsp;• ' + ci.table + ' : ' + ci.cols.join(', ') + '<br>'; });
+  } else if (present.length) {
+    html += '✓ Colonnes attendues présentes sur toutes les tables déjà créées.';
+  }
+  wcfgSetTablesStatus(html);
 }
 
 async function wcfgInstallTables() {
