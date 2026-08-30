@@ -672,6 +672,17 @@ select.cfilt { cursor: pointer; }
 }
 .wcfg-save-ind.vis { opacity: 1; }
 .wcfg-save-dot { width: 6px; height: 6px; border-radius: 50%; background: #27ae60; }
+.wcfg-guest-card { border: 1px solid var(--border); border-radius: 8px; padding: 10px; margin-bottom: 10px; }
+.wcfg-guest-head { display: flex; gap: 6px; align-items: center; margin-bottom: 8px; }
+.wcfg-guest-head input { flex: 1; }
+.wcfg-guest-del { border: none; background: none; color: var(--muted); cursor: pointer; font-size: 13px; padding: 4px 6px; }
+.wcfg-guest-del:hover { color: #c0392b; }
+.wcfg-guest-sub { font-size: 10.5px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; margin: 8px 0 4px; }
+.wcfg-guest-grid { display: flex; flex-wrap: wrap; gap: 4px 12px; }
+.wcfg-guest-chk { display: flex; align-items: center; gap: 5px; font-size: 12px; color: var(--text); cursor: pointer; }
+.wcfg-guest-link-row { display: flex; align-items: center; gap: 8px; margin-top: 10px; }
+.wcfg-guest-copied { font-size: 11px; color: #27ae60; opacity: 0; transition: opacity .2s; }
+.wcfg-guest-copied.vis { opacity: 1; }
 
 
 /* ── Colonne agenda semaine (droite bujo) ── */
@@ -2557,8 +2568,13 @@ body.presentation #exitPresentBtn{ display:flex; }
     <div class="wcfg-hint" style="margin-bottom:8px">
       Vérifie que les tables Grist nécessaires au widget existent dans ce document, et crée automatiquement celles qui manquent (sans jamais toucher aux tables déjà présentes).
     </div>
-    <button class="bs" style="width:100%;margin-bottom:8px" onclick="wcfgCheckTables()">Vérifier les tables</button>
+        <button class="bs" style="width:100%;margin-bottom:8px" onclick="wcfgCheckTables()">Vérifier les tables</button>
     <div id="wcfgTablesStatus" class="wcfg-hint" style="margin-bottom:4px"></div>
+
+    <div class="wcfg-section-title">Vues partagées (invités)</div>
+    <div class="wcfg-hint" style="margin-bottom:8px">Génère un lien qui n'affiche que certains onglets et certaines collections. <strong>Ce n'est pas une restriction de sécurité</strong> : la personne garde accès à l'ensemble des données du document Grist par d'autres moyens — c'est uniquement pour alléger l'affichage.</div>
+    <div id="wcfgGuestsList"></div>
+    <button class="bs" style="width:100%;margin-bottom:8px" onclick="wcfgAddGuest()">+ Nouveau profil invité</button>
 
     <div class="wcfg-save-bar">
       <button class="bs" onclick="wcfgSaveConfig()">Enregistrer</button>
@@ -2696,6 +2712,9 @@ async function loadConfig() {
 function cfgOn(key) { return CFG[key] !== 'false'; } // défaut = activé
 
 function applyConfigValues() {
+  resolveGuestProfile();
+  const gearBtn = document.querySelector('.wcfg-gear-btn');
+  if (gearBtn) gearBtn.style.display = guestProfile ? 'none' : '';
   if (CFG.accent) {
     const hex = CFG.accent.startsWith('#') ? CFG.accent : '#' + CFG.accent;
     document.documentElement.style.setProperty('--accent', hex);
@@ -2708,7 +2727,8 @@ function applyConfigValues() {
     titleEl.classList.toggle('vis', !!CFG.titre);
   }
 
-  const tabVis = { bujo: cfgOn('bujo_on'), lectures: cfgOn('lectures_on'), collections: cfgOn('collections_on'), outliner: cfgOn('outliner_on'), mindmap: cfgOn('mindmap_on'), recettes: cfgOn('recettes_on') };
+    const tabVis = { bujo: cfgOn('bujo_on'), lectures: cfgOn('lectures_on'), collections: cfgOn('collections_on'), outliner: cfgOn('outliner_on'), mindmap: cfgOn('mindmap_on'), recettes: cfgOn('recettes_on') };
+  if (guestProfile) { Object.keys(tabVis).forEach(t => { tabVis[t] = tabVis[t] && guestProfile.tabs.includes(t); }); }
   Object.keys(tabVis).forEach(tab => {
     const el = document.querySelector(`[data-tab="${tab}"]`);
     if (el) el.style.display = tabVis[tab] ? '' : 'none';
@@ -2746,7 +2766,105 @@ function applyConfigValues() {
 let wcfgRowIds = {};
 let wcfgSaveT = null;
 const WCFG_TOGGLE_KEYS = ['bujo_on','lectures_on','collections_on','outliner_on','mindmap_on','recettes_on','bday_on','projet_on','col_cal_on','col_week_on'];
-const WCFG_ALL_KEYS = ['titre','accent','label_bujo','label_lectures','label_collections','label_outliner','label_mindmap','label_recettes','default_bujo_view','tab_order', ...WCFG_TOGGLE_KEYS];
+const WCFG_ALL_KEYS = ['titre','accent','label_bujo','label_lectures','label_collections','label_outliner','label_mindmap','label_recettes','default_bujo_view','tab_order','guest_profiles', ...WCFG_TOGGLE_KEYS];
+
+const urlParams = new URLSearchParams(location.search);
+const guestSlug = urlParams.get('vue');
+let guestProfile = null;
+
+function getGuestProfiles() {
+  try { return JSON.parse(CFG.guest_profiles || '[]'); } catch(e) { return []; }
+}
+function resolveGuestProfile() {
+  guestProfile = guestSlug ? (getGuestProfiles().find(p => p.slug === guestSlug) || null) : null;
+}
+function wcfgSlug(s) {
+  return (s||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/g,'-').replace(/(^-|-$)/g,'') || 'invite';
+}
+function wcfgAddGuest() {
+  const profiles = getGuestProfiles();
+  let base = 'invite', slug = base, n = 1;
+  while (profiles.some(p => p.slug === slug)) { n++; slug = base + '-' + n; }
+  profiles.push({ slug, label: 'Nouvel invité', tabs: DEFAULT_TAB_ORDER.slice(), cols: (cols||[]).map(c => String(c.id)) });
+  CFG.guest_profiles = JSON.stringify(profiles);
+  wcfgRenderGuests();
+}
+function wcfgRenameGuest(oldSlug, newLabel) {
+  const profiles = getGuestProfiles();
+  const p = profiles.find(x => x.slug === oldSlug);
+  if (!p) return;
+  p.label = newLabel;
+  const newSlug = wcfgSlug(newLabel);
+  if (newSlug !== oldSlug && !profiles.some(x => x.slug === newSlug)) p.slug = newSlug;
+  CFG.guest_profiles = JSON.stringify(profiles);
+  wcfgRenderGuests();
+}
+function wcfgToggleGuestTab(slug, tab) {
+  const profiles = getGuestProfiles();
+  const p = profiles.find(x => x.slug === slug);
+  if (!p) return;
+  const i = p.tabs.indexOf(tab);
+  if (i === -1) p.tabs.push(tab); else p.tabs.splice(i,1);
+  CFG.guest_profiles = JSON.stringify(profiles);
+  wcfgRenderGuests();
+}
+function wcfgToggleGuestCol(slug, colId) {
+  const profiles = getGuestProfiles();
+  const p = profiles.find(x => x.slug === slug);
+  if (!p) return;
+  colId = String(colId);
+  const i = p.cols.indexOf(colId);
+  if (i === -1) p.cols.push(colId); else p.cols.splice(i,1);
+  CFG.guest_profiles = JSON.stringify(profiles);
+  wcfgRenderGuests();
+}
+function wcfgDeleteGuest(slug) {
+  if (!confirm('Supprimer ce profil invité ?')) return;
+  CFG.guest_profiles = JSON.stringify(getGuestProfiles().filter(p => p.slug !== slug));
+  wcfgRenderGuests();
+}
+function wcfgCopyGuestLink(slug) {
+  const url = location.origin + location.pathname + '?vue=' + encodeURIComponent(slug);
+  navigator.clipboard.writeText(url).then(() => wcfgShowGuestCopied(slug)).catch(() => prompt('Copie manuelle :', url));
+}
+function wcfgShowGuestCopied(slug) {
+  const el = document.getElementById('wcfg-guest-copied-' + slug);
+  if (!el) return;
+  el.classList.add('vis');
+  setTimeout(() => el.classList.remove('vis'), 1400);
+}
+function wcfgRenderGuests() {
+  const box = document.getElementById('wcfgGuestsList');
+  if (!box) return;
+  const profiles = getGuestProfiles();
+  if (!profiles.length) { box.innerHTML = '<div class="wcfg-hint" style="margin-bottom:8px">Aucun profil invité pour l\'instant.</div>'; return; }
+  const tabLabels = {bujo:'Bujo',lectures:'Lectures',collections:'Collections',outliner:'Outliner',mindmap:'Mind Map',recettes:'Recettes'};
+  box.innerHTML = profiles.map(p => {
+    const tabsH = DEFAULT_TAB_ORDER.map(t => {
+      const lbl = CFG['label_' + t] || tabLabels[t];
+      const on = p.tabs.includes(t);
+      return `<label class="wcfg-guest-chk"><input type="checkbox" ${on?'checked':''} onchange="wcfgToggleGuestTab('${p.slug}','${t}')"> ${esc(lbl)}</label>`;
+    }).join('');
+    const colsH = (cols||[]).length ? (cols||[]).map(c => {
+      const on = p.cols.includes(String(c.id));
+      return `<label class="wcfg-guest-chk"><input type="checkbox" ${on?'checked':''} onchange="wcfgToggleGuestCol('${p.slug}','${c.id}')"> ${esc(c.nom)}</label>`;
+    }).join('') : '<span class="wcfg-hint">Aucune collection créée.</span>';
+    return `<div class="wcfg-guest-card">
+      <div class="wcfg-guest-head">
+        <input type="text" class="wcfg-tabrow-input" value="${esc(p.label)}" onchange="wcfgRenameGuest('${p.slug}', this.value)">
+        <button class="wcfg-guest-del" onclick="wcfgDeleteGuest('${p.slug}')" title="Supprimer">✕</button>
+      </div>
+      <div class="wcfg-guest-sub">Onglets visibles</div>
+      <div class="wcfg-guest-grid">${tabsH}</div>
+      <div class="wcfg-guest-sub">Collections visibles</div>
+      <div class="wcfg-guest-grid">${colsH}</div>
+      <div class="wcfg-guest-link-row">
+        <button class="bs" onclick="wcfgCopyGuestLink('${p.slug}')">Copier le lien</button>
+        <span class="wcfg-guest-copied" id="wcfg-guest-copied-${p.slug}">Copié ✓</span>
+      </div>
+    </div>`;
+  }).join('');
+}
 const DEFAULT_TAB_ORDER = ['bujo','lectures','collections','outliner','mindmap','recettes'];
 
 function getTabOrder() {
@@ -2813,8 +2931,9 @@ function wcfgRefreshFields() {
   document.getElementById('wcfgAccentHex').value = hex;
   document.getElementById('wcfgAccentPicker').value = /^#[0-9a-fA-F]{6}$/.test(hex) ? hex : '#e8a020';
   document.getElementById('wcfgDefaultView').value = (CFG.default_bujo_view === 'late' ? 'today' : CFG.default_bujo_view) || 'today';
-    wcfgRefreshToggles();
+      wcfgRefreshToggles();
   wcfgRenderTabOrderUI();
+  wcfgRenderGuests();
 }
 
 function openConfigModal() {
@@ -5291,7 +5410,8 @@ function renderColSidebar() {
   const list = document.getElementById('colList');
   if (!list) return;
   renderColInboxPin();
-  const otherCols = cols.filter(c => !isInboxCol(c));
+    let otherCols = cols.filter(c => !isInboxCol(c));
+  if (guestProfile) otherCols = otherCols.filter(c => guestProfile.cols.includes(String(c.id)));
   list.innerHTML = otherCols.map((col) => {
     const i = cols.indexOf(col);
     const count = items.filter(it => it.col_id === col.id).length;
