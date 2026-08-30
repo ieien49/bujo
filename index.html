@@ -6080,12 +6080,30 @@ function gColAdd(col) {
   if(typeof grist==='undefined')return;
   grist.docApi.applyUserActions([['AddRecord','Collections',null, {nom:col.nom,theme:col.theme,icone:col.icone,vue:col.vue||'',ordre:col.ordre||0}]])
     .then(res => {
-      // Stocker le vrai id Grist dans col.gid pour que gItemAdd puisse l'utiliser
       const gid = res?.retValues?.[0];
-      if (gid) {
-        const existing = cols.find(co => co.id === col.id);
-        if (existing) existing.gid = gid;
-      }
+      if (!gid) return;
+      const existing = cols.find(co => co.id === col.id);
+      if (!existing) return;
+      // L'id temporaire ('c'+timestamp) doit être remplacé par l'id
+      // définitif ('g'+id Grist) dès que celui-ci est connu, sinon toute
+      // référence prise avant ce moment (items déjà créés, sélection en
+      // cours, case cochée dans un profil invité) pointe vers un id qui
+      // n'existera plus après rechargement de la page.
+      const oldId = existing.id;
+      const newId = 'g' + gid;
+      existing.gid = gid;
+      existing.id = newId;
+      items.forEach(it => { if (it.col_id === oldId) it.col_id = newId; });
+      if (selColId === oldId) selColId = newId;
+      const profiles = getGuestProfiles();
+      let changed = false;
+      profiles.forEach(p => {
+        const i = p.cols.indexOf(oldId);
+        if (i !== -1) { p.cols[i] = newId; changed = true; }
+      });
+      if (changed) { CFG.guest_profiles = JSON.stringify(profiles); wcfgRenderGuests(); }
+      renderColSidebar();
+      renderColMain();
     })
     .catch(console.error);
 }
