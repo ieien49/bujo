@@ -1826,6 +1826,88 @@ body.presentation #exitPresentBtn{ display:flex; }
   background:var(--mm-paper-dim); border:1px solid var(--mm-line); border-radius:8px;
   padding:6px 10px; cursor:pointer; align-self:flex-start;
 }
+
+/* ══════════════════════════════════════════
+   ONGLET RECETTES (classes/ids préfixés rec
+   pour ne rien écraser du reste de l'appli)
+   ══════════════════════════════════════════ */
+#page-recettes { display: flex; flex-direction: column; height: 100%; overflow: hidden; background: #f8f5f0; font-family: 'DM Sans', -apple-system, sans-serif; }
+#recTopbar { background: #fff; border-bottom: 0.5px solid #e0dbd3; padding: 10px 14px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+#recSearchInput { flex: 1 1 140px; padding: 6px 12px; border: 1px solid #d3d1c7; border-radius: 20px; font-size: 13px; outline: none; background: #f8f5f0; }
+#recSearchInput:focus { border-color: #7f77dd; }
+.rec-filter-btn { padding: 5px 12px; border: 1px solid #d3d1c7; border-radius: 20px; background: #fff; font-size: 12px; cursor: pointer; color: #5f5e5a; }
+.rec-filter-btn.active { background: #3c3489; color: #fff; border-color: #3c3489; }
+#recAddBtn { margin-left: auto; padding: 6px 14px; background: #3c3489; color: #fff; border: none; border-radius: 20px; font-size: 13px; font-weight: 600; cursor: pointer; }
+#recAddBtn:hover { background: #534ab7; }
+#recTagsBar { background: #fff; border-bottom: 0.5px solid #f1efe8; padding: 8px 14px; display: flex; flex-wrap: wrap; gap: 6px; align-items: center; min-height: 38px; }
+#recTagsBar:empty { display: none; }
+.rec-tag-btn { padding: 4px 11px; border: 0.5px solid #d3d1c7; border-radius: 20px; background: #f8f5f0; font-size: 11px; cursor: pointer; color: #5f5e5a; transition: all .15s; }
+.rec-tag-btn:hover { background: #eeedfe; color: #3c3489; border-color: #afa9ec; }
+.rec-tag-btn.active { background: #3c3489; color: #fff; border-color: #3c3489; }
+#recGrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 14px; padding: 14px; overflow-y: auto; }
+.rec-card { background: #fff; border-radius: 12px; border: 1px solid #e8e4dc; overflow: hidden; cursor: pointer; transition: transform .15s, box-shadow .15s; }
+.rec-card:hover { transform: translateY(-3px); box-shadow: 0 6px 18px rgba(0,0,0,.09); }
+.rec-card-img { width: 100%; height: 130px; background: linear-gradient(135deg, #eeedfe, #e1f5ee); display: flex; align-items: center; justify-content: center; font-size: 44px; }
+.rec-card-img img { width: 100%; height: 130px; object-fit: cover; display: block; }
+.rec-card-body { padding: 10px 12px 12px; }
+.rec-card-cat { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .5px; display: inline-block; padding: 2px 8px; border-radius: 10px; margin-bottom: 4px; }
+.rec-card-title { font-size: 13px; font-weight: 600; margin-bottom: 6px; line-height: 1.3; color: #1a1a1a; }
+.rec-card-meta { display: flex; gap: 8px; font-size: 11px; color: #888780; flex-wrap: wrap; }
+.rec-stars { color: #ef9f27; }
+#recDetail { display: none; position: fixed; top: 0; right: 0; bottom: 0; width: min(460px, 100vw); background: #fff; border-left: 1px solid #e0dbd3; overflow-y: auto; z-index: 20; }
+#recDetail.open { display: block; }
+#recDetailHeader { position: sticky; top: 0; background: #fff; border-bottom: 1px solid #e8e4dc; padding: 12px 14px; display: flex; align-items: center; gap: 10px; }
+#recCloseBtn { background: none; border: none; cursor: pointer; font-size: 15px; padding: 4px 8px; border-radius: 6px; color: #888780; }
+#recCloseBtn:hover { background: #f1efe8; }
+#recEditBtn { color: #3c3489; font-size: 13px; font-weight: 600; padding: 5px 12px; border: 1px solid #afa9ec; border-radius: 20px; background: none; cursor: pointer; }
+#recEditBtn:hover { background: #eeedfe; }
+#recDetailTitle { font-size: 15px; font-weight: 700; flex: 1; color: #1a1a1a; }
+#recDetailBody { padding: 0 14px 28px; }
+.rec-detail-hero { width: 100%; height: 190px; background: linear-gradient(135deg, #eeedfe, #e1f5ee); display: flex; align-items: center; justify-content: center; font-size: 64px; margin-bottom: 14px; }
+.rec-detail-hero img { width: 100%; height: 190px; object-fit: cover; display: block; }
+.rec-badges { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 14px; }
+.rec-badge { padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; }
+.rec-section { margin-bottom: 18px; }
+.rec-section h3 { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .6px; color: #888780; margin-bottom: 8px; padding-bottom: 5px; border-bottom: 1px solid #f1efe8; }
+.rec-meta-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+.rec-meta-item { background: #f8f5f0; border-radius: 8px; padding: 8px 10px; font-size: 12px; color: #1a1a1a; }
+.rec-meta-item .val { font-size: 15px; font-weight: 700; color: #3c3489; display: block; }
+.rec-ingr-text, .rec-instr-text { font-size: 13px; line-height: 1.8; color: #444441; white-space: pre-wrap; background: #f8f5f0; border-radius: 8px; padding: 10px 12px; }
+#recModalOverlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.35); z-index: 30; align-items: center; justify-content: center; }
+#recModalOverlay.open { display: flex; }
+#recModal { background: #fff; border-radius: 16px; width: min(520px, 96vw); max-height: 90vh; overflow-y: auto; box-shadow: 0 16px 48px rgba(0,0,0,.18); }
+#recModalHeader { padding: 16px 18px; border-bottom: 1px solid #e8e4dc; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; background: #fff; z-index: 1; }
+#recModalHeader h2 { font-size: 16px; font-weight: 700; color: #3c3489; }
+#recModalClose { background: none; border: none; cursor: pointer; font-size: 20px; color: #888780; padding: 2px 6px; border-radius: 6px; }
+#recModalClose:hover { background: #f1efe8; }
+#recModalForm { padding: 16px 18px 20px; display: flex; flex-direction: column; gap: 14px; }
+.rec-form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.rec-form-group { display: flex; flex-direction: column; gap: 5px; }
+.rec-form-group label { font-size: 12px; font-weight: 600; color: #5f5e5a; text-transform: uppercase; letter-spacing: .4px; }
+.rec-form-group input, .rec-form-group select, .rec-form-group textarea { padding: 8px 10px; border: 1px solid #d3d1c7; border-radius: 8px; font-size: 13px; font-family: inherit; outline: none; background: #fff; color: #2c2c2a; }
+.rec-form-group input:focus, .rec-form-group select:focus, .rec-form-group textarea:focus { border-color: #7f77dd; }
+.rec-form-group textarea { resize: vertical; min-height: 80px; line-height: 1.6; }
+.rec-form-actions { display: flex; gap: 10px; justify-content: flex-end; padding-top: 4px; border-top: 1px solid #f1efe8; align-items: center; }
+.rec-btn-cancel { padding: 8px 18px; border: 1px solid #d3d1c7; border-radius: 20px; background: #fff; font-size: 13px; cursor: pointer; color: #5f5e5a; }
+.rec-btn-cancel:hover { background: #f1efe8; }
+.rec-btn-save { padding: 8px 20px; border: none; border-radius: 20px; background: #3c3489; color: #fff; font-size: 13px; font-weight: 600; cursor: pointer; }
+.rec-btn-save:hover { background: #534ab7; }
+.rec-btn-save:disabled { background: #afa9ec; cursor: not-allowed; }
+.rec-btn-delete { padding: 8px 14px; border: 1px solid #f09595; border-radius: 20px; background: #fff; font-size: 13px; cursor: pointer; color: #a32d2d; margin-right: auto; }
+.rec-btn-delete:hover { background: #fcebeb; }
+#rec-empty { grid-column: 1/-1; text-align: center; padding: 60px 20px; color: #888780; }
+.rec-toast { position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%); background: #3c3489; color: #fff; padding: 9px 18px; border-radius: 20px; font-size: 13px; z-index: 100; opacity: 0; transition: opacity .3s; pointer-events: none; }
+.rec-toast.show { opacity: 1; }
+.rec-cat-entree    { background: #e1f5ee; color: #0f6e56; }
+.rec-cat-plat      { background: #eeedfe; color: #3c3489; }
+.rec-cat-dessert   { background: #faeeda; color: #854f0b; }
+.rec-cat-aperitif  { background: #faece7; color: #993c1d; }
+.rec-cat-boisson   { background: #e6f1fb; color: #185fa5; }
+.rec-cat-petitdej  { background: #fbeaf0; color: #993556; }
+.rec-cat-default   { background: #f1efe8; color: #5f5e5a; }
+.rec-diff-facile   { background: #eaf3de; color: #3b6d11; }
+.rec-diff-moyen    { background: #faeeda; color: #854f0b; }
+.rec-diff-difficile{ background: #fcebeb; color: #a32d2d; }
 </style>
 </head>
 <body>
@@ -1859,6 +1941,10 @@ body.presentation #exitPresentBtn{ display:flex; }
   <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="5" cy="12" r="2.5"/><circle cx="19" cy="6" r="2.5"/><circle cx="19" cy="18" r="2.5"/><path d="M7.3 10.8 16.7 7.2M7.3 13.2 16.7 16.8"/></svg>
   <span class="tab-label">Mind Map</span>
 </button>
+  <button class="app-tab" data-tab="recettes" onclick="switchTab('recettes')">
+    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 2v7c0 1.1.9 2 2 2h0a2 2 0 0 0 2-2V2"/><path d="M7 2v20"/><path d="M17 2a5 5 0 0 0-5 5v6h5"/><path d="M17 13v9"/></svg>
+    <span class="tab-label">Recettes</span>
+  </button>
 </div>
   <button class="gsearch-btn" onclick="openGlobalSearch()" title="Rechercher partout">
     <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
@@ -2162,6 +2248,80 @@ body.presentation #exitPresentBtn{ display:flex; }
       <textarea id="panelNotesInput" placeholder="Notes détaillées pour ce nœud…"></textarea>
     </div>
   </div>
+</div>
+
+<!-- ── PAGE RECETTES ── -->
+<div class="page" id="page-recettes">
+  <div id="recTopbar">
+    <input type="text" id="recSearchInput" placeholder="Rechercher…" oninput="recApplyFilters()">
+    <button class="rec-filter-btn active" onclick="recSetFilter(this,'')">Tout</button>
+    <button class="rec-filter-btn" onclick="recSetFilter(this,'Entrée')">Entrée</button>
+    <button class="rec-filter-btn" onclick="recSetFilter(this,'Plat')">Plat</button>
+    <button class="rec-filter-btn" onclick="recSetFilter(this,'Dessert')">Dessert</button>
+    <button class="rec-filter-btn" onclick="recSetFilter(this,'Apéritif')">Apéritif</button>
+    <button class="rec-filter-btn" onclick="recSetFilter(this,'Boisson')">Boisson</button>
+    <button class="rec-filter-btn" onclick="recSetFilter(this,'Petit déjeuner')">Petit déj.</button>
+    <button id="recAddBtn" onclick="recOpenForm(null)">+ Nouvelle recette</button>
+  </div>
+  <div id="recTagsBar"></div>
+  <div id="recGrid"></div>
+
+  <!-- Panneau détail -->
+  <div id="recDetail">
+    <div id="recDetailHeader">
+      <button id="recCloseBtn" onclick="recCloseDetail()">&#8592;</button>
+      <span id="recDetailTitle"></span>
+      <button id="recEditBtn" onclick="recOpenFormFromDetail()">✏ Modifier</button>
+    </div>
+    <div id="recDetailBody"></div>
+  </div>
+
+  <!-- Modale ajout/édition -->
+  <div id="recModalOverlay">
+    <div id="recModal">
+      <div id="recModalHeader">
+        <h2 id="recModalTitle">Nouvelle recette</h2>
+        <button id="recModalClose" onclick="recCloseForm()">\xd7</button>
+      </div>
+      <div id="recModalForm">
+        <div class="rec-form-group"><label>Nom *</label><input type="text" id="recFNom" placeholder="Ex : Tarte tatin"></div>
+        <div class="rec-form-row">
+          <div class="rec-form-group"><label>Catégorie</label>
+            <select id="recFCategorie">
+              <option value="">— Choisir —</option>
+              <option>Entrée</option><option>Plat</option><option>Dessert</option>
+              <option>Apéritif</option><option>Boisson</option><option>Petit déjeuner</option>
+            </select>
+          </div>
+          <div class="rec-form-group"><label>Difficulté</label>
+            <select id="recFDifficulte">
+              <option value="">— Choisir —</option>
+              <option>Facile</option><option>Moyen</option><option>Difficile</option>
+            </select>
+          </div>
+        </div>
+        <div class="rec-form-row">
+          <div class="rec-form-group"><label>Préparation (min)</label><input type="number" id="recFPrep" min="0" placeholder="20"></div>
+          <div class="rec-form-group"><label>Cuisson (min)</label><input type="number" id="recFCuisson" min="0" placeholder="30"></div>
+        </div>
+        <div class="rec-form-row">
+          <div class="rec-form-group"><label>Personnes</label><input type="number" id="recFPersonnes" min="1" placeholder="4"></div>
+          <div class="rec-form-group"><label>Note (1-5)</label><input type="number" id="recFNote" min="1" max="5" placeholder="4"></div>
+        </div>
+        <div class="rec-form-group"><label>Ingrédients</label><textarea id="recFIngredients" placeholder="200g farine&#10;3 œufs…"></textarea></div>
+        <div class="rec-form-group"><label>Instructions</label><textarea id="recFInstructions" style="min-height:120px" placeholder="1. Préchauffer…"></textarea></div>
+        <div class="rec-form-group"><label>URL photo</label><input type="url" id="recFImage" placeholder="https://…"></div>
+        <div class="rec-form-group"><label>Tags</label><input type="text" id="recFTags" placeholder="végétarien, rapide…"></div>
+        <div class="rec-form-actions">
+          <button class="rec-btn-delete" id="recDeleteBtn" onclick="recDeleteCurrentRecipe()" style="display:none">🗑 Supprimer</button>
+          <button class="rec-btn-cancel" onclick="recCloseForm()">Annuler</button>
+          <button class="rec-btn-save" id="recSaveBtn" onclick="recSaveRecipe()">Enregistrer</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="rec-toast" id="recToast"></div>
 </div>
 
   <!-- ── MODALE NOUVELLE/ÉDITION COLLECTION ── -->
@@ -2801,6 +2961,7 @@ let saveT = null;
 // ══════════════════════════════════════════════════════
 let colsLoaded = false;
 let mindmapLoaded = false;
+let recettesLoaded = false;
 
 let currentTabStored = null;
 function switchTab(tab) {
@@ -2821,6 +2982,11 @@ function switchTab(tab) {
   if (tab === 'mindmap' && !mindmapLoaded) {
     mindmapLoaded = true;
     window.mmBoot();
+  }
+  if (tab === 'recettes' && !recettesLoaded) {
+    recettesLoaded = true;
+    if (typeof grist !== 'undefined') recLoadRecipes();
+    else { recAllRecipes = []; recApplyFilters(); recRenderTagsBar(); }
   }
   if (typeof grist !== 'undefined' && tab !== currentTabStored) {
     currentTabStored = tab;
@@ -4754,7 +4920,7 @@ if(typeof grist!=='undefined'){
     loadConfig();
     try {
       const savedTab = localStorage.getItem('bujoWidget_lastTab_' + CACHE_NS);
-      if (savedTab && ['bujo','lectures','collections','outliner','mindmap'].includes(savedTab) && savedTab !== 'bujo') {
+      if (savedTab && ['bujo','lectures','collections','outliner','mindmap','recettes'].includes(savedTab) && savedTab !== 'bujo') {
         currentTabStored = savedTab;
         switchTab(savedTab);
       } else {
@@ -6911,6 +7077,235 @@ async function mmBootDemo(){
   render();
 }
 })();
+
+// ══════════════════════════════════════════════════════
+//  ONGLET RECETTES (table Grist "Recettes")
+//  Toutes les fonctions/variables sont préfixées "rec"
+//  pour ne rien écraser du reste de l'application.
+//  esc() est réutilisée depuis le reste du fichier.
+// ══════════════════════════════════════════════════════
+var recAllRecipes = [];
+var recActiveFilter = '';
+var recActiveTag = '';
+var recCurrentDetailId = null;
+var recEditingId = null;
+
+function recEscAttr(s) { if (!s) return ''; return String(s).replace(/\\/g,'\\\\').replace(/'/g,"\\'"); }
+
+function recLoadRecipes(callback) {
+  grist.docApi.fetchTable('Recettes').then(function(data) {
+    recAllRecipes = [];
+    for (var i = 0; i < data.id.length; i++) {
+      recAllRecipes.push({
+        id: data.id[i],
+        Nom: data.Nom[i] || '',
+        Categorie: data.Categorie[i] || '',
+        Difficulte: data.Difficulte[i] || '',
+        Temps_preparation: data.Temps_preparation[i] || null,
+        Temps_cuisson: data.Temps_cuisson[i] || null,
+        Nb_personnes: data.Nb_personnes[i] || null,
+        Note: data.Note[i] || null,
+        Ingredients: data.Ingredients[i] || '',
+        Instructions: data.Instructions[i] || '',
+        Image_url: data.Image_url[i] || '',
+        Tags: data.Tags[i] || ''
+      });
+    }
+    recApplyFilters();
+    recRenderTagsBar();
+    if (recCurrentDetailId !== null) {
+      var u = recAllRecipes.find(function(r) { return r.id === recCurrentDetailId; });
+      if (u) recRenderDetail(u); else recCloseDetail();
+    }
+    if (callback) callback();
+  }).catch(function(e) {
+    console.error('Recettes fetch error', e);
+    recShowToast('Erreur de chargement des recettes', true);
+    if (callback) callback();
+  });
+}
+
+function recApplyFilters() {
+  var input = document.getElementById('recSearchInput');
+  var q = (input ? input.value : '').toLowerCase();
+  var filtered = recAllRecipes.filter(function(r) {
+    var matchCat = !recActiveFilter || (r.Categorie || '') === recActiveFilter;
+    var matchTag = !recActiveTag || (r.Tags || '').split(',').map(function(t) { return t.trim(); }).indexOf(recActiveTag) !== -1;
+    var matchQ = !q ||
+      (r.Nom || '').toLowerCase().includes(q) ||
+      (r.Ingredients || '').toLowerCase().includes(q) ||
+      (r.Tags || '').toLowerCase().includes(q);
+    return matchCat && matchTag && matchQ;
+  });
+  recRenderGrid(filtered);
+}
+
+function recSetFilter(btn, cat) {
+  recActiveFilter = cat;
+  document.querySelectorAll('.rec-filter-btn').forEach(function(b) { b.classList.remove('active'); });
+  btn.classList.add('active');
+  recApplyFilters();
+}
+
+function recRenderTagsBar() {
+  var tagSet = {};
+  recAllRecipes.forEach(function(r) {
+    if (!r.Tags) return;
+    r.Tags.split(',').forEach(function(t) {
+      var tag = t.trim();
+      if (tag) tagSet[tag] = true;
+    });
+  });
+  var tags = Object.keys(tagSet).sort();
+  var bar = document.getElementById('recTagsBar');
+  if (!bar) return;
+  if (!tags.length) { bar.innerHTML = ''; return; }
+  bar.innerHTML = tags.map(function(tag) {
+    return '<button class="rec-tag-btn' + (tag === recActiveTag ? ' active' : '') + '"'
+      + ' onclick="recSetTagFilter(\'' + recEscAttr(tag) + '\')">' + esc(tag) + '</button>';
+  }).join('');
+}
+
+function recSetTagFilter(tag) {
+  recActiveTag = (recActiveTag === tag) ? '' : tag;
+  recRenderTagsBar();
+  recApplyFilters();
+}
+
+function recCatClass(cat) {
+  var map = { 'Entrée':'rec-cat-entree','Plat':'rec-cat-plat','Dessert':'rec-cat-dessert','Apéritif':'rec-cat-aperitif','Boisson':'rec-cat-boisson','Petit déjeuner':'rec-cat-petitdej' };
+  return map[cat] || 'rec-cat-default';
+}
+function recDiffClass(d) { return { 'Facile':'rec-diff-facile','Moyen':'rec-diff-moyen','Difficile':'rec-diff-difficile' }[d] || ''; }
+function recCatEmoji(cat) { return { 'Entrée':'🥗','Plat':'🍲','Dessert':'🍰','Apéritif':'🪙','Boisson':'🥤','Petit déjeuner':'🥐' }[cat] || '🍽'; }
+function recStars(n) {
+  var v = Math.round(n);
+  return '<span class="rec-stars">' + '★'.repeat(v) + '☆'.repeat(5-v) + '</span>';
+}
+
+function recRenderGrid(recipes) {
+  var grid = document.getElementById('recGrid');
+  if (!grid) return;
+  if (!recipes.length) { grid.innerHTML = '<div id="rec-empty">Aucune recette trouvée.</div>'; return; }
+  grid.innerHTML = recipes.map(function(r) {
+    var emoji = recCatEmoji(r.Categorie);
+    var imgHtml = r.Image_url
+      ? '<div class="rec-card-img"><img src="' + esc(r.Image_url) + '" alt="' + esc(r.Nom) + '" onerror="this.parentNode.innerHTML=\'' + emoji + '\'"></div>'
+      : '<div class="rec-card-img">' + emoji + '</div>';
+    var temps = [r.Temps_preparation ? r.Temps_preparation + ' min prép.' : '', r.Temps_cuisson ? r.Temps_cuisson + ' min cuisson' : ''].filter(Boolean).join(' \xb7 ');
+    return '<div class="rec-card" onclick="recOpenDetail(' + r.id + ')">'
+      + imgHtml + '<div class="rec-card-body">'
+      + '<div class="rec-card-cat ' + recCatClass(r.Categorie) + '">' + (esc(r.Categorie) || 'Autre') + '</div>'
+      + '<div class="rec-card-title">' + esc(r.Nom || 'Sans titre') + '</div>'
+      + '<div class="rec-card-meta">' + (temps ? '<span>⏱ ' + temps + '</span>' : '') + (r.Note ? recStars(r.Note) : '') + '</div>'
+      + '</div></div>';
+  }).join('');
+}
+
+function recOpenDetail(id) {
+  var r = recAllRecipes.find(function(x) { return x.id === id; });
+  if (!r) return;
+  recCurrentDetailId = id;
+  document.getElementById('recDetailTitle').textContent = r.Nom || 'Sans titre';
+  recRenderDetail(r);
+  document.getElementById('recDetail').classList.add('open');
+}
+
+function recRenderDetail(r) {
+  var emoji = recCatEmoji(r.Categorie);
+  var heroHtml = r.Image_url
+    ? '<div class="rec-detail-hero"><img src="' + esc(r.Image_url) + '" onerror="this.parentNode.innerHTML=\'' + emoji + '\'"></div>'
+    : '<div class="rec-detail-hero">' + emoji + '</div>';
+  var total = (r.Temps_preparation || 0) + (r.Temps_cuisson || 0);
+  var badges = '';
+  if (r.Categorie) badges += '<span class="rec-badge ' + recCatClass(r.Categorie) + '">' + esc(r.Categorie) + '</span>';
+  if (r.Difficulte) badges += '<span class="rec-badge ' + recDiffClass(r.Difficulte) + '">' + esc(r.Difficulte) + '</span>';
+  if (r.Tags) r.Tags.split(',').forEach(function(t) { badges += '<span class="rec-badge rec-cat-default">' + esc(t.trim()) + '</span>'; });
+  var meta = '';
+  if (r.Temps_preparation) meta += '<div class="rec-meta-item"><span class="val">' + r.Temps_preparation + ' min</span>Préparation</div>';
+  if (r.Temps_cuisson)     meta += '<div class="rec-meta-item"><span class="val">' + r.Temps_cuisson + ' min</span>Cuisson</div>';
+  if (total)               meta += '<div class="rec-meta-item"><span class="val">' + total + ' min</span>Total</div>';
+  if (r.Nb_personnes)      meta += '<div class="rec-meta-item"><span class="val">' + r.Nb_personnes + ' pers.</span>Portions</div>';
+  if (r.Note)              meta += '<div class="rec-meta-item"><span class="val">' + recStars(r.Note) + '</span>Note</div>';
+  document.getElementById('recDetailBody').innerHTML =
+    heroHtml + '<div class="rec-badges">' + badges + '</div>'
+    + (meta ? '<div class="rec-section"><h3>Infos</h3><div class="rec-meta-grid">' + meta + '</div></div>' : '')
+    + (r.Ingredients ? '<div class="rec-section"><h3>Ingrédients</h3><div class="rec-ingr-text">' + esc(r.Ingredients) + '</div></div>' : '')
+    + (r.Instructions ? '<div class="rec-section"><h3>Préparation</h3><div class="rec-instr-text">' + esc(r.Instructions) + '</div></div>' : '');
+}
+
+function recCloseDetail() { document.getElementById('recDetail').classList.remove('open'); recCurrentDetailId = null; }
+
+function recOpenForm(recipe) {
+  recEditingId = recipe ? recipe.id : null;
+  document.getElementById('recModalTitle').textContent = recipe ? '✏ Modifier la recette' : 'Nouvelle recette';
+  document.getElementById('recFNom').value          = recipe ? (recipe.Nom || '') : '';
+  document.getElementById('recFCategorie').value    = recipe ? (recipe.Categorie || '') : '';
+  document.getElementById('recFDifficulte').value   = recipe ? (recipe.Difficulte || '') : '';
+  document.getElementById('recFPrep').value         = recipe ? (recipe.Temps_preparation || '') : '';
+  document.getElementById('recFCuisson').value      = recipe ? (recipe.Temps_cuisson || '') : '';
+  document.getElementById('recFPersonnes').value    = recipe ? (recipe.Nb_personnes || '') : '';
+  document.getElementById('recFNote').value         = recipe ? (recipe.Note || '') : '';
+  document.getElementById('recFIngredients').value  = recipe ? (recipe.Ingredients || '') : '';
+  document.getElementById('recFInstructions').value = recipe ? (recipe.Instructions || '') : '';
+  document.getElementById('recFImage').value        = recipe ? (recipe.Image_url || '') : '';
+  document.getElementById('recFTags').value         = recipe ? (recipe.Tags || '') : '';
+  document.getElementById('recDeleteBtn').style.display = recipe ? 'inline-block' : 'none';
+  document.getElementById('recModalOverlay').classList.add('open');
+  setTimeout(function() { document.getElementById('recFNom').focus(); }, 50);
+}
+
+function recOpenFormFromDetail() { var r = recAllRecipes.find(function(x) { return x.id === recCurrentDetailId; }); if (r) recOpenForm(r); }
+function recCloseForm() { document.getElementById('recModalOverlay').classList.remove('open'); recEditingId = null; }
+
+function recSaveRecipe() {
+  var nom = document.getElementById('recFNom').value.trim();
+  if (!nom) { document.getElementById('recFNom').focus(); return; }
+  var btn = document.getElementById('recSaveBtn');
+  btn.disabled = true; btn.textContent = 'Enregistrement…';
+  var fields = {
+    Nom: nom,
+    Categorie: document.getElementById('recFCategorie').value || null,
+    Difficulte: document.getElementById('recFDifficulte').value || null,
+    Temps_preparation: parseInt(document.getElementById('recFPrep').value) || null,
+    Temps_cuisson: parseInt(document.getElementById('recFCuisson').value) || null,
+    Nb_personnes: parseInt(document.getElementById('recFPersonnes').value) || null,
+    Note: parseFloat(document.getElementById('recFNote').value) || null,
+    Ingredients: document.getElementById('recFIngredients').value.trim() || null,
+    Instructions: document.getElementById('recFInstructions').value.trim() || null,
+    Image_url: document.getElementById('recFImage').value.trim() || null,
+    Tags: document.getElementById('recFTags').value.trim() || null
+  };
+  var action = recEditingId !== null
+    ? ['UpdateRecord', 'Recettes', recEditingId, fields]
+    : ['AddRecord', 'Recettes', null, fields];
+  grist.docApi.applyUserActions([action]).then(function() {
+    recCloseForm(); recShowToast(recEditingId !== null ? 'Recette mise à jour ✓' : 'Recette ajoutée ✓');
+    recLoadRecipes();
+  }).catch(function(e) { recShowToast('Erreur : ' + e.message, true); })
+  .finally(function() { btn.disabled = false; btn.textContent = 'Enregistrer'; });
+}
+
+function recDeleteCurrentRecipe() {
+  var r = recAllRecipes.find(function(x) { return x.id === recCurrentDetailId; });
+  if (!r) return;
+  var nom = r.Nom || 'cette recette';
+  var saisie = prompt('Pour confirmer, tapez le nom de la recette :\n"' + nom + '"');
+  if (saisie === null) return;
+  if (saisie.trim().toLowerCase() !== nom.trim().toLowerCase()) { recShowToast('Nom incorrect — suppression annulée', true); return; }
+  grist.docApi.applyUserActions([['RemoveRecord', 'Recettes', recCurrentDetailId]]).then(function() {
+    recCloseForm(); recCloseDetail(); recShowToast('Recette supprimée');
+    recLoadRecipes();
+  }).catch(function(e) { recShowToast('Erreur : ' + e.message, true); });
+}
+
+function recShowToast(msg, err) {
+  var t = document.getElementById('recToast');
+  if (!t) return;
+  t.textContent = msg; t.style.background = err ? '#a32d2d' : '#3c3489';
+  t.classList.add('show');
+  setTimeout(function() { t.classList.remove('show'); }, 2500);
+}
 </script>
 <div id="calPop" class="cal-pop" style="display:none"></div>
 
