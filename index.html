@@ -2715,16 +2715,18 @@ function applyConfigValues() {
   resolveGuestProfile();
   const gearBtn = document.querySelector('.wcfg-gear-btn');
   if (gearBtn) gearBtn.style.display = guestProfile ? 'none' : '';
-  if (CFG.accent) {
-    const hex = CFG.accent.startsWith('#') ? CFG.accent : '#' + CFG.accent;
+  const effAccent = (guestProfile && guestProfile.accent) || CFG.accent;
+  if (effAccent) {
+    const hex = effAccent.startsWith('#') ? effAccent : '#' + effAccent;
     document.documentElement.style.setProperty('--accent', hex);
     document.documentElement.style.setProperty('--accent-soft', hex + '33');
   }
-  if (CFG.titre) document.title = CFG.titre;
+  const effTitre = (guestProfile && guestProfile.titre) || CFG.titre;
+  if (effTitre) document.title = effTitre;
   const titleEl = document.getElementById('appTitle');
   if (titleEl) {
-    titleEl.textContent = CFG.titre || '';
-    titleEl.classList.toggle('vis', !!CFG.titre);
+    titleEl.textContent = effTitre || '';
+    titleEl.classList.toggle('vis', !!effTitre);
   }
 
     const tabVis = { bujo: cfgOn('bujo_on'), lectures: cfgOn('lectures_on'), collections: cfgOn('collections_on'), outliner: cfgOn('outliner_on'), mindmap: cfgOn('mindmap_on'), recettes: cfgOn('recettes_on') };
@@ -2785,7 +2787,7 @@ function wcfgAddGuest() {
   const profiles = getGuestProfiles();
   let base = 'invite', slug = base, n = 1;
   while (profiles.some(p => p.slug === slug)) { n++; slug = base + '-' + n; }
-  profiles.push({ slug, label: 'Nouvel invité', tabs: DEFAULT_TAB_ORDER.slice(), cols: (cols||[]).map(c => String(c.id)) });
+  profiles.push({ slug, label: 'Nouvel invité', tabs: DEFAULT_TAB_ORDER.slice(), cols: (cols||[]).map(c => String(c.id)), titre: '', accent: '' });
   CFG.guest_profiles = JSON.stringify(profiles);
   wcfgRenderGuests();
 }
@@ -2817,6 +2819,24 @@ function wcfgToggleGuestCol(slug, colId) {
   if (i === -1) p.cols.push(colId); else p.cols.splice(i,1);
   CFG.guest_profiles = JSON.stringify(profiles);
   wcfgRenderGuests();
+}
+function wcfgSetGuestTitre(slug, val) {
+  const profiles = getGuestProfiles();
+  const p = profiles.find(x => x.slug === slug);
+  if (!p) return;
+  p.titre = val;
+  CFG.guest_profiles = JSON.stringify(profiles);
+}
+function wcfgSetGuestAccent(slug, val) {
+  const profiles = getGuestProfiles();
+  const p = profiles.find(x => x.slug === slug);
+  if (!p) return;
+  let v = (val || '').trim();
+  if (v && !v.startsWith('#')) v = '#' + v;
+  p.accent = v;
+  CFG.guest_profiles = JSON.stringify(profiles);
+  const dot = document.getElementById('wcfg-guest-accentdot-' + slug);
+  if (dot && /^#[0-9a-fA-F]{6}$/.test(v)) dot.style.background = v;
 }
 function wcfgDeleteGuest(slug) {
   if (!confirm('Supprimer ce profil invité ?')) return;
@@ -2858,6 +2878,13 @@ function wcfgRenderGuests() {
       <div class="wcfg-guest-grid">${tabsH}</div>
       <div class="wcfg-guest-sub">Collections visibles</div>
       <div class="wcfg-guest-grid">${colsH}</div>
+      <div class="wcfg-guest-sub">Titre du document (laisser vide pour garder le titre par défaut)</div>
+      <input type="text" class="wcfg-tabrow-input" placeholder="${esc(CFG.titre || 'Titre par défaut')}" value="${esc(p.titre || '')}" onchange="wcfgSetGuestTitre('${p.slug}', this.value)">
+      <div class="wcfg-guest-sub">Couleur d'accent (laisser vide pour garder la couleur par défaut)</div>
+      <div style="display:flex;align-items:center;gap:8px">
+        <div id="wcfg-guest-accentdot-${p.slug}" style="width:20px;height:20px;border-radius:50%;border:1px solid var(--border);flex-shrink:0;background:${/^#[0-9a-fA-F]{6}$/.test(p.accent||'') ? p.accent : (CFG.accent || '#e8a020')}"></div>
+        <input type="text" class="wcfg-tabrow-input" placeholder="${esc(CFG.accent || '#e8a020')}" value="${esc(p.accent || '')}" onchange="wcfgSetGuestAccent('${p.slug}', this.value)">
+      </div>
       <div class="wcfg-guest-link-row">
         <button class="bs" onclick="wcfgCopyGuestLink('${p.slug}')">Copier le lien</button>
         <span class="wcfg-guest-copied" id="wcfg-guest-copied-${p.slug}">Copié ✓</span>
