@@ -1259,6 +1259,37 @@ select.cfilt { cursor: pointer; }
 .col-add-item-btn:hover { background: var(--bg-soft); border-color: var(--accent); color: var(--text); }
 
 /* ── Items listes ── */
+.col-pdf-btn {
+  display: flex; align-items: center; gap: 5px;
+  padding: 5px 10px; border: 1px solid var(--border); border-radius: var(--radius);
+  background: var(--bg-card); color: var(--muted); font-size: 12px; cursor: pointer;
+  transition: background .1s, color .1s, border-color .1s; margin-left: 8px; flex-shrink: 0;
+}
+.col-pdf-btn:hover { background: var(--bg-soft); color: var(--text); border-color: var(--accent); }
+#printColArea { display: none; }
+@media print {
+  body > *:not(#printColArea) { display: none !important; }
+  #printColArea { display: block !important; padding: 24px; }
+  #printColArea .print-h { font-size: 20px; font-weight: 700; margin-bottom: 2px; }
+  #printColArea .print-sub { font-size: 11px; color: #666; margin-bottom: 18px; }
+  #printColArea .print-row { display: flex; gap: 10px; align-items: flex-start; padding: 8px 0; border-bottom: 1px solid #ddd; break-inside: avoid; }
+  #printColArea .print-chk { width: 12px; height: 12px; border: 1.5px solid #333; margin-top: 2px; flex-shrink: 0; }
+  #printColArea .print-chk.done { background: #333; }
+  #printColArea .print-swatch { width: 16px; height: 16px; border: 1px solid #999; flex-shrink: 0; margin-top: 2px; }
+  #printColArea .print-title { font-weight: 600; font-size: 13px; }
+  #printColArea .print-title.done { text-decoration: line-through; color: #888; }
+  #printColArea .print-meta { font-size: 11px; color: #666; margin-top: 1px; }
+  #printColArea .print-body { font-size: 12px; color: #333; margin-top: 3px; line-height: 1.4; }
+  #printColArea .print-tag { display: inline-block; font-size: 10px; background: #eee; color: #555; border-radius: 8px; padding: 1px 7px; margin-right: 4px; }
+}
+.item-liste-drag {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  width: 14px; color: var(--light); cursor: grab; opacity: 0; transition: opacity .1s;
+  flex-shrink: 0; align-self: stretch;
+}
+.item-liste:hover .item-liste-drag { opacity: .6; }
+.item-liste-drag:hover { opacity: 1 !important; color: var(--accent); }
+.item-liste.sortable-ghost { opacity: .4; }
 .item-liste {
   display: flex; align-items: flex-start; gap: 9px;
   padding: 8px 6px; border-bottom: .5px solid var(--border);
@@ -5499,6 +5530,7 @@ function setTagFilter(tag) {
   const vue = col.vue || ((col.theme==='listes'||col.theme==='liens')?'liste':'cards');
   if (ct) ct.innerHTML = renderItems(filteredByTag(colItems), col.theme, vue);
   if (vue === 'cards') initItemsSortable();
+  if (vue === 'liste') initItemsListeSortable();
 }
 
 function setColVue(vue) {
@@ -5605,6 +5637,10 @@ function renderColMain() {
         <button class="fd-pb${vue==='cards'?' active':''}" onclick="setColVue('cards')">Cards</button>
         <button class="fd-pb${vue==='table'?' active':''}" onclick="setColVue('table')">Tableau</button>
       </div>
+      <button class="col-pdf-btn" onclick="exportColPdf()" title="Exporter en PDF">
+        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><polyline points="9 15 12 18 15 15"/></svg>
+        PDF
+      </button>
     </div>
     <div class="col-main-body" id="colMainBody">
       <button class="col-add-item-btn" onclick="openItemMod(null,'${col.theme}')">
@@ -5623,6 +5659,7 @@ function renderColMain() {
     });
   }
   if (vue === 'cards') initItemsSortable();
+  if (vue === 'liste') initItemsListeSortable();
 }
 
 let itemsSortable = null;
@@ -5639,6 +5676,84 @@ function initItemsSortable() {
       gItemReorderBulk(idxs.map(idx => items[idx]));
     }
   });
+}
+
+let itemsListeSortable = null;
+function initItemsListeSortable() {
+  const container = document.getElementById('colItemsContainer');
+  if (!container) return;
+  if (itemsListeSortable) { itemsListeSortable.destroy(); itemsListeSortable = null; }
+  itemsListeSortable = Sortable.create(container, {
+    handle: '.item-liste-drag',
+    animation: 150,
+    onEnd: () => {
+      const idxs = [...container.children].map(el => parseInt(el.dataset.itemIdx)).filter(n => !isNaN(n));
+      idxs.forEach((idx, i) => { if (items[idx]) items[idx].ordre = i; });
+      gItemReorderBulk(idxs.map(idx => items[idx]));
+    }
+  });
+}
+
+function exportColPdf() {
+  const col = cols.find(c => c.id === selColId);
+  if (!col) return;
+  const colItems = filteredByTag(items.filter(it => it.col_id === selColId).sort((a,b)=>(a.ordre??0)-(b.ordre??0)));
+  const area = document.getElementById('printColArea');
+  if (!area) return;
+
+  const dateStr = new Date().toLocaleDateString('fr-FR', { day:'numeric', month:'long', year:'numeric' });
+  let rowsHtml = '';
+
+  if (!colItems.length) {
+    rowsHtml = '<div class="print-row">Aucun élément.</div>';
+  } else if (col.theme === 'listes') {
+    rowsHtml = colItems.map(it => `<div class="print-row">
+      <div class="print-chk${it.fait?' done':''}"></div>
+      <div>
+        <div class="print-title${it.fait?' done':''}">${esc(it.titre||'Sans titre')}</div>
+        ${it.tag ? tagsPrint(it.tag) : ''}
+      </div>
+    </div>`).join('');
+  } else if (col.theme === 'liens') {
+    rowsHtml = colItems.map(it => `<div class="print-row">
+      <div>
+        <div class="print-title">${esc(it.titre||it.url||'Sans titre')}</div>
+        ${it.url ? `<div class="print-meta">${esc(it.url)}</div>` : ''}
+        ${it.tag ? tagsPrint(it.tag) : ''}
+      </div>
+    </div>`).join('');
+  } else if (col.theme === 'couleurs') {
+    const hex = it => (it.url||'').trim();
+    rowsHtml = colItems.map(it => `<div class="print-row">
+      <div class="print-swatch" style="background:${hex(it)||'#ccc'}"></div>
+      <div>
+        <div class="print-title">${esc(it.titre||'Sans nom')}</div>
+        ${hex(it) ? `<div class="print-meta">${esc(hex(it))}</div>` : ''}
+      </div>
+    </div>`).join('');
+  } else { // fiches (par défaut)
+    rowsHtml = colItems.map(it => {
+      const texte = it.texte ? (/<[a-z]/i.test(it.texte) ? it.texte : esc(it.texte).replace(/\n/g,'<br>')) : '';
+      return `<div class="print-row">
+      <div style="width:100%">
+        <div class="print-title">${esc(it.titre||'Sans titre')}</div>
+        ${it.tag ? tagsPrint(it.tag) : ''}
+        ${texte ? `<div class="print-body">${texte}</div>` : ''}
+        ${it.url ? `<div class="print-meta">${esc(it.url)}</div>` : ''}
+      </div>
+    </div>`;
+    }).join('');
+  }
+
+  area.innerHTML = `
+    <div class="print-h">${esc(colDisplayName(col))}</div>
+    <div class="print-sub">${(CFG.titre ? esc(CFG.titre) + ' — ' : '')}Exporté le ${dateStr} · ${colItems.length} élément${colItems.length>1?'s':''}${activeTagFilter ? ` · tag « ${esc(activeTagFilter)} »` : ''}</div>
+    ${rowsHtml}`;
+
+  setTimeout(() => window.print(), 50);
+}
+function tagsPrint(tagStr) {
+  return splitTags(tagStr).map(t => `<span class="print-tag">${esc(t)}</span>`).join('');
 }
 
 function openLienCard(idx) {
@@ -5793,7 +5908,8 @@ function renderItemsListe(colItems, theme) {
     return colItems.map((it,i) => {
       const idx = items.indexOf(it);
       const tagHtml = tagsHtml(it.tag);
-      return `<div class="item-liste">
+      return `<div class="item-liste" data-item-idx="${idx}">
+        <span class="item-liste-drag">&#8942;&#8942;</span>
         <div class="item-chk${it.fait?' done':''}" onclick="toggleItem(${idx})"></div>
         ${coverImg(it.cover, 'item-cover-thumb')}
         <div class="item-body">
@@ -5814,7 +5930,8 @@ function renderItemsListe(colItems, theme) {
       const idx = items.indexOf(it);
       const tagHtml = tagsHtml(it.tag);
       const urlDisplay = it.url ? it.url.replace(/^https?:\/\//,'').split('/')[0] : '';
-      return `<div class="item-lien">
+      return `<div class="item-lien" data-item-idx="${idx}">
+        <span class="item-liste-drag">&#8942;&#8942;</span>
         ${it.cover ? coverImg(it.cover, 'item-cover-thumb') : '<div class="item-lien-ico"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg></div>'}
         <div class="item-body">
           <div class="item-body-row">
@@ -5835,7 +5952,8 @@ function renderItemsListe(colItems, theme) {
       const idx = items.indexOf(it);
       const preview = (it.texte||'').replace(/<[^>]+>/g,'').substring(0,90);
       const tagHtml = tagsHtml(it.tag);
-      return `<div class="item-liste" onclick="openFicheModal(${idx})" style="cursor:pointer">
+      return `<div class="item-liste" data-item-idx="${idx}" onclick="openFicheModal(${idx})" style="cursor:pointer">
+        <span class="item-liste-drag" onclick="event.stopPropagation()">&#8942;&#8942;</span>
         ${coverImg(it.cover, 'item-cover-thumb')}
         <div class="item-body">
           <div class="item-body-row">
@@ -5853,7 +5971,8 @@ function renderItemsListe(colItems, theme) {
       const idx = items.indexOf(it);
       const hex = (it.url||'').trim();
       const tagHtml = tagsHtml(it.tag);
-      return `<div class="item-liste">
+      return `<div class="item-liste" data-item-idx="${idx}">
+        <span class="item-liste-drag">&#8942;&#8942;</span>
         <div class="item-couleur-swatch" style="width:20px;height:20px;background:${hex||'var(--bg-soft)'}"></div>
         <div class="item-body">
           <div class="item-body-row">
@@ -7723,5 +7842,6 @@ function recShowToast(msg, err) {
     </div>
   </div>
 
+<div id="printColArea"></div>
 </body>
 </html>
