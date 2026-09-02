@@ -564,6 +564,16 @@ select.cfilt { cursor: pointer; }
   border: none; background: none; color: var(--light); cursor: pointer;
   border-radius: 8px; transition: color .12s, background .12s; flex-shrink: 0; z-index: 1;
 }
+/* Pastille de statut hors-ligne / synchro en attente (voir OfflineSync) */
+.offline-dot {
+  position: absolute; right: 71px; top: 50%; transform: translateY(-50%);
+  width: 8px; height: 8px; border-radius: 50%;
+  background: var(--light); display: none; z-index: 1; cursor: default;
+}
+.offline-dot.is-visible { display: block; }
+.offline-dot.is-pending { background: var(--accent); animation: offlineDotPulse 1.6s ease-in-out infinite; }
+.offline-dot.is-offline-idle { background: var(--muted); }
+@keyframes offlineDotPulse { 0%,100% { opacity: 1; } 50% { opacity: .35; } }
 .wcfg-gear-btn:hover { color: var(--text); background: var(--bg-hover); }
 .gsearch-btn {
   position: absolute; right: 40px; top: 50%; transform: translateY(-50%);
@@ -2012,6 +2022,7 @@ body.presentation #exitPresentBtn{ display:flex; }
     <span class="tab-label">Recettes</span>
   </button>
 </div>
+  <span id="offlineDot" class="offline-dot" title=""></span>
   <button class="gsearch-btn" onclick="openGlobalSearch()" title="Rechercher partout">
     <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
   </button>
@@ -3084,7 +3095,7 @@ async function wcfgSaveConfig() {
       : ['AddRecord', 'Config', null, { cle, valeur }];
   });
   try {
-    await grist.docApi.applyUserActions(actions);
+    await OfflineSync.applyUserActions(actions);
     await loadConfig(); // recharge CFG + wcfgRowIds, applique et met à jour le cache
     wcfgFlashSaved();
     setTimeout(closeConfigModal, 700);
@@ -4484,15 +4495,15 @@ function bujoDistinctTags() {
 }
 function gBujoUpdate(t){
   if(typeof grist==='undefined'||!t.id)return;
-  grist.docApi.applyUserActions([['UpdateRecord','Bujo',t.id,{tache:t.name,date:t.date,termine:t.done,anniversaire:!!t.bday,projet:!!t.projet,archive:!!t.archive,urgent:!!t.urgent,tag:t.tag||''}]]).then(loadBujo).catch(console.error);
+  OfflineSync.applyUserActions([['UpdateRecord','Bujo',t.id,{tache:t.name,date:t.date,termine:t.done,anniversaire:!!t.bday,projet:!!t.projet,archive:!!t.archive,urgent:!!t.urgent,tag:t.tag||''}]]).then(res => { if (res) loadBujo(); }).catch(console.error);
 }
 function gBujoAdd(t){
   if(typeof grist==='undefined')return;
-  grist.docApi.applyUserActions([['AddRecord','Bujo',null,{tache:t.name,date:t.date,termine:false,anniversaire:!!t.bday,projet:!!t.projet,archive:!!t.archive,urgent:!!t.urgent,tag:t.tag||''}]]).then(loadBujo).catch(console.error);
+  OfflineSync.applyUserActions([['AddRecord','Bujo',null,{tache:t.name,date:t.date,termine:false,anniversaire:!!t.bday,projet:!!t.projet,archive:!!t.archive,urgent:!!t.urgent,tag:t.tag||''}]]).then(res => { if (res) loadBujo(); }).catch(console.error);
 }
 function gBujoDelete(t){
   if(typeof grist==='undefined'||!t.id)return;
-  grist.docApi.applyUserActions([['RemoveRecord','Bujo',t.id]]).then(loadBujo).catch(console.error);
+  OfflineSync.applyUserActions([['RemoveRecord','Bujo',t.id]]).then(res => { if (res) loadBujo(); }).catch(console.error);
 }
 
 // ══════════════════════════════════════════════════════
@@ -4703,11 +4714,11 @@ document.getElementById('btnLecSave').addEventListener('click',async()=>{
   const fields={titre:document.getElementById('eT')?.value||'',auteur:document.getElementById('eA')?.value||'',statut:document.getElementById('eSt')?.value||'',cover:document.getElementById('eCov')?.value||'',date_edition:lGFV('ed'),date_lecture:lGFV('lec'),resume:document.getElementById('eRes')?.innerHTML||'',incipit:document.getElementById('eInc')?.innerHTML||'',personnages:document.getElementById('ePer')?.innerHTML||'',citations:document.getElementById('eCit')?.innerHTML||''};
   try{
     if(lecMode==='create'){
-      const res=await grist.docApi.applyUserActions([['AddRecord','Lectures',null,fields]]);
-      lecSelId=res.retValues?.[0]??null;
+      const res=await OfflineSync.applyUserActions([['AddRecord','Lectures',null,fields]]);
+      lecSelId=res?.retValues?.[0]??null;
       await loadLectures();
     } else {
-      await grist.docApi.applyUserActions([['UpdateRecord','Lectures',lecSelId,fields]]);
+      await OfflineSync.applyUserActions([['UpdateRecord','Lectures',lecSelId,fields]]);
       const ri=lecRecs.findIndex(r=>r.id===lecSelId);
       if(ri>=0)lecRecs[ri]={...lecRecs[ri],...fields};
     }
@@ -4725,7 +4736,7 @@ document.getElementById('btnLecDel').addEventListener('click',()=>document.getEl
 document.getElementById('btnDelCancel').addEventListener('click',()=>document.getElementById('modDel').style.display='none');
 document.getElementById('btnDelConfirm').addEventListener('click',async()=>{
   document.getElementById('modDel').style.display='none';if(!lecSelId)return;
-  try{await grist.docApi.applyUserActions([['RemoveRecord','Lectures',lecSelId]]);lecRecs=lecRecs.filter(r=>r.id!==lecSelId);lecClosePanel();lecFilter2();document.getElementById('badge-lectures').textContent=lecRecs.length||'';}catch(e){alert('Erreur : '+e.message);}
+  try{await OfflineSync.applyUserActions([['RemoveRecord','Lectures',lecSelId]]);lecRecs=lecRecs.filter(r=>r.id!==lecSelId);lecClosePanel();lecFilter2();document.getElementById('badge-lectures').textContent=lecRecs.length||'';}catch(e){alert('Erreur : '+e.message);}
 });
 document.getElementById('btnLecNew').addEventListener('click',()=>{
   lecSelId=null;lecMode='create';
@@ -4846,6 +4857,7 @@ function outGetAllDescendants(id) {
 
 // ── Mutations : appel Grist + mise à jour optimiste locale + re-render ──
 async function outAddNode(parentId, afterId) {
+  if (offlineGuard()) return;
   const siblings = outGetChildren(parentId || 0);
   let pos;
   if (afterId) {
@@ -4868,7 +4880,7 @@ async function outAddNode(parentId, afterId) {
 }
 async function outUpdateTitle(id, title) {
   const r = outGetRecord(id); if (r) r.title = title;
-  await grist.docApi.applyUserActions([['UpdateRecord', OUT_TABLE_ID, id, { title }]]);
+  await OfflineSync.applyUserActions([['UpdateRecord', OUT_TABLE_ID, id, { title }]]);
 }
 async function outToggleCollapse(id) {
   const r = outGetRecord(id); if (!r) return;
@@ -4885,18 +4897,18 @@ async function outToggleCollapse(id) {
     }
   }
 
-  await grist.docApi.applyUserActions(actions);
+  await OfflineSync.applyUserActions(actions);
   outRender();
 }
 async function outToggleChecked(id) {
   const r = outGetRecord(id); if (!r) return;
   r.checked = !r.checked;
-  await grist.docApi.applyUserActions([['UpdateRecord', OUT_TABLE_ID, id, { checked: r.checked }]]);
+  await OfflineSync.applyUserActions([['UpdateRecord', OUT_TABLE_ID, id, { checked: r.checked }]]);
   outRender();
 }
 async function outDeleteNode(id) {
   const all = outGetAllDescendants(id); all.push(id);
-  await grist.docApi.applyUserActions([['BulkRemoveRecord', OUT_TABLE_ID, all]]);
+  await OfflineSync.applyUserActions([['BulkRemoveRecord', OUT_TABLE_ID, all]]);
   outRecords = outRecords.filter(r => !all.includes(r.id));
   outRender();
 }
@@ -4906,10 +4918,10 @@ async function outIndentNode(id) {
   const idx = siblings.findIndex(r => r.id === id); if (idx < 1) return;
   const np = siblings[idx - 1];
   const newPos = outMaxPosition(np.id) + 1;
-  await grist.docApi.applyUserActions([['UpdateRecord', OUT_TABLE_ID, id, { parent_id: np.id, position: newPos }]]);
+  await OfflineSync.applyUserActions([['UpdateRecord', OUT_TABLE_ID, id, { parent_id: np.id, position: newPos }]]);
   rec.parent_id = np.id; rec.position = newPos;
   if (np.collapsed) {
-    await grist.docApi.applyUserActions([['UpdateRecord', OUT_TABLE_ID, np.id, { collapsed: false }]]);
+    await OfflineSync.applyUserActions([['UpdateRecord', OUT_TABLE_ID, np.id, { collapsed: false }]]);
     np.collapsed = false;
   }
   outRender();
@@ -4923,7 +4935,7 @@ async function outUnindentNode(id) {
   const actions = [];
   if (toShift.length) actions.push(['BulkUpdateRecord', OUT_TABLE_ID, toShift.map(r=>r.id), { position: toShift.map(r=>(r.position||0)+1) }]);
   actions.push(['UpdateRecord', OUT_TABLE_ID, id, { parent_id: gpId, position: newPos }]);
-  await grist.docApi.applyUserActions(actions);
+  await OfflineSync.applyUserActions(actions);
   toShift.forEach(r => { r.position = (r.position||0) + 1; });
   rec.parent_id = gpId; rec.position = newPos;
   outRender();
@@ -4935,18 +4947,18 @@ async function outMoveNode(dragId, targetId, position) {
   if (position === 'child') {
     newParentId = targetId; newPos = outMaxPosition(targetId) + 1;
     const tr = outGetRecord(targetId);
-    if (tr?.collapsed) { await grist.docApi.applyUserActions([['UpdateRecord', OUT_TABLE_ID, targetId, { collapsed: false }]]); tr.collapsed = false; }
+    if (tr?.collapsed) { await OfflineSync.applyUserActions([['UpdateRecord', OUT_TABLE_ID, targetId, { collapsed: false }]]); tr.collapsed = false; }
   } else {
     const tr = outGetRecord(targetId);
     newParentId = tr?.parent_id || 0;
     newPos = (tr?.position || 0) + (position === 'after' ? 1 : 0);
     const toShift = outGetChildren(newParentId).filter(r => r.id !== dragId && (r.position||0) >= newPos);
     if (toShift.length) {
-      await grist.docApi.applyUserActions([['BulkUpdateRecord', OUT_TABLE_ID, toShift.map(r=>r.id), { position: toShift.map(r=>(r.position||0)+1) }]]);
+      await OfflineSync.applyUserActions([['BulkUpdateRecord', OUT_TABLE_ID, toShift.map(r=>r.id), { position: toShift.map(r=>(r.position||0)+1) }]]);
       toShift.forEach(r => { r.position = (r.position||0) + 1; });
     }
   }
-  await grist.docApi.applyUserActions([['UpdateRecord', OUT_TABLE_ID, dragId, { parent_id: newParentId, position: newPos }]]);
+  await OfflineSync.applyUserActions([['UpdateRecord', OUT_TABLE_ID, dragId, { parent_id: newParentId, position: newPos }]]);
   dragRec.parent_id = newParentId; dragRec.position = newPos;
   outRender();
 }
@@ -5315,6 +5327,102 @@ document.addEventListener('keydown', (e) => {
     outSearchOpen ? document.getElementById('out-search-input').focus() : outOpenSearch();
   }
 });
+
+// ══════════════════════════════════════════════════════
+//  OFFLINE SYNC
+//  File d'attente localStorage pour les écritures Grist qui échouent
+//  (coupure réseau typiquement). Ne gère QUE les écritures "tire et
+//  oublie" (le code ne dépend pas de l'id retourné par Grist juste
+//  après l'appel). Les créations qui ont besoin de l'id réel tout de
+//  suite (nouvelle carte mentale, nouveau nœud outliner/mindmap,
+//  import outliner→mindmap) restent bloquées hors-ligne via
+//  offlineGuard() — voir les commentaires sur ces fonctions.
+// ══════════════════════════════════════════════════════
+const OfflineSync = (() => {
+  const QKEY = 'bujoWidget_offlineQueue_' + CACHE_NS;
+  let flushing = false;
+
+  function loadQ(){ try { return JSON.parse(localStorage.getItem(QKEY)) || []; } catch(e){ return []; } }
+  function saveQ(q){ try { localStorage.setItem(QKEY, JSON.stringify(q)); } catch(e){} updateDot(); }
+
+  // Remplace grist.docApi.applyUserActions : en cas d'échec (hors-ligne le
+  // plus souvent, mais aussi toute autre erreur réseau), l'action est mise
+  // en file au lieu de remonter une exception. Retourne null si mise en
+  // file — le code appelant ne doit donc jamais compter sur la valeur de
+  // retour ici (c'est pour ça que les créations avec id chaîné utilisent
+  // grist.docApi directement, pas cette fonction).
+  async function applyUserActions(actions){
+    try {
+      return await grist.docApi.applyUserActions(actions);
+    } catch(e){
+      const q = loadQ();
+      q.push({ actions, ts: Date.now() });
+      saveQ(q);
+      console.warn('Action mise en file d\'attente (hors ligne ?) :', e);
+      return null;
+    }
+  }
+
+  async function flush(){
+    if (flushing) return;
+    const q = loadQ();
+    if (!q.length) { updateDot(); return; }
+    flushing = true;
+    const remaining = [];
+    for (const item of q) {
+      try { await grist.docApi.applyUserActions(item.actions); }
+      catch(e){ remaining.push(item); }
+    }
+    saveQ(remaining);
+    flushing = false;
+    if (remaining.length < q.length) {
+      // Au moins une action est passée : ce qui est visible à l'écran peut
+      // être obsolète (ids provisoires, valeurs locales) → on recharge les
+      // vues actuellement chargées pour repartir sur les données Grist.
+      try { await loadBujo(); } catch(e){}
+      try { await loadLectures(); } catch(e){}
+      try { await loadOutliner(); } catch(e){}
+      try { if (typeof loadCollections === 'function') await loadCollections(); } catch(e){}
+    }
+  }
+
+  function updateDot(){
+    const el = document.getElementById('offlineDot');
+    if (!el) return;
+    const n = loadQ().length;
+    if (n > 0) {
+      el.classList.add('is-visible','is-pending');
+      el.classList.remove('is-offline-idle');
+      el.title = n + ' modification' + (n>1?'s':'') + ' en attente de synchronisation';
+    } else if (!navigator.onLine) {
+      el.classList.add('is-visible','is-offline-idle');
+      el.classList.remove('is-pending');
+      el.title = 'Hors ligne';
+    } else {
+      el.classList.remove('is-visible','is-pending','is-offline-idle');
+      el.title = '';
+    }
+  }
+
+  window.addEventListener('online', flush);
+  window.addEventListener('offline', updateDot);
+  setInterval(flush, 20000);
+  document.addEventListener('DOMContentLoaded', updateDot);
+  updateDot();
+
+  return { applyUserActions, flush, updateDot, get pendingCount(){ return loadQ().length; } };
+})();
+
+// Garde-fou pour les créations qui ont besoin de l'id Grist réel tout de
+// suite après l'AddRecord (voir en-tête OfflineSync ci-dessus). Renvoie
+// true (et affiche un message) si l'action doit être bloquée hors-ligne.
+function offlineGuard(){
+  if (!navigator.onLine) {
+    alert('Cette action nécessite une connexion internet (elle crée un élément dont l\'identifiant doit être confirmé par Grist immédiatement).');
+    return true;
+  }
+  return false;
+}
 
 // ══════════════════════════════════════════════════════
 //  INIT GRIST / DEMO
@@ -6263,7 +6371,7 @@ function deleteItem() {
 // ── Grist API Collections ──
 function gColAdd(col) {
   if(typeof grist==='undefined')return;
-  grist.docApi.applyUserActions([['AddRecord','Collections',null, {nom:col.nom,theme:col.theme,icone:col.icone,vue:col.vue||'',ordre:col.ordre||0}]])
+  OfflineSync.applyUserActions([['AddRecord','Collections',null, {nom:col.nom,theme:col.theme,icone:col.icone,vue:col.vue||'',ordre:col.ordre||0}]])
     .then(res => {
       const gid = res?.retValues?.[0];
       if (!gid) return;
@@ -6294,12 +6402,12 @@ function gColAdd(col) {
 }
 function gColUpdate(col) {
   if(typeof grist==='undefined'||!col.gid)return;
-  grist.docApi.applyUserActions([['UpdateRecord','Collections',col.gid, {nom:col.nom,theme:col.theme,icone:col.icone,vue:col.vue||'',ordre:col.ordre||0}]]).catch(console.error);
+  OfflineSync.applyUserActions([['UpdateRecord','Collections',col.gid, {nom:col.nom,theme:col.theme,icone:col.icone,vue:col.vue||'',ordre:col.ordre||0}]]).catch(console.error);
 }
 
 function gColDelete(col) {
   if(typeof grist==='undefined'||!col.gid)return;
-  grist.docApi.applyUserActions([['RemoveRecord','Collections',col.gid]]).catch(console.error);
+  OfflineSync.applyUserActions([['RemoveRecord','Collections',col.gid]]).catch(console.error);
 }
 
 function gColReorderBulk(colsArr) {
@@ -6308,7 +6416,7 @@ function gColReorderBulk(colsArr) {
   if (!withGid.length) return;
   const ids = withGid.map(c => c.gid);
   const ordreVals = withGid.map(c => c.ordre);
-  grist.docApi.applyUserActions([['BulkUpdateRecord', 'Collections', ids, {ordre: ordreVals}]]).catch(console.error);
+  OfflineSync.applyUserActions([['BulkUpdateRecord', 'Collections', ids, {ordre: ordreVals}]]).catch(console.error);
 }
 
 function gItemReorderBulk(itemsArr) {
@@ -6317,13 +6425,13 @@ function gItemReorderBulk(itemsArr) {
   if (!withGid.length) return;
   const ids = withGid.map(it => it.gid);
   const ordreVals = withGid.map(it => it.ordre);
-  grist.docApi.applyUserActions([['BulkUpdateRecord', 'Items', ids, {ordre: ordreVals}]]).catch(console.error);
+  OfflineSync.applyUserActions([['BulkUpdateRecord', 'Items', ids, {ordre: ordreVals}]]).catch(console.error);
 }
 
 function gItemAdd(it) {
   if(typeof grist==='undefined')return;
   const col = cols.find(c=>c.id===it.col_id);
-  grist.docApi.applyUserActions([['AddRecord','Items',null,{collection:col?.gid||0,titre:it.titre,texte:it.texte,url:it.url,cover:it.cover||'',tag:it.tag,fait:!!it.fait,type:col?.theme||'',ordre:it.ordre||0}]])
+  OfflineSync.applyUserActions([['AddRecord','Items',null,{collection:col?.gid||0,titre:it.titre,texte:it.texte,url:it.url,cover:it.cover||'',tag:it.tag,fait:!!it.fait,type:col?.theme||'',ordre:it.ordre||0}]])
     .then(res => {
       const gid = res?.retValues?.[0];
       if (gid) { const existing = items.find(x=>x.id===it.id); if (existing) existing.gid = gid; }
@@ -6333,11 +6441,11 @@ function gItemAdd(it) {
 function gItemUpdate(it) {
   if(typeof grist==='undefined'||!it.gid)return;
   const col = cols.find(c => c.id === it.col_id);
-  grist.docApi.applyUserActions([['UpdateRecord','Items',it.gid,{collection:col?.gid||0,titre:it.titre,texte:it.texte,url:it.url,cover:it.cover||'',tag:it.tag,fait:!!it.fait,ordre:it.ordre||0}]]).catch(console.error);
+  OfflineSync.applyUserActions([['UpdateRecord','Items',it.gid,{collection:col?.gid||0,titre:it.titre,texte:it.texte,url:it.url,cover:it.cover||'',tag:it.tag,fait:!!it.fait,ordre:it.ordre||0}]]).catch(console.error);
 }
 function gItemDelete(it) {
   if(typeof grist==='undefined'||!it.gid)return;
-  grist.docApi.applyUserActions([['RemoveRecord','Items',it.gid]]).catch(console.error);
+  OfflineSync.applyUserActions([['RemoveRecord','Items',it.gid]]).catch(console.error);
 }
 
 
@@ -6672,8 +6780,12 @@ async function loadCartes(){
       if (cachedNoeuds) { allNoeuds = cachedNoeuds; noeuds = cachedNoeuds.filter(n => n.MapId === currentMapId); render(); }
     } else showEmptyState();
   }
-  cartes = toRows(await grist.docApi.fetchTable(TABLE_CARTES));
-  cacheSet('mm_cartes', cartes);
+  try {
+    cartes = toRows(await grist.docApi.fetchTable(TABLE_CARTES));
+    cacheSet('mm_cartes', cartes);
+  } catch (e) {
+    console.warn('Mind map (cartes) hors ligne, cache conservé :', e);
+  }
   populateMapSelect();
   if (!currentMapId && cartes.length) currentMapId = cartes[0].id;
   if (currentMapId) await loadNoeuds();
@@ -6681,10 +6793,16 @@ async function loadCartes(){
 }
 
 async function loadNoeuds(){
-  const all = toRows(await grist.docApi.fetchTable(TABLE_NOEUDS));
-  cacheSet('mm_noeuds', all);
-  allNoeuds = all;
-  noeuds = all.filter(n => n.MapId === currentMapId);
+  try {
+    const all = toRows(await grist.docApi.fetchTable(TABLE_NOEUDS));
+    cacheSet('mm_noeuds', all);
+    allNoeuds = all;
+    noeuds = all.filter(n => n.MapId === currentMapId);
+  } catch (e) {
+    console.warn('Mind map (nœuds) hors ligne, cache conservé :', e);
+    // On ne touche pas à allNoeuds/noeuds : ils gardent la dernière valeur
+    // connue (cache ou état local) au lieu de planter le rendu.
+  }
   render();
 }
 
@@ -6750,6 +6868,7 @@ function mmPromptModal(title, defaultValue){
 }
 
 async function createMap(){
+  if (offlineGuard()) return;
   const titre = await mmPromptModal('Titre de la nouvelle carte :', 'Nouvelle carte');
   if (titre === null) return;
   const res = await grist.docApi.applyUserActions([
@@ -6772,7 +6891,7 @@ document.getElementById('renameMapBtn').addEventListener('click', async () => {
   const carte = cartes.find(c => c.id === currentMapId);
   const titre = await mmPromptModal('Nouveau titre :', carte ? carte.Titre : '');
   if (titre === null) return;
-  await grist.docApi.applyUserActions([
+  await OfflineSync.applyUserActions([
     ['UpdateRecord', TABLE_CARTES, currentMapId, { Titre: titre }]
   ]);
   await loadCartes();
@@ -6814,7 +6933,7 @@ document.getElementById('deleteMapBtn').addEventListener('click', async () => {
   const actions = [];
   if (idsToDelete.length) actions.push(['BulkRemoveRecord', TABLE_NOEUDS, idsToDelete]);
   actions.push(['RemoveRecord', TABLE_CARTES, currentMapId]);
-  await grist.docApi.applyUserActions(actions);
+  await OfflineSync.applyUserActions(actions);
   currentMapId = null;
   didCenter = false;
   setSelectedNode(null);
@@ -6825,6 +6944,7 @@ document.getElementById('deleteMapBtn').addEventListener('click', async () => {
 
 // Outliner (branche) → nouvelle carte Mind Map
 window.mmImportOutlinerBranch = async function(outlinerRootId){
+  if (offlineGuard()) return;
   const rootRec = outGetRecord(outlinerRootId);
   if (!rootRec) return;
   const titre = await mmPromptModal('Nom de la nouvelle carte Mind Map :', rootRec.title || 'Carte sans titre');
@@ -6876,6 +6996,7 @@ window.mmImportOutlinerBranch = async function(outlinerRootId){
 // Mind Map (carte courante) → nouvelle branche en tête de l'Outliner
 document.getElementById('exportOutlinerBtn').addEventListener('click', async () => {
   if (!currentMapId) return;
+  if (offlineGuard()) return;
   const rootRec = noeuds.find(n => !n.ParentId || n.ParentId === 0);
   if (!rootRec) return;
 
@@ -7305,13 +7426,13 @@ async function reorderSibling(current, targetNode){
   const idx = siblings.findIndex(s => s.id === targetNode.id);
   siblings.splice(idx, 0, current);
   const actions = siblings.map((s, i) => ['UpdateRecord', TABLE_NOEUDS, s.id, { Ordre: i }]);
-  await grist.docApi.applyUserActions(actions);
+  await OfflineSync.applyUserActions(actions);
 }
 
 async function reparentNode(current, targetNode){
   const futureSiblings = noeuds.filter(n => n.ParentId === targetNode.id);
   const ordre = futureSiblings.length ? Math.max(...futureSiblings.map(s => s.Ordre || 0)) + 1 : 0;
-  await grist.docApi.applyUserActions([
+  await OfflineSync.applyUserActions([
     ['UpdateRecord', TABLE_NOEUDS, current.id, { ParentId: targetNode.id, Ordre: ordre }]
   ]);
 }
@@ -7347,7 +7468,7 @@ function startEdit(d){
     const val = node.value.trim();
     fo.remove();
     if (val && val !== d.data.Label){
-      await grist.docApi.applyUserActions([
+      await OfflineSync.applyUserActions([
         ['UpdateRecord', TABLE_NOEUDS, d.data.id, { Label: val }]
       ]);
       await loadNoeuds();
@@ -7399,6 +7520,7 @@ async function onKeyDown(ev){
 }
 
 async function addNode(parentId){
+  if (offlineGuard()) return;
   const siblings = noeuds.filter(n => n.ParentId === parentId);
   const ordre = siblings.length ? Math.max(...siblings.map(s => s.Ordre||0)) + 1 : 0;
   const res = await grist.docApi.applyUserActions([
@@ -7416,7 +7538,7 @@ async function addNode(parentId){
 
 async function deleteNode(id){
   const idsToDelete = collectSubtreeIds(id);
-  await grist.docApi.applyUserActions(
+  await OfflineSync.applyUserActions(
     idsToDelete.map(i => ['RemoveRecord', TABLE_NOEUDS, i])
   );
   setSelectedNode(null);
@@ -7455,7 +7577,7 @@ function schedulePanelSave(){
     if (!idAtEdit) return;
     const url = document.getElementById('panelUrlInput').value.trim();
     const notes = document.getElementById('panelNotesInput').value;
-    await grist.docApi.applyUserActions([
+    await OfflineSync.applyUserActions([
       ['UpdateRecord', TABLE_NOEUDS, idAtEdit, { Url: url, Notes: notes }]
     ]);
     await loadNoeuds();
@@ -7810,7 +7932,7 @@ function recSaveRecipe() {
   var action = recEditingId !== null
     ? ['UpdateRecord', 'Recettes', recEditingId, fields]
     : ['AddRecord', 'Recettes', null, fields];
-  grist.docApi.applyUserActions([action]).then(function() {
+  OfflineSync.applyUserActions([action]).then(function() {
     recCloseForm(); recShowToast(recEditingId !== null ? 'Recette mise à jour ✓' : 'Recette ajoutée ✓');
     recLoadRecipes();
   }).catch(function(e) { recShowToast('Erreur : ' + e.message, true); })
@@ -7824,7 +7946,7 @@ function recDeleteCurrentRecipe() {
   var saisie = prompt('Pour confirmer, tapez le nom de la recette :\n"' + nom + '"');
   if (saisie === null) return;
   if (saisie.trim().toLowerCase() !== nom.trim().toLowerCase()) { recShowToast('Nom incorrect — suppression annulée', true); return; }
-  grist.docApi.applyUserActions([['RemoveRecord', 'Recettes', recCurrentDetailId]]).then(function() {
+  OfflineSync.applyUserActions([['RemoveRecord', 'Recettes', recCurrentDetailId]]).then(function() {
     recCloseForm(); recCloseDetail(); recShowToast('Recette supprimée');
     recLoadRecipes();
   }).catch(function(e) { recShowToast('Erreur : ' + e.message, true); });
