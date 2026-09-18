@@ -1990,8 +1990,11 @@ body.presentation #exitPresentBtn{ display:flex; }
    ══════════════════════════════════════════ */
 #page-kanban { background: var(--bg-soft); }
 #kbTopbar { background: var(--bg); border-bottom: 1px solid var(--border); padding: 9px 14px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; flex-shrink: 0; }
-#kbSearch { flex: 1 1 160px; max-width: 280px; padding: 6px 12px; border: 1px solid var(--border); border-radius: 20px; font-size: 13px; outline: none; background: var(--bg-soft); color: var(--text); font-family: inherit; }
+#kbSearch { flex: 1 1 160px; max-width: 280px; padding: 6px 26px 6px 12px; border: 1px solid var(--border); border-radius: 20px; font-size: 13px; outline: none; background: var(--bg-soft); color: var(--text); font-family: inherit; width: 100%; box-sizing: border-box; }
 #kbSearch:focus { border-color: var(--accent); }
+.kb-search-wrap { position: relative; flex: 1 1 160px; max-width: 280px; }
+.kb-search-clear { position: absolute; right: 6px; top: 50%; transform: translateY(-50%); border: none; background: none; color: var(--muted); font-size: 12px; cursor: pointer; padding: 3px 5px; line-height: 1; border-radius: 50%; }
+.kb-search-clear:hover { color: var(--text); background: var(--bg-hover); }
 #kbActeurSel { padding: 6px 10px; border: 1px solid var(--border); border-radius: 20px; font-size: 12px; background: var(--bg); color: var(--text); font-family: inherit; cursor: pointer; }
 #kbTableauSel { padding: 6px 12px; border: 1px solid var(--accent); border-radius: 20px; font-size: 12.5px; font-weight: 600; background: var(--accent-soft); color: var(--text); font-family: inherit; cursor: pointer; }
 .kb-tb-btn { padding: 6px 13px; border: 1px solid var(--border); border-radius: 20px; background: var(--bg); font-size: 12px; cursor: pointer; color: var(--text); font-family: inherit; }
@@ -2481,9 +2484,11 @@ body.presentation #exitPresentBtn{ display:flex; }
     <div id="kbTopbar">
       <select id="kbTableauSel" onchange="kbSetTableauActif(this.value)"></select>
       <button class="kb-tb-btn" onclick="kbOpenBoardMod()" title="Gérer les tableaux">⚙ Tableaux</button>
-      <input type="text" id="kbSearch" placeholder="Rechercher une carte…" oninput="kbSetSearch(this.value)">
+      <div class="kb-search-wrap">
+        <input type="text" id="kbSearch" placeholder="Rechercher une carte…" oninput="kbSetSearch(this.value)">
+        <button id="kbSearchClear" class="kb-search-clear" onclick="kbClearSearch()" title="Effacer la recherche" style="display:none">✕</button>
+      </div>
       <select id="kbActeurSel" onchange="kbSetActeur(this.value)"><option value="">Tous les acteurs</option></select>
-      <button class="kb-tb-btn" onclick="kbOpenColMod(null)">+ Colonne</button>
       <button class="kb-tb-btn primary" onclick="kbOpenCardMod(null, null)">+ Nouvelle carte</button>
       <div id="kbFilterWarn">Un filtre est actif : le glisser-déposer est désactivé pour ne pas corrompre l'ordre des cartes.</div>
     </div>
@@ -8400,10 +8405,22 @@ function kbSetTableauActif(v) {
   try { localStorage.setItem('bujoWidget_kbBoard_' + CACHE_NS, String(kbTableauActif)); } catch (e) {}
   kbSearch = ''; kbActeurFiltre = '';
   const s = document.getElementById('kbSearch'); if (s) s.value = '';
+  const clr = document.getElementById('kbSearchClear'); if (clr) clr.style.display = 'none';
   kbRender();
 }
 
-function kbSetSearch(v) { kbSearch = v || ''; kbRender(); }
+function kbSetSearch(v) {
+  kbSearch = v || '';
+  const clr = document.getElementById('kbSearchClear');
+  if (clr) clr.style.display = kbSearch ? '' : 'none';
+  kbRender();
+}
+function kbClearSearch() {
+  const s = document.getElementById('kbSearch');
+  if (s) s.value = '';
+  kbSetSearch('');
+  if (s) s.focus();
+}
 function kbSetActeur(v) { kbActeurFiltre = v || ''; kbRender(); }
 
 // ── Glisser-déposer (désactivé si un filtre est actif) ──
