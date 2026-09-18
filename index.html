@@ -2012,6 +2012,9 @@ body.presentation #exitPresentBtn{ display:flex; }
 .kb-ico-btn:disabled { opacity: .3; cursor: default; }
 .kb-col-body { flex: 1; overflow-y: auto; padding: 8px; display: flex; flex-direction: column; gap: 7px; min-height: 42px; }
 .kb-card { background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 8px 10px; cursor: pointer; box-shadow: 0 1px 2px rgba(0,0,0,.04); }
+.kb-card-compact { display: flex; align-items: center; gap: 6px; padding: 5px 9px; }
+.kb-card-titre-compact { flex: 1; font-size: 12px; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.kb-ech-dot { width: 6px; height: 6px; border-radius: 50%; background: #a32d2d; flex-shrink: 0; }
 .kb-card:hover { border-color: var(--kb-c, var(--accent)); }
 .kb-card-titre { font-size: 13px; color: var(--text); line-height: 1.35; }
 .kb-card-notes { font-size: 11px; color: var(--muted); margin-top: 4px; line-height: 1.35; }
@@ -2527,6 +2530,11 @@ body.presentation #exitPresentBtn{ display:flex; }
       <div class="cf">
         <label>Limite de cartes (WIP) — 0 = illimité</label>
         <input type="number" id="kbColWip" min="0" step="1" value="0">
+      </div>
+      <div class="cf">
+        <label class="wcfg-guest-chk" style="font-size:12.5px;text-transform:none;letter-spacing:normal;font-weight:400;color:var(--text)">
+          <input type="checkbox" id="kbColCompact"> Affichage compact (recommandé pour les colonnes qui accueillent beaucoup de cartes, ex. « Terminé »)
+        </label>
       </div>
       <div class="cmod-act">
         <button class="cbtn-del" id="kbColBtnDel" style="display:none" onclick="kbDeleteCol()">Supprimer</button>
@@ -3370,6 +3378,7 @@ const WCFG_REQUIRED_TABLES = [
     { id: 'couleur',    type: 'Text' },
     { id: 'ordre',      type: 'Int' },
     { id: 'limite_wip', type: 'Int' },
+    { id: 'compact',    type: 'Bool' },
     { id: 'tableau',    type: 'Text' },
   ]},
   { id: 'Kanban_Cartes', cols: [
@@ -8227,7 +8236,7 @@ async function loadKanban() {
   kbCols = kbRows(rc).map(r => ({
     id: r.id, nom: String(r.nom || ''), icone: String(r.icone || ''),
     couleur: String(r.couleur || ''), ordre: Number(r.ordre) || 0,
-    limite_wip: Number(r.limite_wip) || 0, tableau: String(r.tableau || '')
+    limite_wip: Number(r.limite_wip) || 0, compact: !!r.compact, tableau: String(r.tableau || '')
   })).sort((a, b) => a.ordre - b.ordre);
   kbCards = kbRows(rk).map(r => ({
     id: r.id, titre: String(r.titre || ''), acteur: String(r.acteur || ''),
@@ -8337,7 +8346,7 @@ function kbRender() {
         <button class="kb-ico-btn" onclick="kbMoveCol(${col.id},1)" title="Déplacer à droite" ${idx === last ? 'disabled' : ''}>▶</button>
         <button class="kb-ico-btn" onclick="kbOpenColMod(${col.id})" title="Modifier la colonne">✎</button>
       </div>
-      <div class="kb-col-body" data-col="${col.id}">${cards.map(kbCardHTML).join('')}</div>
+      <div class="kb-col-body" data-col="${col.id}">${cards.map(c => kbCardHTML(c, col.compact)).join('')}</div>
       <button class="kb-add-card" onclick="kbOpenCardMod(null,${col.id})">+ Ajouter une carte</button>
     </div>`;
   }).join('') + '<button class="kb-add-col" onclick="kbOpenColMod(null)">+ Colonne</button>';
@@ -8346,11 +8355,19 @@ function kbRender() {
   kbSyncActeurUI();
 }
 
-function kbCardHTML(c) {
+function kbCardHTML(c, compact) {
+  const late = c.echeance && c.echeance < todayStr;
+  if (compact) {
+    const act = c.acteur
+      ? `<span class="kb-acteur" style="background:${kbActeurColor(c.acteur)}" title="${esc(c.acteur)}">${esc(kbInitials(c.acteur))}</span>` : '';
+    return `<div class="kb-card kb-card-compact" data-id="${c.id}" onclick="kbOpenCardMod(${c.id})">
+      <span class="kb-card-titre-compact" title="${esc(c.titre || '')}">${esc(c.titre || '(sans titre)')}</span>
+      ${late ? '<span class="kb-ech-dot" title="Échéance dépassée"></span>' : ''}${act}
+    </div>`;
+  }
   const act = c.acteur
     ? `<span class="kb-acteur" style="background:${kbActeurColor(c.acteur)}">${esc(kbInitials(c.acteur))}</span>` +
       `<span class="kb-acteur-nom">${esc(c.acteur)}</span>` : '';
-  const late = c.echeance && c.echeance < todayStr;
   const ech = c.echeance ? `<span class="kb-ech ${late ? 'late' : ''}">${esc(kbFmtDate(c.echeance))}</span>` : '';
   const notes = c.notes ? `<div class="kb-card-notes">${esc(c.notes.slice(0, 140))}</div>` : '';
   return `<div class="kb-card" data-id="${c.id}" onclick="kbOpenCardMod(${c.id})">
@@ -8440,6 +8457,7 @@ function kbOpenColMod(id) {
   document.getElementById('kbColNom').value = col ? col.nom : '';
   document.getElementById('kbColIcone').value = col ? col.icone : '';
   document.getElementById('kbColWip').value = col ? (col.limite_wip || 0) : 0;
+  document.getElementById('kbColCompact').checked = col ? !!col.compact : false;
   kbColCouleur = (col && col.couleur) || KB_PALETTE[kbCols.length % KB_PALETTE.length];
   kbRenderPalette();
   kbUpdateIconPreview();
@@ -8474,6 +8492,7 @@ async function kbSaveCol() {
     couleur: kbColCouleur,
     icone: document.getElementById('kbColIcone').value.trim(),
     limite_wip: parseInt(document.getElementById('kbColWip').value, 10) || 0,
+    compact: document.getElementById('kbColCompact').checked,
     tableau: String(kbTableauActif)
   };
   try {
@@ -8625,7 +8644,7 @@ function kbInitDemo() {
   kbCols = [
     { id: 1, nom: 'À faire',  couleur: '#6B7280', icone: '', ordre: 0, limite_wip: 0, tableau: '1' },
     { id: 2, nom: 'En cours', couleur: '#5B6EE8', icone: '', ordre: 1, limite_wip: 3, tableau: '1' },
-    { id: 3, nom: 'Terminé',  couleur: '#4E8B6B', icone: '', ordre: 2, limite_wip: 0, tableau: '1' },
+    { id: 3, nom: 'Terminé',  couleur: '#4E8B6B', icone: '', ordre: 2, limite_wip: 0, compact: true, tableau: '1' },
     { id: 4, nom: 'Idées',    couleur: '#C88A2E', icone: '', ordre: 0, limite_wip: 0, tableau: '2' }
   ];
   kbCards = [
