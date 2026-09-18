@@ -1984,6 +1984,58 @@ body.presentation #exitPresentBtn{ display:flex; }
 .rec-diff-facile   { background: #eaf3de; color: #3b6d11; }
 .rec-diff-moyen    { background: #faeeda; color: #854f0b; }
 .rec-diff-difficile{ background: #fcebeb; color: #a32d2d; }
+/* ══════════════════════════════════════════
+   ONGLET KANBAN (tout est préfixé kb- / #kb
+   pour ne rien écraser du reste de l'appli)
+   ══════════════════════════════════════════ */
+#page-kanban { overflow: hidden; display: flex; flex-direction: column; background: var(--bg-soft); }
+#kbTopbar { background: var(--bg); border-bottom: 1px solid var(--border); padding: 9px 14px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; flex-shrink: 0; }
+#kbSearch { flex: 1 1 160px; max-width: 280px; padding: 6px 12px; border: 1px solid var(--border); border-radius: 20px; font-size: 13px; outline: none; background: var(--bg-soft); color: var(--text); font-family: inherit; }
+#kbSearch:focus { border-color: var(--accent); }
+#kbActeurSel { padding: 6px 10px; border: 1px solid var(--border); border-radius: 20px; font-size: 12px; background: var(--bg); color: var(--text); font-family: inherit; cursor: pointer; }
+.kb-tb-btn { padding: 6px 13px; border: 1px solid var(--border); border-radius: 20px; background: var(--bg); font-size: 12px; cursor: pointer; color: var(--text); font-family: inherit; }
+.kb-tb-btn:hover { background: var(--bg-hover); }
+.kb-tb-btn.primary { margin-left: auto; background: var(--accent); color: #fff; border-color: var(--accent); font-weight: 600; }
+#kbFilterWarn { display: none; font-size: 11px; color: var(--muted); flex-basis: 100%; }
+#kbFilterWarn.vis { display: block; }
+
+#kbBoard { flex: 1; overflow-x: auto; overflow-y: hidden; display: flex; align-items: flex-start; gap: 12px; padding: 14px; }
+.kb-col { flex: 0 0 270px; max-height: 100%; display: flex; flex-direction: column; background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius); border-top: 3px solid var(--kb-c, var(--accent)); }
+.kb-col-head { display: flex; align-items: center; gap: 6px; padding: 9px 10px 7px; border-bottom: 1px solid var(--border); }
+.kb-col-ico { width: 20px; height: 20px; border-radius: 5px; display: inline-flex; align-items: center; justify-content: center; color: #fff; flex-shrink: 0; }
+.kb-col-nom { font-size: 13px; font-weight: 600; color: var(--text); flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.kb-count, .kb-wip { font-size: 11px; color: var(--muted); background: var(--bg-soft); border-radius: 10px; padding: 1px 7px; flex-shrink: 0; }
+.kb-wip.over { background: #fde2e2; color: #a32d2d; font-weight: 600; }
+.kb-ico-btn { background: none; border: none; color: var(--light); cursor: pointer; font-size: 13px; padding: 2px 3px; line-height: 1; border-radius: 4px; }
+.kb-ico-btn:hover { color: var(--text); background: var(--bg-hover); }
+.kb-ico-btn:disabled { opacity: .3; cursor: default; }
+.kb-col-body { flex: 1; overflow-y: auto; padding: 8px; display: flex; flex-direction: column; gap: 7px; min-height: 42px; }
+.kb-card { background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 8px 10px; cursor: pointer; box-shadow: 0 1px 2px rgba(0,0,0,.04); }
+.kb-card:hover { border-color: var(--kb-c, var(--accent)); }
+.kb-card-titre { font-size: 13px; color: var(--text); line-height: 1.35; }
+.kb-card-notes { font-size: 11px; color: var(--muted); margin-top: 4px; line-height: 1.35; }
+.kb-card-foot { display: flex; align-items: center; gap: 6px; margin-top: 7px; flex-wrap: wrap; }
+.kb-card-foot:empty { display: none; }
+.kb-acteur { width: 18px; height: 18px; border-radius: 50%; color: #fff; font-size: 9px; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.kb-acteur-nom { font-size: 11px; color: var(--muted); }
+.kb-ech { font-size: 10px; color: var(--muted); background: var(--bg-soft); border-radius: 10px; padding: 1px 7px; margin-left: auto; }
+.kb-ech.late { background: #fde2e2; color: #a32d2d; }
+.kb-ghost { opacity: .35; }
+.kb-add-card { border: none; background: none; color: var(--muted); font-size: 12px; text-align: left; padding: 7px 10px 9px; cursor: pointer; font-family: inherit; border-top: 1px solid var(--border); }
+.kb-add-card:hover { color: var(--text); background: var(--bg-hover); }
+.kb-add-col { flex: 0 0 150px; border: 1px dashed var(--border); background: none; border-radius: var(--radius); padding: 14px 10px; color: var(--muted); font-size: 12px; cursor: pointer; font-family: inherit; }
+.kb-add-col:hover { border-color: var(--accent); color: var(--text); }
+.kb-empty { color: var(--muted); font-size: 13px; padding: 30px 14px; }
+.kb-palette { display: flex; gap: 6px; flex-wrap: wrap; }
+.kb-swatch { width: 22px; height: 22px; border-radius: 50%; cursor: pointer; border: 2px solid transparent; }
+.kb-swatch.sel { border-color: var(--text); }
+#kbColIconePrev { display: inline-flex; align-items: center; gap: 6px; font-size: 11px; color: var(--muted); margin-top: 5px; }
+#kbColModOv .cf input[type=number], #kbCardModOv .cf input[type=date] {
+  width: 100%; padding: 7px 10px; border: .5px solid var(--border);
+  border-radius: var(--radius); font-size: 12.5px; color: var(--text);
+  background: var(--bg); outline: none; font-family: inherit;
+}
+#kbCardModOv .cf textarea { min-height: 70px; }
 </style>
 </head>
 <body>
@@ -2020,6 +2072,10 @@ body.presentation #exitPresentBtn{ display:flex; }
   <button class="app-tab" data-tab="recettes" onclick="switchTab('recettes')">
     <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 2v7c0 1.1.9 2 2 2h0a2 2 0 0 0 2-2V2"/><path d="M7 2v20"/><path d="M17 2a5 5 0 0 0-5 5v6h5"/><path d="M17 13v9"/></svg>
     <span class="tab-label">Recettes</span>
+  </button>
+  <button class="app-tab" data-tab="kanban" onclick="switchTab('kanban')">
+    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="5" height="18" rx="1"/><rect x="10" y="3" width="5" height="12" rx="1"/><rect x="17" y="3" width="4" height="8" rx="1"/></svg>
+    <span class="tab-label">Kanban</span>
   </button>
 </div>
   <span id="offlineDot" class="offline-dot" title=""></span>
@@ -2410,6 +2466,84 @@ body.presentation #exitPresentBtn{ display:flex; }
   <div class="rec-toast" id="recToast"></div>
 </div>
 
+  <!-- ══════════════════════════════════════════
+       ONGLET KANBAN
+       ══════════════════════════════════════════ -->
+  <div class="page" id="page-kanban">
+    <div id="kbTopbar">
+      <input type="text" id="kbSearch" placeholder="Rechercher une carte…" oninput="kbSetSearch(this.value)">
+      <select id="kbActeurSel" onchange="kbSetActeur(this.value)"><option value="">Tous les acteurs</option></select>
+      <button class="kb-tb-btn" onclick="kbOpenColMod(null)">+ Colonne</button>
+      <button class="kb-tb-btn primary" onclick="kbOpenCardMod(null, null)">+ Nouvelle carte</button>
+      <div id="kbFilterWarn">Un filtre est actif : le glisser-déposer est désactivé pour ne pas corrompre l'ordre des cartes.</div>
+    </div>
+    <div id="kbBoard"></div>
+  </div>
+
+  <!-- ── MODALE COLONNE KANBAN ── -->
+  <div class="cmod-ov" id="kbColModOv" onclick="kbHandleColModClick(event)">
+    <div class="cmod">
+      <div class="cmod-title" id="kbColModTitle">Nouvelle colonne</div>
+      <div class="cf">
+        <label>Nom</label>
+        <input type="text" id="kbColNom" placeholder="À faire, En cours, Terminé…">
+      </div>
+      <div class="cf">
+        <label>Couleur</label>
+        <div class="kb-palette" id="kbColPalette"></div>
+      </div>
+      <div class="cf">
+        <label>Icône (code SVG) — <a href="https://remixicon.com" target="_blank" rel="noopener">remixicon.com</a></label>
+        <div class="svg-input-wrap">
+          <textarea id="kbColIcone" oninput="kbUpdateIconPreview()"></textarea>
+          <div id="kbColIconePrev"></div>
+        </div>
+      </div>
+      <div class="cf">
+        <label>Limite de cartes (WIP) — 0 = illimité</label>
+        <input type="number" id="kbColWip" min="0" step="1" value="0">
+      </div>
+      <div class="cmod-act">
+        <button class="cbtn-del" id="kbColBtnDel" style="display:none" onclick="kbDeleteCol()">Supprimer</button>
+        <button class="cbtn-c" onclick="kbCloseColMod()">Annuler</button>
+        <button class="cbtn-s" onclick="kbSaveCol()">Enregistrer</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── MODALE CARTE KANBAN ── -->
+  <div class="cmod-ov" id="kbCardModOv" onclick="kbHandleCardModClick(event)">
+    <div class="cmod">
+      <div class="cmod-title" id="kbCardModTitle">Nouvelle carte</div>
+      <div class="cf">
+        <label>Nom de la carte</label>
+        <input type="text" id="kbCardTitre" placeholder="Intitulé…">
+      </div>
+      <div class="cf">
+        <label>Acteur</label>
+        <input type="text" id="kbCardActeur" list="kbActeursList" placeholder="Nom de la personne…" autocomplete="off">
+        <datalist id="kbActeursList"></datalist>
+      </div>
+      <div class="cf">
+        <label>Colonne</label>
+        <select id="kbCardColonne"></select>
+      </div>
+      <div class="cf">
+        <label>Échéance</label>
+        <input type="date" id="kbCardEcheance">
+      </div>
+      <div class="cf">
+        <label>Notes</label>
+        <textarea id="kbCardNotes" rows="3"></textarea>
+      </div>
+      <div class="cmod-act">
+        <button class="cbtn-del" id="kbCardBtnDel" style="display:none" onclick="kbDeleteCard()">Supprimer</button>
+        <button class="cbtn-c" onclick="kbCloseCardMod()">Annuler</button>
+        <button class="cbtn-s" onclick="kbSaveCard()">Enregistrer</button>
+      </div>
+    </div>
+  </div>
+
   <!-- ── MODALE NOUVELLE/ÉDITION COLLECTION ── -->
   <div class="cmod-ov" id="colModOv" onclick="handleCmodClick(event)">
     <div class="cmod">
@@ -2579,6 +2713,12 @@ body.presentation #exitPresentBtn{ display:flex; }
       <span class="wcfg-tabrow-key">Recettes</span>
       <input type="text" class="wcfg-tabrow-input" id="wcfgLabelRecettes" placeholder="Recettes">
       <div class="wcfg-tog-sw" id="wcfg-tog-recettes_on" onclick="wcfgToggle('recettes_on')"></div>
+    </div>
+    <div class="wcfg-tabrow" data-tab="kanban">
+      <div class="wcfg-tabrow-move"><button onclick="wcfgMoveTab('kanban',-1)">▲</button><button onclick="wcfgMoveTab('kanban',1)">▼</button></div>
+      <span class="wcfg-tabrow-key">Kanban</span>
+      <input type="text" class="wcfg-tabrow-input" id="wcfgLabelKanban" placeholder="Kanban">
+      <div class="wcfg-tog-sw" id="wcfg-tog-kanban_on" onclick="wcfgToggle('kanban_on')"></div>
     </div>
     </div>
     <div class="wcfg-hint" style="margin-bottom:12px">Le libellé personnalise le nom affiché ; l'interrupteur active ou masque l'onglet. Les flèches ▲▼ changent l'ordre d'affichage.</div>
@@ -2783,7 +2923,7 @@ function applyConfigValues() {
     titleEl.classList.toggle('vis', !!effTitre);
   }
 
-    const tabVis = { bujo: cfgOn('bujo_on'), lectures: cfgOn('lectures_on'), collections: cfgOn('collections_on'), outliner: cfgOn('outliner_on'), mindmap: cfgOn('mindmap_on'), recettes: cfgOn('recettes_on') };
+    const tabVis = { bujo: cfgOn('bujo_on'), lectures: cfgOn('lectures_on'), collections: cfgOn('collections_on'), outliner: cfgOn('outliner_on'), mindmap: cfgOn('mindmap_on'), recettes: cfgOn('recettes_on'), kanban: cfgOn('kanban_on') };
   if (guestProfile) { Object.keys(tabVis).forEach(t => { tabVis[t] = tabVis[t] && guestProfile.tabs.includes(t); }); }
   Object.keys(tabVis).forEach(tab => {
     const el = document.querySelector(`[data-tab="${tab}"]`);
@@ -2800,6 +2940,7 @@ function applyConfigValues() {
   setLabel('outliner', CFG.label_outliner, 'Outliner');
    setLabel('mindmap', CFG.label_mindmap, 'Mind Map');
   setLabel('recettes', CFG.label_recettes, 'Recettes');
+  setLabel('kanban', CFG.label_kanban, 'Kanban');
 
   document.getElementById('n-bdays').style.display = cfgOn('bday_on') ? '' : 'none';
   document.getElementById('bujoProjetCol').style.display = cfgOn('projet_on') ? '' : 'none';
@@ -2809,7 +2950,7 @@ function applyConfigValues() {
     applyTabOrder();
   const activeTab = document.querySelector('.app-tab.active');
   if (activeTab && activeTab.style.display === 'none') {
-    const nextTab = ['bujo','lectures','collections','outliner','mindmap','recettes'].find(t => tabVis[t]);
+    const nextTab = ['bujo','lectures','collections','outliner','mindmap','recettes','kanban'].find(t => tabVis[t]);
     if (nextTab) switchTab(nextTab);
   }
 
@@ -2821,8 +2962,8 @@ function applyConfigValues() {
 // ══════════════════════════════════════════════════════
 let wcfgRowIds = {};
 let wcfgSaveT = null;
-const WCFG_TOGGLE_KEYS = ['bujo_on','lectures_on','collections_on','outliner_on','mindmap_on','recettes_on','bday_on','projet_on','col_cal_on','col_week_on'];
-const WCFG_ALL_KEYS = ['titre','accent','label_bujo','label_lectures','label_collections','label_outliner','label_mindmap','label_recettes','default_bujo_view','tab_order','guest_profiles', ...WCFG_TOGGLE_KEYS];
+const WCFG_TOGGLE_KEYS = ['bujo_on','lectures_on','collections_on','outliner_on','mindmap_on','recettes_on','kanban_on','bday_on','projet_on','col_cal_on','col_week_on'];
+const WCFG_ALL_KEYS = ['titre','accent','label_bujo','label_lectures','label_collections','label_outliner','label_mindmap','label_recettes','label_kanban','default_bujo_view','tab_order','guest_profiles', ...WCFG_TOGGLE_KEYS];
 
 const urlParams = new URLSearchParams(location.search);
 const guestSlug = urlParams.get('vue');
@@ -2924,7 +3065,7 @@ function wcfgRenderGuests() {
   if (!box) return;
   const profiles = getGuestProfiles();
   if (!profiles.length) { box.innerHTML = '<div class="wcfg-hint" style="margin-bottom:8px">Aucun profil invité pour l\'instant.</div>'; return; }
-  const tabLabels = {bujo:'Bujo',lectures:'Lectures',collections:'Collections',outliner:'Outliner',mindmap:'Mind Map',recettes:'Recettes'};
+  const tabLabels = {bujo:'Bujo',lectures:'Lectures',collections:'Collections',outliner:'Outliner',mindmap:'Mind Map',recettes:'Recettes',kanban:'Kanban'};
   box.innerHTML = profiles.map(p => {
     const tabsH = DEFAULT_TAB_ORDER.map(t => {
       const lbl = CFG['label_' + t] || tabLabels[t];
@@ -2970,7 +3111,7 @@ function wcfgRenderGuests() {
     </div>`;
   }).join('');
 }
-const DEFAULT_TAB_ORDER = ['bujo','lectures','collections','outliner','mindmap','recettes'];
+const DEFAULT_TAB_ORDER = ['bujo','lectures','collections','outliner','mindmap','recettes','kanban'];
 
 function getTabOrder() {
   const saved = (CFG.tab_order || '').split(',').map(s => s.trim()).filter(Boolean);
@@ -3032,6 +3173,7 @@ function wcfgRefreshFields() {
   document.getElementById('wcfgLabelOutliner').value = CFG.label_outliner || '';
   document.getElementById('wcfgLabelMindmap').value = CFG.label_mindmap || '';
   document.getElementById('wcfgLabelRecettes').value = CFG.label_recettes || '';
+  document.getElementById('wcfgLabelKanban').value = CFG.label_kanban || '';
   const hex = CFG.accent || '#e8a020';
   document.getElementById('wcfgAccentHex').value = hex;
   document.getElementById('wcfgAccentPicker').value = /^#[0-9a-fA-F]{6}$/.test(hex) ? hex : '#e8a020';
@@ -3084,6 +3226,7 @@ document.getElementById('wcfgLabelCollections').addEventListener('input', e => {
 document.getElementById('wcfgLabelOutliner').addEventListener('input', e => { CFG.label_outliner = e.target.value; });
 document.getElementById('wcfgLabelMindmap').addEventListener('input', e => { CFG.label_mindmap = e.target.value; });
 document.getElementById('wcfgLabelRecettes').addEventListener('input', e => { CFG.label_recettes = e.target.value; });
+document.getElementById('wcfgLabelKanban').addEventListener('input', e => { CFG.label_kanban = e.target.value; });
 document.getElementById('wcfgDefaultView').addEventListener('change', e => { CFG.default_bujo_view = e.target.value; });
 
 async function wcfgSaveConfig() {
@@ -3191,6 +3334,23 @@ const WCFG_REQUIRED_TABLES = [
     { id: 'Image_url',         type: 'Text' },
     { id: 'Note',              type: 'Numeric' },
     { id: 'Tags',              type: 'Text' },
+  ]},
+  { id: 'Kanban_Colonnes', cols: [
+    { id: 'nom',        type: 'Text' },
+    { id: 'icone',      type: 'Text' },
+    { id: 'couleur',    type: 'Text' },
+    { id: 'ordre',      type: 'Int' },
+    { id: 'limite_wip', type: 'Int' },
+    { id: 'tableau',    type: 'Text' },
+  ]},
+  { id: 'Kanban_Cartes', cols: [
+    { id: 'titre',    type: 'Text' },
+    { id: 'acteur',   type: 'Text' },
+    { id: 'colonne',  type: 'Ref:Kanban_Colonnes' },
+    { id: 'ordre',    type: 'Int' },
+    { id: 'notes',    type: 'Text' },
+    { id: 'echeance', type: 'Text' },
+    { id: 'tableau',  type: 'Text' },
   ]},
 ];
 
@@ -3318,6 +3478,7 @@ let saveT = null;
 let colsLoaded = false;
 let mindmapLoaded = false;
 let recettesLoaded = false;
+let kanbanLoaded = false;
 
 let currentTabStored = null;
 function switchTab(tab) {
@@ -3343,6 +3504,11 @@ function switchTab(tab) {
     recettesLoaded = true;
     if (typeof grist !== 'undefined') recLoadRecipes();
     else { recAllRecipes = []; recApplyFilters(); recRenderTagsBar(); }
+  }
+  if (tab === 'kanban' && !kanbanLoaded) {
+    kanbanLoaded = true;
+    if (typeof grist !== 'undefined') loadKanban();
+    else kbInitDemo();
   }
   if (typeof grist !== 'undefined' && tab !== currentTabStored) {
     currentTabStored = tab;
@@ -7959,6 +8125,358 @@ function recShowToast(msg, err) {
   t.classList.add('show');
   setTimeout(function() { t.classList.remove('show'); }, 2500);
 }
+
+// ══════════════════════════════════════════════════════
+//  ONGLET KANBAN
+//  Tables dédiées Kanban_Colonnes / Kanban_Cartes.
+//  Rien n'est partagé avec Collections/Items : le seul
+//  couplage est la table Config (libellé + visibilité).
+//  Tous les identifiants sont préfixés kb* / KB_.
+// ══════════════════════════════════════════════════════
+const KB_T_COLS  = 'Kanban_Colonnes';
+const KB_T_CARDS = 'Kanban_Cartes';
+const KB_TABLEAU = '';   // réservé au multi-tableaux (non exploité pour l'instant)
+const KB_PALETTE = ['#6B7280','#5B6EE8','#4E8B6B','#C88A2E','#D2665A','#8B5E83','#2E8B98','#e8a020'];
+
+let kbCols        = [];
+let kbCards       = [];
+let kbSortables   = [];
+let kbSearch      = '';
+let kbActeurFiltre = '';
+let kbEditColId   = null;
+let kbEditCardId  = null;
+let kbColCouleur  = KB_PALETTE[0];
+let kbTablesOk    = true;
+let kbDemoSeq     = 9000;
+
+function kbIsDemo() { return typeof grist === 'undefined'; }
+function kbFilterActive() { return !!(kbSearch.trim() || kbActeurFiltre); }
+
+// ── Conversion table Grist (colonnes) → tableau de lignes ──
+function kbRows(raw) {
+  const ids = (raw && raw.id) || [];
+  return ids.map((id, i) => {
+    const o = { id };
+    Object.keys(raw).forEach(k => { if (k !== 'id') o[k] = raw[k][i]; });
+    return o;
+  });
+}
+
+// ── Écriture : Grist (avec file d'attente hors-ligne) ou local en mode démo ──
+async function kbApply(actions) {
+  if (!kbIsDemo()) return OfflineSync.applyUserActions(actions);
+  actions.forEach(a => {
+    const [verb, table, id, fields] = a;
+    const arr = (table === KB_T_COLS) ? kbCols : kbCards;
+    if (verb === 'AddRecord') arr.push(Object.assign({ id: ++kbDemoSeq }, fields));
+    else if (verb === 'UpdateRecord') { const o = arr.find(x => x.id === id); if (o) Object.assign(o, fields); }
+    else if (verb === 'RemoveRecord') { const i = arr.findIndex(x => x.id === id); if (i >= 0) arr.splice(i, 1); }
+    else if (verb === 'BulkRemoveRecord') { (id || []).forEach(rid => { const i = arr.findIndex(x => x.id === rid); if (i >= 0) arr.splice(i, 1); }); }
+  });
+  return true;
+}
+function kbRefresh() { if (kbIsDemo()) { kbRender(); } else { loadKanban(); } }
+
+// ── Chargement ──
+async function loadKanban() {
+  if (kbIsDemo()) { kbRender(); return; }
+  let rc = null, rk = null;
+  try {
+    rc = await grist.docApi.fetchTable(KB_T_COLS);
+    rk = await grist.docApi.fetchTable(KB_T_CARDS);
+  } catch (e) {
+    console.warn('Kanban : tables introuvables —', e);
+    kbTablesOk = false; kbRender(); return;
+  }
+  kbTablesOk = true;
+  kbCols = kbRows(rc).map(r => ({
+    id: r.id, nom: String(r.nom || ''), icone: String(r.icone || ''),
+    couleur: String(r.couleur || ''), ordre: Number(r.ordre) || 0,
+    limite_wip: Number(r.limite_wip) || 0, tableau: String(r.tableau || '')
+  })).sort((a, b) => a.ordre - b.ordre);
+  kbCards = kbRows(rk).map(r => ({
+    id: r.id, titre: String(r.titre || ''), acteur: String(r.acteur || ''),
+    colonne: Number(r.colonne) || 0, ordre: Number(r.ordre) || 0,
+    notes: String(r.notes || ''), echeance: String(r.echeance || ''),
+    tableau: String(r.tableau || '')
+  })).sort((a, b) => a.ordre - b.ordre);
+  kbRender();
+}
+
+// ── Utilitaires d'affichage ──
+function kbInitials(nom) {
+  const parts = String(nom).trim().split(/\s+/).filter(Boolean);
+  if (!parts.length) return '?';
+  return (parts[0][0] + (parts[1] ? parts[1][0] : '')).toUpperCase();
+}
+function kbActeurColor(nom) {
+  let h = 0;
+  for (let i = 0; i < nom.length; i++) h = (h * 31 + nom.charCodeAt(i)) % 360;
+  return `hsl(${h} 52% 46%)`;
+}
+function kbFmtDate(iso) {
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(iso || '');
+  if (!m) return iso || '';
+  return m[3] + ' ' + MSH[parseInt(m[2], 10) - 1];
+}
+function kbDistinctActeurs() {
+  return [...new Set(kbCards.map(c => c.acteur).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'fr'));
+}
+
+// ── Rendu ──
+function kbRender() {
+  const board = document.getElementById('kbBoard');
+  if (!board) return;
+  kbSortables.forEach(s => { try { s.destroy(); } catch (e) {} });
+  kbSortables = [];
+
+  const warn = document.getElementById('kbFilterWarn');
+  if (warn) warn.classList.toggle('vis', kbFilterActive() && kbCols.length > 0);
+
+  if (!kbTablesOk) {
+    board.innerHTML = '<div class="kb-empty">Les tables <b>' + KB_T_COLS + '</b> et <b>' + KB_T_CARDS +
+      '</b> n\'existent pas encore dans ce document.<br>Ouvre les réglages du widget (⚙) → « Tables nécessaires » → « Vérifier » puis « Créer ».</div>';
+    kbSyncActeurUI(); return;
+  }
+  if (!kbCols.length) {
+    board.innerHTML = '<div class="kb-empty">Aucune colonne pour l\'instant.</div>' +
+      '<button class="kb-add-col" onclick="kbOpenColMod(null)">+ Colonne</button>';
+    kbSyncActeurUI(); return;
+  }
+
+  const q = kbSearch.trim().toLowerCase();
+  const last = kbCols.length - 1;
+  board.innerHTML = kbCols.map((col, idx) => {
+    const cards = kbCards
+      .filter(c => c.colonne === col.id)
+      .filter(c => !kbActeurFiltre || c.acteur === kbActeurFiltre)
+      .filter(c => !q || (c.titre + ' ' + c.acteur + ' ' + c.notes).toLowerCase().includes(q))
+      .sort((a, b) => a.ordre - b.ordre);
+    const coul = col.couleur || 'var(--accent)';
+    const ico = col.icone
+      ? `<span class="kb-col-ico" style="background:${esc(coul)}">${renderColIcon(col.icone, 13)}</span>` : '';
+    const total = kbCards.filter(c => c.colonne === col.id).length;
+    const badge = col.limite_wip > 0
+      ? `<span class="kb-wip ${total > col.limite_wip ? 'over' : ''}">${total}/${col.limite_wip}</span>`
+      : `<span class="kb-count">${total}</span>`;
+    return `<div class="kb-col" style="--kb-c:${esc(coul)}">
+      <div class="kb-col-head">
+        ${ico}<span class="kb-col-nom" title="${esc(col.nom)}">${esc(col.nom || '(sans nom)')}</span>${badge}
+        <button class="kb-ico-btn" onclick="kbMoveCol(${col.id},-1)" title="Déplacer à gauche" ${idx === 0 ? 'disabled' : ''}>◀</button>
+        <button class="kb-ico-btn" onclick="kbMoveCol(${col.id},1)" title="Déplacer à droite" ${idx === last ? 'disabled' : ''}>▶</button>
+        <button class="kb-ico-btn" onclick="kbOpenColMod(${col.id})" title="Modifier la colonne">✎</button>
+      </div>
+      <div class="kb-col-body" data-col="${col.id}">${cards.map(kbCardHTML).join('')}</div>
+      <button class="kb-add-card" onclick="kbOpenCardMod(null,${col.id})">+ Ajouter une carte</button>
+    </div>`;
+  }).join('') + '<button class="kb-add-col" onclick="kbOpenColMod(null)">+ Colonne</button>';
+
+  if (!kbFilterActive()) kbInitSortables();
+  kbSyncActeurUI();
+}
+
+function kbCardHTML(c) {
+  const act = c.acteur
+    ? `<span class="kb-acteur" style="background:${kbActeurColor(c.acteur)}">${esc(kbInitials(c.acteur))}</span>` +
+      `<span class="kb-acteur-nom">${esc(c.acteur)}</span>` : '';
+  const late = c.echeance && c.echeance < todayStr;
+  const ech = c.echeance ? `<span class="kb-ech ${late ? 'late' : ''}">${esc(kbFmtDate(c.echeance))}</span>` : '';
+  const notes = c.notes ? `<div class="kb-card-notes">${esc(c.notes.slice(0, 140))}</div>` : '';
+  return `<div class="kb-card" data-id="${c.id}" onclick="kbOpenCardMod(${c.id})">
+    <div class="kb-card-titre">${esc(c.titre || '(sans titre)')}</div>
+    ${notes}
+    <div class="kb-card-foot">${act}${ech}</div>
+  </div>`;
+}
+
+function kbSyncActeurUI() {
+  const acteurs = kbDistinctActeurs();
+  const sel = document.getElementById('kbActeurSel');
+  if (sel) {
+    sel.innerHTML = '<option value="">Tous les acteurs</option>' +
+      acteurs.map(a => `<option value="${esc(a)}">${esc(a)}</option>`).join('');
+    sel.value = kbActeurFiltre;
+  }
+  const dl = document.getElementById('kbActeursList');
+  if (dl) dl.innerHTML = acteurs.map(a => `<option value="${esc(a)}">`).join('');
+}
+
+function kbSetSearch(v) { kbSearch = v || ''; kbRender(); }
+function kbSetActeur(v) { kbActeurFiltre = v || ''; kbRender(); }
+
+// ── Glisser-déposer (désactivé si un filtre est actif) ──
+function kbInitSortables() {
+  document.querySelectorAll('#kbBoard .kb-col-body').forEach(el => {
+    kbSortables.push(Sortable.create(el, {
+      group: 'kanban-cards', animation: 150, draggable: '.kb-card',
+      ghostClass: 'kb-ghost', onEnd: kbOnDrop
+    }));
+  });
+}
+async function kbOnDrop(evt) {
+  const actions = [];
+  const reindex = (container) => {
+    const colId = Number(container.dataset.col);
+    [...container.querySelectorAll('.kb-card')].forEach((el, i) => {
+      const id = Number(el.dataset.id);
+      const c = kbCards.find(x => x.id === id);
+      if (!c) return;
+      if (c.colonne !== colId || c.ordre !== i) {
+        c.colonne = colId; c.ordre = i;
+        actions.push(['UpdateRecord', KB_T_CARDS, id, { colonne: colId, ordre: i }]);
+      }
+    });
+  };
+  reindex(evt.to);
+  if (evt.from !== evt.to) reindex(evt.from);
+  if (!actions.length) return;
+  try { await kbApply(actions); } catch (e) { console.error(e); }
+  kbRender();
+}
+
+// ── Ordre des colonnes ──
+async function kbMoveCol(id, dir) {
+  const i = kbCols.findIndex(c => c.id === id);
+  const j = i + dir;
+  if (i < 0 || j < 0 || j >= kbCols.length) return;
+  const tmp = kbCols[i]; kbCols[i] = kbCols[j]; kbCols[j] = tmp;
+  const actions = kbCols.map((c, k) => { c.ordre = k; return ['UpdateRecord', KB_T_COLS, c.id, { ordre: k }]; });
+  kbRender();
+  try { await kbApply(actions); } catch (e) { console.error(e); }
+}
+
+// ── Modale colonne ──
+function kbOpenColMod(id) {
+  kbEditColId = id || null;
+  const col = id ? kbCols.find(c => c.id === id) : null;
+  document.getElementById('kbColModTitle').textContent = col ? 'Modifier la colonne' : 'Nouvelle colonne';
+  document.getElementById('kbColNom').value = col ? col.nom : '';
+  document.getElementById('kbColIcone').value = col ? col.icone : '';
+  document.getElementById('kbColWip').value = col ? (col.limite_wip || 0) : 0;
+  kbColCouleur = (col && col.couleur) || KB_PALETTE[kbCols.length % KB_PALETTE.length];
+  kbRenderPalette();
+  kbUpdateIconPreview();
+  document.getElementById('kbColBtnDel').style.display = col ? '' : 'none';
+  document.getElementById('kbColModOv').classList.add('open');
+  setTimeout(() => document.getElementById('kbColNom').focus(), 50);
+}
+function kbCloseColMod() { document.getElementById('kbColModOv').classList.remove('open'); }
+function kbHandleColModClick(e) { if (e.target === document.getElementById('kbColModOv')) kbCloseColMod(); }
+function kbRenderPalette() {
+  const box = document.getElementById('kbColPalette');
+  if (!box) return;
+  box.innerHTML = KB_PALETTE.map(c =>
+    `<div class="kb-swatch ${c === kbColCouleur ? 'sel' : ''}" style="background:${c}" onclick="kbPickCouleur('${c}')"></div>`
+  ).join('');
+}
+function kbPickCouleur(c) { kbColCouleur = c; kbRenderPalette(); kbUpdateIconPreview(); }
+function kbUpdateIconPreview() {
+  const ta = document.getElementById('kbColIcone');
+  const prev = document.getElementById('kbColIconePrev');
+  if (!ta || !prev) return;
+  const v = ta.value.trim();
+  prev.innerHTML = v
+    ? `<span class="kb-col-ico" style="background:${kbColCouleur}">${renderColIcon(v, 13)}</span> Aperçu`
+    : '';
+}
+async function kbSaveCol() {
+  const nom = document.getElementById('kbColNom').value.trim();
+  if (!nom) { alert('Le nom de la colonne est obligatoire.'); return; }
+  const fields = {
+    nom,
+    couleur: kbColCouleur,
+    icone: document.getElementById('kbColIcone').value.trim(),
+    limite_wip: parseInt(document.getElementById('kbColWip').value, 10) || 0,
+    tableau: KB_TABLEAU
+  };
+  try {
+    if (kbEditColId) {
+      await kbApply([['UpdateRecord', KB_T_COLS, kbEditColId, fields]]);
+    } else {
+      fields.ordre = kbCols.length ? Math.max(...kbCols.map(c => c.ordre)) + 1 : 0;
+      await kbApply([['AddRecord', KB_T_COLS, null, fields]]);
+    }
+  } catch (e) { alert('Erreur : ' + e.message); return; }
+  kbCloseColMod(); kbRefresh();
+}
+async function kbDeleteCol() {
+  if (!kbEditColId) return;
+  const n = kbCards.filter(c => c.colonne === kbEditColId).length;
+  if (!confirm(`Supprimer cette colonne${n ? ` et ses ${n} carte(s)` : ''} ? Action irréversible.`)) return;
+  const ids = kbCards.filter(c => c.colonne === kbEditColId).map(c => c.id);
+  const actions = [];
+  if (ids.length) actions.push(['BulkRemoveRecord', KB_T_CARDS, ids]);
+  actions.push(['RemoveRecord', KB_T_COLS, kbEditColId]);
+  try { await kbApply(actions); } catch (e) { alert('Erreur : ' + e.message); return; }
+  kbCloseColMod(); kbRefresh();
+}
+
+// ── Modale carte ──
+function kbOpenCardMod(id, colId) {
+  if (!kbCols.length) { alert('Crée d\'abord au moins une colonne.'); return; }
+  kbEditCardId = id || null;
+  const c = id ? kbCards.find(x => x.id === id) : null;
+  document.getElementById('kbCardModTitle').textContent = c ? 'Modifier la carte' : 'Nouvelle carte';
+  document.getElementById('kbCardTitre').value = c ? c.titre : '';
+  document.getElementById('kbCardActeur').value = c ? c.acteur : '';
+  document.getElementById('kbCardNotes').value = c ? c.notes : '';
+  document.getElementById('kbCardEcheance').value = c ? (c.echeance || '') : '';
+  const sel = document.getElementById('kbCardColonne');
+  sel.innerHTML = kbCols.map(k => `<option value="${k.id}">${esc(k.nom || '(sans nom)')}</option>`).join('');
+  sel.value = String(c ? c.colonne : (colId || kbCols[0].id));
+  kbSyncActeurUI();
+  document.getElementById('kbCardBtnDel').style.display = c ? '' : 'none';
+  document.getElementById('kbCardModOv').classList.add('open');
+  setTimeout(() => document.getElementById('kbCardTitre').focus(), 50);
+}
+function kbCloseCardMod() { document.getElementById('kbCardModOv').classList.remove('open'); }
+function kbHandleCardModClick(e) { if (e.target === document.getElementById('kbCardModOv')) kbCloseCardMod(); }
+async function kbSaveCard() {
+  const titre = document.getElementById('kbCardTitre').value.trim();
+  if (!titre) { alert('Le nom de la carte est obligatoire.'); return; }
+  const colonne = Number(document.getElementById('kbCardColonne').value) || 0;
+  const fields = {
+    titre,
+    acteur: document.getElementById('kbCardActeur').value.trim(),
+    notes: document.getElementById('kbCardNotes').value.trim(),
+    echeance: document.getElementById('kbCardEcheance').value || '',
+    colonne,
+    tableau: KB_TABLEAU
+  };
+  try {
+    if (kbEditCardId) {
+      await kbApply([['UpdateRecord', KB_T_CARDS, kbEditCardId, fields]]);
+    } else {
+      const inCol = kbCards.filter(x => x.colonne === colonne);
+      fields.ordre = inCol.length ? Math.max(...inCol.map(x => x.ordre)) + 1 : 0;
+      await kbApply([['AddRecord', KB_T_CARDS, null, fields]]);
+    }
+  } catch (e) { alert('Erreur : ' + e.message); return; }
+  kbCloseCardMod(); kbRefresh();
+}
+async function kbDeleteCard() {
+  if (!kbEditCardId) return;
+  if (!confirm('Supprimer cette carte ?')) return;
+  try { await kbApply([['RemoveRecord', KB_T_CARDS, kbEditCardId]]); }
+  catch (e) { alert('Erreur : ' + e.message); return; }
+  kbCloseCardMod(); kbRefresh();
+}
+
+// ── Jeu de démonstration (fichier ouvert hors de Grist) ──
+function kbInitDemo() {
+  kbCols = [
+    { id: 1, nom: 'À faire',  couleur: '#6B7280', icone: '', ordre: 0, limite_wip: 0, tableau: '' },
+    { id: 2, nom: 'En cours', couleur: '#5B6EE8', icone: '', ordre: 1, limite_wip: 3, tableau: '' },
+    { id: 3, nom: 'Terminé',  couleur: '#4E8B6B', icone: '', ordre: 2, limite_wip: 0, tableau: '' }
+  ];
+  kbCards = [
+    { id: 101, titre: 'Rédiger la note de cadrage', acteur: 'Camille', colonne: 1, ordre: 0, notes: '', echeance: '', tableau: '' },
+    { id: 102, titre: 'Relancer le prestataire',    acteur: 'Yanis',   colonne: 2, ordre: 0, notes: 'Par mail', echeance: '', tableau: '' },
+    { id: 103, titre: 'Valider la maquette',        acteur: 'Camille', colonne: 3, ordre: 0, notes: '', echeance: '', tableau: '' }
+  ];
+  kbRender();
+}
+
 </script>
 <div id="calPop" class="cal-pop" style="display:none"></div>
 
