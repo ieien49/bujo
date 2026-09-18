@@ -1993,6 +1993,7 @@ body.presentation #exitPresentBtn{ display:flex; }
 #kbSearch { flex: 1 1 160px; max-width: 280px; padding: 6px 12px; border: 1px solid var(--border); border-radius: 20px; font-size: 13px; outline: none; background: var(--bg-soft); color: var(--text); font-family: inherit; }
 #kbSearch:focus { border-color: var(--accent); }
 #kbActeurSel { padding: 6px 10px; border: 1px solid var(--border); border-radius: 20px; font-size: 12px; background: var(--bg); color: var(--text); font-family: inherit; cursor: pointer; }
+#kbTableauSel { padding: 6px 12px; border: 1px solid var(--accent); border-radius: 20px; font-size: 12.5px; font-weight: 600; background: var(--accent-soft); color: var(--text); font-family: inherit; cursor: pointer; }
 .kb-tb-btn { padding: 6px 13px; border: 1px solid var(--border); border-radius: 20px; background: var(--bg); font-size: 12px; cursor: pointer; color: var(--text); font-family: inherit; }
 .kb-tb-btn:hover { background: var(--bg-hover); }
 .kb-tb-btn.primary { margin-left: auto; background: var(--accent); color: #fff; border-color: var(--accent); font-weight: 600; }
@@ -2036,6 +2037,10 @@ body.presentation #exitPresentBtn{ display:flex; }
   background: var(--bg); outline: none; font-family: inherit;
 }
 #kbCardModOv .cf textarea { min-height: 70px; }
+.kb-board-row { display: flex; align-items: center; gap: 8px; padding: 6px 0; border-bottom: 1px solid var(--border); }
+.kb-board-row:last-child { border-bottom: none; }
+.kb-board-row input[type=text] { flex: 1; padding: 6px 9px; border: .5px solid var(--border); border-radius: var(--radius); font-size: 12.5px; color: var(--text); background: var(--bg); font-family: inherit; }
+.kb-board-row .kb-ico-btn { flex-shrink: 0; }
 </style>
 </head>
 <body>
@@ -2471,6 +2476,8 @@ body.presentation #exitPresentBtn{ display:flex; }
        ══════════════════════════════════════════ -->
   <div class="page" id="page-kanban">
     <div id="kbTopbar">
+      <select id="kbTableauSel" onchange="kbSetTableauActif(this.value)"></select>
+      <button class="kb-tb-btn" onclick="kbOpenBoardMod()" title="Gérer les tableaux">⚙ Tableaux</button>
       <input type="text" id="kbSearch" placeholder="Rechercher une carte…" oninput="kbSetSearch(this.value)">
       <select id="kbActeurSel" onchange="kbSetActeur(this.value)"><option value="">Tous les acteurs</option></select>
       <button class="kb-tb-btn" onclick="kbOpenColMod(null)">+ Colonne</button>
@@ -2478,6 +2485,24 @@ body.presentation #exitPresentBtn{ display:flex; }
       <div id="kbFilterWarn">Un filtre est actif : le glisser-déposer est désactivé pour ne pas corrompre l'ordre des cartes.</div>
     </div>
     <div id="kbBoard"></div>
+  </div>
+
+  <!-- ── MODALE GESTION DES TABLEAUX ── -->
+  <div class="cmod-ov" id="kbBoardModOv" onclick="kbHandleBoardModClick(event)">
+    <div class="cmod">
+      <div class="cmod-title">Tableaux Kanban</div>
+      <div id="kbBoardList"></div>
+      <div class="cf" style="margin-top:14px">
+        <label>Nouveau tableau</label>
+        <div style="display:flex;gap:8px">
+          <input type="text" id="kbNewBoardNom" placeholder="Nom du tableau…" style="flex:1">
+          <button class="cbtn-s" onclick="kbAddBoard()">Ajouter</button>
+        </div>
+      </div>
+      <div class="cmod-act">
+        <button class="cbtn-c" onclick="kbCloseBoardMod()">Fermer</button>
+      </div>
+    </div>
   </div>
 
   <!-- ── MODALE COLONNE KANBAN ── -->
@@ -3334,6 +3359,10 @@ const WCFG_REQUIRED_TABLES = [
     { id: 'Image_url',         type: 'Text' },
     { id: 'Note',              type: 'Numeric' },
     { id: 'Tags',              type: 'Text' },
+  ]},
+  { id: 'Kanban_Tableaux', cols: [
+    { id: 'nom',   type: 'Text' },
+    { id: 'ordre', type: 'Int' },
   ]},
   { id: 'Kanban_Colonnes', cols: [
     { id: 'nom',        type: 'Text' },
@@ -8133,11 +8162,13 @@ function recShowToast(msg, err) {
 //  couplage est la table Config (libellé + visibilité).
 //  Tous les identifiants sont préfixés kb* / KB_.
 // ══════════════════════════════════════════════════════
-const KB_T_COLS  = 'Kanban_Colonnes';
-const KB_T_CARDS = 'Kanban_Cartes';
-const KB_TABLEAU = '';   // réservé au multi-tableaux (non exploité pour l'instant)
+const KB_T_COLS   = 'Kanban_Colonnes';
+const KB_T_CARDS  = 'Kanban_Cartes';
+const KB_T_BOARDS = 'Kanban_Tableaux';
 const KB_PALETTE = ['#6B7280','#5B6EE8','#4E8B6B','#C88A2E','#D2665A','#8B5E83','#2E8B98','#e8a020'];
 
+let kbTableaux     = [];   // [{id, nom, ordre}]
+let kbTableauActif = null; // id du tableau affiché
 let kbCols        = [];
 let kbCards       = [];
 let kbSortables   = [];
@@ -8167,7 +8198,7 @@ async function kbApply(actions) {
   if (!kbIsDemo()) return OfflineSync.applyUserActions(actions);
   actions.forEach(a => {
     const [verb, table, id, fields] = a;
-    const arr = (table === KB_T_COLS) ? kbCols : kbCards;
+    const arr = (table === KB_T_BOARDS) ? kbTableaux : (table === KB_T_COLS) ? kbCols : kbCards;
     if (verb === 'AddRecord') arr.push(Object.assign({ id: ++kbDemoSeq }, fields));
     else if (verb === 'UpdateRecord') { const o = arr.find(x => x.id === id); if (o) Object.assign(o, fields); }
     else if (verb === 'RemoveRecord') { const i = arr.findIndex(x => x.id === id); if (i >= 0) arr.splice(i, 1); }
@@ -8179,9 +8210,10 @@ function kbRefresh() { if (kbIsDemo()) { kbRender(); } else { loadKanban(); } }
 
 // ── Chargement ──
 async function loadKanban() {
-  if (kbIsDemo()) { kbRender(); return; }
-  let rc = null, rk = null;
+  if (kbIsDemo()) { kbInitDemo(); return; }
+  let rb = null, rc = null, rk = null;
   try {
+    rb = await grist.docApi.fetchTable(KB_T_BOARDS);
     rc = await grist.docApi.fetchTable(KB_T_COLS);
     rk = await grist.docApi.fetchTable(KB_T_CARDS);
   } catch (e) {
@@ -8189,6 +8221,9 @@ async function loadKanban() {
     kbTablesOk = false; kbRender(); return;
   }
   kbTablesOk = true;
+  kbTableaux = kbRows(rb).map(r => ({
+    id: r.id, nom: String(r.nom || ''), ordre: Number(r.ordre) || 0
+  })).sort((a, b) => a.ordre - b.ordre);
   kbCols = kbRows(rc).map(r => ({
     id: r.id, nom: String(r.nom || ''), icone: String(r.icone || ''),
     couleur: String(r.couleur || ''), ordre: Number(r.ordre) || 0,
@@ -8200,6 +8235,33 @@ async function loadKanban() {
     notes: String(r.notes || ''), echeance: String(r.echeance || ''),
     tableau: String(r.tableau || '')
   })).sort((a, b) => a.ordre - b.ordre);
+
+  // Migration auto : premier chargement après passage au multi-tableaux —
+  // aucun tableau n'existe encore, on en crée un et on y rattache les
+  // colonnes/cartes déjà présentes (créées avant cette fonctionnalité).
+  if (!kbTableaux.length) {
+    try { await kbApply([['AddRecord', KB_T_BOARDS, null, { nom: 'Tableau 1', ordre: 0 }]]); }
+    catch (e) { console.error('Kanban : échec de la migration —', e); kbRender(); return; }
+    let rb2;
+    try { rb2 = await grist.docApi.fetchTable(KB_T_BOARDS); }
+    catch (e) { console.warn('Kanban : migration en attente (hors-ligne ?) —', e); kbRender(); return; }
+    kbTableaux = kbRows(rb2).map(r => ({ id: r.id, nom: String(r.nom || ''), ordre: Number(r.ordre) || 0 })).sort((a, b) => a.ordre - b.ordre);
+    if (!kbTableaux.length) { kbRender(); return; } // écriture en file d'attente hors-ligne : on retentera au prochain chargement
+    const newId = kbTableaux[0].id;
+    const orphanCols = kbCols.filter(c => !c.tableau);
+    const orphanCards = kbCards.filter(c => !c.tableau);
+    const migActions = [];
+    if (orphanCols.length) migActions.push(['BulkUpdateRecord', KB_T_COLS, orphanCols.map(c => c.id), { tableau: orphanCols.map(() => String(newId)) }]);
+    if (orphanCards.length) migActions.push(['BulkUpdateRecord', KB_T_CARDS, orphanCards.map(c => c.id), { tableau: orphanCards.map(() => String(newId)) }]);
+    if (migActions.length) {
+      try { await kbApply(migActions); } catch (e) { console.error('Kanban : échec du rattachement —', e); }
+      orphanCols.forEach(c => c.tableau = String(newId));
+      orphanCards.forEach(c => c.tableau = String(newId));
+    }
+  }
+
+  const cached = localStorage.getItem('bujoWidget_kbBoard_' + CACHE_NS);
+  kbTableauActif = kbTableaux.some(t => String(t.id) === cached) ? Number(cached) : kbTableaux[0].id;
   kbRender();
 }
 
@@ -8220,7 +8282,8 @@ function kbFmtDate(iso) {
   return m[3] + ' ' + MSH[parseInt(m[2], 10) - 1];
 }
 function kbDistinctActeurs() {
-  return [...new Set(kbCards.map(c => c.acteur).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'fr'));
+  return [...new Set(kbCards.filter(c => c.tableau === String(kbTableauActif)).map(c => c.acteur).filter(Boolean))]
+    .sort((a, b) => a.localeCompare(b, 'fr'));
 }
 
 // ── Rendu ──
@@ -8233,20 +8296,28 @@ function kbRender() {
   const warn = document.getElementById('kbFilterWarn');
   if (warn) warn.classList.toggle('vis', kbFilterActive() && kbCols.length > 0);
 
+  kbSyncBoardUI();
+
   if (!kbTablesOk) {
-    board.innerHTML = '<div class="kb-empty">Les tables <b>' + KB_T_COLS + '</b> et <b>' + KB_T_CARDS +
+    board.innerHTML = '<div class="kb-empty">Les tables <b>' + KB_T_BOARDS + '</b>, <b>' + KB_T_COLS + '</b> et <b>' + KB_T_CARDS +
       '</b> n\'existent pas encore dans ce document.<br>Ouvre les réglages du widget (⚙) → « Tables nécessaires » → « Vérifier » puis « Créer ».</div>';
     kbSyncActeurUI(); return;
   }
-  if (!kbCols.length) {
-    board.innerHTML = '<div class="kb-empty">Aucune colonne pour l\'instant.</div>' +
+  if (!kbTableaux.length) {
+    board.innerHTML = '<div class="kb-empty">Aucun tableau pour l\'instant.</div>' +
+      '<button class="kb-add-col" onclick="kbOpenBoardMod()">+ Tableau</button>';
+    kbSyncActeurUI(); return;
+  }
+  const colsDuTableau = kbCols.filter(c => c.tableau === String(kbTableauActif));
+  if (!colsDuTableau.length) {
+    board.innerHTML = '<div class="kb-empty">Aucune colonne pour l\'instant dans ce tableau.</div>' +
       '<button class="kb-add-col" onclick="kbOpenColMod(null)">+ Colonne</button>';
     kbSyncActeurUI(); return;
   }
 
   const q = kbSearch.trim().toLowerCase();
-  const last = kbCols.length - 1;
-  board.innerHTML = kbCols.map((col, idx) => {
+  const last = colsDuTableau.length - 1;
+  board.innerHTML = colsDuTableau.map((col, idx) => {
     const cards = kbCards
       .filter(c => c.colonne === col.id)
       .filter(c => !kbActeurFiltre || c.acteur === kbActeurFiltre)
@@ -8301,6 +8372,20 @@ function kbSyncActeurUI() {
   if (dl) dl.innerHTML = acteurs.map(a => `<option value="${esc(a)}">`).join('');
 }
 
+function kbSyncBoardUI() {
+  const sel = document.getElementById('kbTableauSel');
+  if (!sel) return;
+  sel.innerHTML = kbTableaux.map(t => `<option value="${t.id}">${esc(t.nom || '(sans nom)')}</option>`).join('');
+  if (kbTableauActif != null) sel.value = String(kbTableauActif);
+}
+function kbSetTableauActif(v) {
+  kbTableauActif = Number(v);
+  try { localStorage.setItem('bujoWidget_kbBoard_' + CACHE_NS, String(kbTableauActif)); } catch (e) {}
+  kbSearch = ''; kbActeurFiltre = '';
+  const s = document.getElementById('kbSearch'); if (s) s.value = '';
+  kbRender();
+}
+
 function kbSetSearch(v) { kbSearch = v || ''; kbRender(); }
 function kbSetActeur(v) { kbActeurFiltre = v || ''; kbRender(); }
 
@@ -8336,17 +8421,19 @@ async function kbOnDrop(evt) {
 
 // ── Ordre des colonnes ──
 async function kbMoveCol(id, dir) {
-  const i = kbCols.findIndex(c => c.id === id);
+  const inBoard = kbCols.filter(c => c.tableau === String(kbTableauActif)).sort((a, b) => a.ordre - b.ordre);
+  const i = inBoard.findIndex(c => c.id === id);
   const j = i + dir;
-  if (i < 0 || j < 0 || j >= kbCols.length) return;
-  const tmp = kbCols[i]; kbCols[i] = kbCols[j]; kbCols[j] = tmp;
-  const actions = kbCols.map((c, k) => { c.ordre = k; return ['UpdateRecord', KB_T_COLS, c.id, { ordre: k }]; });
+  if (i < 0 || j < 0 || j >= inBoard.length) return;
+  const tmp = inBoard[i]; inBoard[i] = inBoard[j]; inBoard[j] = tmp;
+  const actions = inBoard.map((c, k) => { c.ordre = k; return ['UpdateRecord', KB_T_COLS, c.id, { ordre: k }]; });
   kbRender();
   try { await kbApply(actions); } catch (e) { console.error(e); }
 }
 
 // ── Modale colonne ──
 function kbOpenColMod(id) {
+  if (kbTableauActif == null) { alert('Crée d\'abord un tableau.'); return; }
   kbEditColId = id || null;
   const col = id ? kbCols.find(c => c.id === id) : null;
   document.getElementById('kbColModTitle').textContent = col ? 'Modifier la colonne' : 'Nouvelle colonne';
@@ -8387,13 +8474,14 @@ async function kbSaveCol() {
     couleur: kbColCouleur,
     icone: document.getElementById('kbColIcone').value.trim(),
     limite_wip: parseInt(document.getElementById('kbColWip').value, 10) || 0,
-    tableau: KB_TABLEAU
+    tableau: String(kbTableauActif)
   };
   try {
     if (kbEditColId) {
       await kbApply([['UpdateRecord', KB_T_COLS, kbEditColId, fields]]);
     } else {
-      fields.ordre = kbCols.length ? Math.max(...kbCols.map(c => c.ordre)) + 1 : 0;
+      const inBoard = kbCols.filter(c => c.tableau === String(kbTableauActif));
+      fields.ordre = inBoard.length ? Math.max(...inBoard.map(c => c.ordre)) + 1 : 0;
       await kbApply([['AddRecord', KB_T_COLS, null, fields]]);
     }
   } catch (e) { alert('Erreur : ' + e.message); return; }
@@ -8411,9 +8499,75 @@ async function kbDeleteCol() {
   kbCloseColMod(); kbRefresh();
 }
 
+// ── Modale gestion des tableaux ──
+function kbOpenBoardMod() {
+  kbRenderBoardList();
+  document.getElementById('kbNewBoardNom').value = '';
+  document.getElementById('kbBoardModOv').classList.add('open');
+}
+function kbCloseBoardMod() { document.getElementById('kbBoardModOv').classList.remove('open'); }
+function kbHandleBoardModClick(e) { if (e.target === document.getElementById('kbBoardModOv')) kbCloseBoardMod(); }
+function kbRenderBoardList() {
+  const box = document.getElementById('kbBoardList');
+  if (!box) return;
+  const last = kbTableaux.length - 1;
+  box.innerHTML = kbTableaux.map((t, idx) => `<div class="kb-board-row">
+    <button class="kb-ico-btn" onclick="kbMoveBoard(${t.id},-1)" title="Monter" ${idx === 0 ? 'disabled' : ''}>▲</button>
+    <button class="kb-ico-btn" onclick="kbMoveBoard(${t.id},1)" title="Descendre" ${idx === last ? 'disabled' : ''}>▼</button>
+    <input type="text" value="${esc(t.nom)}" onchange="kbRenameBoard(${t.id}, this.value)">
+    <button class="kb-ico-btn" onclick="kbDeleteBoard(${t.id})" title="Supprimer" ${kbTableaux.length <= 1 ? 'disabled' : ''}>🗑</button>
+  </div>`).join('');
+}
+async function kbAddBoard() {
+  const nom = document.getElementById('kbNewBoardNom').value.trim();
+  if (!nom) return;
+  const ordre = kbTableaux.length ? Math.max(...kbTableaux.map(t => t.ordre)) + 1 : 0;
+  try { await kbApply([['AddRecord', KB_T_BOARDS, null, { nom, ordre }]]); }
+  catch (e) { alert('Erreur : ' + e.message); return; }
+  await loadKanban();
+  kbRenderBoardList();
+  document.getElementById('kbNewBoardNom').value = '';
+}
+async function kbRenameBoard(id, nom) {
+  nom = nom.trim();
+  if (!nom) { kbRenderBoardList(); return; }
+  const t = kbTableaux.find(x => x.id === id);
+  if (t) t.nom = nom;
+  try { await kbApply([['UpdateRecord', KB_T_BOARDS, id, { nom }]]); }
+  catch (e) { alert('Erreur : ' + e.message); }
+  kbSyncBoardUI();
+}
+async function kbMoveBoard(id, dir) {
+  const i = kbTableaux.findIndex(t => t.id === id);
+  const j = i + dir;
+  if (i < 0 || j < 0 || j >= kbTableaux.length) return;
+  const tmp = kbTableaux[i]; kbTableaux[i] = kbTableaux[j]; kbTableaux[j] = tmp;
+  const actions = kbTableaux.map((t, k) => { t.ordre = k; return ['UpdateRecord', KB_T_BOARDS, t.id, { ordre: k }]; });
+  kbRenderBoardList();
+  try { await kbApply(actions); } catch (e) { console.error(e); }
+}
+async function kbDeleteBoard(id) {
+  if (kbTableaux.length <= 1) return;
+  const t = kbTableaux.find(x => x.id === id);
+  const nCols = kbCols.filter(c => c.tableau === String(id)).length;
+  const nCards = kbCards.filter(c => c.tableau === String(id)).length;
+  if (!confirm(`Supprimer le tableau « ${t ? t.nom : ''} »${nCols ? `, ses ${nCols} colonne(s) et ${nCards} carte(s)` : ''} ? Action irréversible.`)) return;
+  const cardIds = kbCards.filter(c => c.tableau === String(id)).map(c => c.id);
+  const colIds = kbCols.filter(c => c.tableau === String(id)).map(c => c.id);
+  const actions = [];
+  if (cardIds.length) actions.push(['BulkRemoveRecord', KB_T_CARDS, cardIds]);
+  if (colIds.length) actions.push(['BulkRemoveRecord', KB_T_COLS, colIds]);
+  actions.push(['RemoveRecord', KB_T_BOARDS, id]);
+  try { await kbApply(actions); } catch (e) { alert('Erreur : ' + e.message); return; }
+  if (kbTableauActif === id) { try { localStorage.removeItem('bujoWidget_kbBoard_' + CACHE_NS); } catch (e) {} }
+  await loadKanban();
+  kbRenderBoardList();
+}
+
 // ── Modale carte ──
 function kbOpenCardMod(id, colId) {
-  if (!kbCols.length) { alert('Crée d\'abord au moins une colonne.'); return; }
+  const boardCols = kbCols.filter(k => k.tableau === String(kbTableauActif));
+  if (!boardCols.length) { alert('Crée d\'abord au moins une colonne dans ce tableau.'); return; }
   kbEditCardId = id || null;
   const c = id ? kbCards.find(x => x.id === id) : null;
   document.getElementById('kbCardModTitle').textContent = c ? 'Modifier la carte' : 'Nouvelle carte';
@@ -8422,8 +8576,8 @@ function kbOpenCardMod(id, colId) {
   document.getElementById('kbCardNotes').value = c ? c.notes : '';
   document.getElementById('kbCardEcheance').value = c ? (c.echeance || '') : '';
   const sel = document.getElementById('kbCardColonne');
-  sel.innerHTML = kbCols.map(k => `<option value="${k.id}">${esc(k.nom || '(sans nom)')}</option>`).join('');
-  sel.value = String(c ? c.colonne : (colId || kbCols[0].id));
+  sel.innerHTML = boardCols.map(k => `<option value="${k.id}">${esc(k.nom || '(sans nom)')}</option>`).join('');
+  sel.value = String(c ? c.colonne : (colId || boardCols[0].id));
   kbSyncActeurUI();
   document.getElementById('kbCardBtnDel').style.display = c ? '' : 'none';
   document.getElementById('kbCardModOv').classList.add('open');
@@ -8441,7 +8595,7 @@ async function kbSaveCard() {
     notes: document.getElementById('kbCardNotes').value.trim(),
     echeance: document.getElementById('kbCardEcheance').value || '',
     colonne,
-    tableau: KB_TABLEAU
+    tableau: String(kbTableauActif)
   };
   try {
     if (kbEditCardId) {
@@ -8464,16 +8618,23 @@ async function kbDeleteCard() {
 
 // ── Jeu de démonstration (fichier ouvert hors de Grist) ──
 function kbInitDemo() {
+  kbTableaux = [
+    { id: 1, nom: 'Projet A', ordre: 0 },
+    { id: 2, nom: 'Projet B', ordre: 1 }
+  ];
   kbCols = [
-    { id: 1, nom: 'À faire',  couleur: '#6B7280', icone: '', ordre: 0, limite_wip: 0, tableau: '' },
-    { id: 2, nom: 'En cours', couleur: '#5B6EE8', icone: '', ordre: 1, limite_wip: 3, tableau: '' },
-    { id: 3, nom: 'Terminé',  couleur: '#4E8B6B', icone: '', ordre: 2, limite_wip: 0, tableau: '' }
+    { id: 1, nom: 'À faire',  couleur: '#6B7280', icone: '', ordre: 0, limite_wip: 0, tableau: '1' },
+    { id: 2, nom: 'En cours', couleur: '#5B6EE8', icone: '', ordre: 1, limite_wip: 3, tableau: '1' },
+    { id: 3, nom: 'Terminé',  couleur: '#4E8B6B', icone: '', ordre: 2, limite_wip: 0, tableau: '1' },
+    { id: 4, nom: 'Idées',    couleur: '#C88A2E', icone: '', ordre: 0, limite_wip: 0, tableau: '2' }
   ];
   kbCards = [
-    { id: 101, titre: 'Rédiger la note de cadrage', acteur: 'Camille', colonne: 1, ordre: 0, notes: '', echeance: '', tableau: '' },
-    { id: 102, titre: 'Relancer le prestataire',    acteur: 'Yanis',   colonne: 2, ordre: 0, notes: 'Par mail', echeance: '', tableau: '' },
-    { id: 103, titre: 'Valider la maquette',        acteur: 'Camille', colonne: 3, ordre: 0, notes: '', echeance: '', tableau: '' }
+    { id: 101, titre: 'Rédiger la note de cadrage', acteur: 'Camille', colonne: 1, ordre: 0, notes: '', echeance: '', tableau: '1' },
+    { id: 102, titre: 'Relancer le prestataire',    acteur: 'Yanis',   colonne: 2, ordre: 0, notes: 'Par mail', echeance: '', tableau: '1' },
+    { id: 103, titre: 'Valider la maquette',        acteur: 'Camille', colonne: 3, ordre: 0, notes: '', echeance: '', tableau: '1' },
+    { id: 104, titre: 'Explorer une piste',         acteur: 'Yanis',   colonne: 4, ordre: 0, notes: '', echeance: '', tableau: '2' }
   ];
+  kbTableauActif = 1;
   kbRender();
 }
 
