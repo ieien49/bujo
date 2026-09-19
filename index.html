@@ -314,6 +314,8 @@ body {
 .titem:hover { background: var(--bg-soft); }
 .titem:hover .tedit, .titem:hover .tmove, .titem:hover .turgent-btn { opacity: 1; }
 .titem.done { opacity: .4; }
+#todayTaskList .titem { cursor: grab; }
+#todayTaskList .titem:active { cursor: grabbing; }
 .tchk {
   width: 16px; height: 16px; border-radius: 50%;
   border: 2px solid var(--light);
@@ -3307,6 +3309,7 @@ const WCFG_REQUIRED_TABLES = [
     { id: 'archive',      type: 'Bool' },
     { id: 'urgent',       type: 'Bool' },
     { id: 'tag',          type: 'Text' },
+    { id: 'ordre',        type: 'Int' },
   ]},
   { id: 'Config', cols: [
     { id: 'cle',    type: 'Text' },
@@ -3861,7 +3864,7 @@ function tHTML(t,i,age,dateRight,late){
   const dr = dateRight ? `<span class="tdate-right">${dateRight}</span>` : '';
   const mv = late ? `<button class="tmove" onclick="moveToToday(${i})" title="Déplacer à aujourd'hui">&#8635;</button>` : '';
   const ug = `<button class="turgent-btn${t.urgent?' on':''}" onclick="toggleUrgentTask(event,${i})" title="${t.urgent?'Retirer l\'urgence':'Marquer comme urgent'}"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg></button>`;
-  return `<div class="titem${t.done?' done':''}${t.urgent?' urgent':''}" ondblclick="openBmod(${i})">
+  return `<div class="titem${t.done?' done':''}${t.urgent?' urgent':''}" data-task-id="${t.id!=null?t.id:''}" ondblclick="openBmod(${i})">
     <div class="tchk${t.done?' checked':''}" onclick="toggleT(${i})"></div>
     <div class="tname">${esc(t.name)}</div>
     ${dr}
@@ -4055,7 +4058,7 @@ function renderMain() {
 
   if(v==='today'){
 const late  = tasks.filter(t => isLate(t) && (!t.projet || !cfgOn('projet_on'))).sort((a,b)=>a.date.localeCompare(b.date));
-const todayT = tasks.filter(t=>!t.bday&&(!t.projet || !cfgOn('projet_on'))&&t.date===todayStr);
+const todayT = tasks.filter(t=>!t.bday&&(!t.projet || !cfgOn('projet_on'))&&t.date===todayStr).sort((a,b)=>(a.ordre??0)-(b.ordre??0));
 const todayB = cfgOn('bday_on') ? tasks.filter(t=>t.bday&&bdayNext(t)?.ds===todayStr) : [];
     if(late.length){
       const isOpen = lateOpen !== false;
@@ -4072,7 +4075,9 @@ const todayB = cfgOn('bday_on') ? tasks.filter(t=>t.bday&&bdayNext(t)?.ds===toda
     if(todayT.length||todayB.length){
       html+=`<div class="section"><div class="sec-hero s-today">Aujourd'hui</div>`;
       todayB.forEach(t=>{const o=bdayNext(t);html+=tHTML(t,tasks.indexOf(t),o?.age);});
+      html+=`<div id="todayTaskList">`;
       html+=todayT.map(t=>tHTML(t,tasks.indexOf(t))).join('');
+      html+=`</div>`;
       html+=`</div>`;
     }
     if(!late.length&&!todayT.length&&!todayB.length) html=`<div class="empty-bujo">Aucune tâche pour aujourd'hui</div>`;
@@ -4179,6 +4184,7 @@ const todayB = cfgOn('bday_on') ? tasks.filter(t=>t.bday&&bdayNext(t)?.ds===toda
   if (!kanbanFull && bujoSidebarOpen) { bujoSidebarOpen = false; pageBujoEl.classList.remove('bujo-sidebar-open'); }
 
   if (v==='week' && bujoWeekMode==='kanban') initWeekKanbanSortable();
+  if (v==='today') initTodayTaskSortable();
 }
 
 function toggleBujoSidebar(force) {
@@ -4468,6 +4474,22 @@ function initWeekKanbanSortable(){
   });
 }
 
+let todayTaskSortable = null;
+function initTodayTaskSortable(){
+  if (todayTaskSortable) { todayTaskSortable.destroy(); todayTaskSortable = null; }
+  const list = document.getElementById('todayTaskList');
+  if (!list) return;
+  todayTaskSortable = Sortable.create(list, {
+    animation: 150,
+    onEnd: () => {
+      const ids = [...list.children].map(el => parseInt(el.dataset.taskId)).filter(id => !isNaN(id));
+      const reordered = ids.map(id => tasks.find(t => t.id === id)).filter(Boolean);
+      reordered.forEach((t,i) => { t.ordre = i; });
+      gBujoReorder(reordered);
+    }
+  });
+}
+
 // ══════════════════════════════════════════════════════
 //  BUJO — ACTIONS
 // ══════════════════════════════════════════════════════
@@ -4663,11 +4685,13 @@ function toggleLate(){
 //  natif Grist : le widget n'a plus besoin d'attendre une validation
 //  manuelle pour s'afficher sur un document tout neuf.
 // ══════════════════════════════════════════════════════
+let bujoOrdreColExists = false;
 async function loadBujo(){
   if(typeof grist==='undefined')return;
   const wasQuickAddFocused = document.activeElement && document.activeElement.id === 'quickAddInput';
   try{
     const raw = await grist.docApi.fetchTable('Bujo');
+    bujoOrdreColExists = Object.prototype.hasOwnProperty.call(raw, 'ordre');
     let loaded = (raw.id||[]).map((id,i)=>({
       id,
       name: String(raw.tache?.[i] ?? ''),
@@ -4678,6 +4702,7 @@ async function loadBujo(){
       archive: !!raw.archive?.[i],
       urgent: !!raw.urgent?.[i],
       tag: String(raw.tag?.[i] ?? ''),
+      ordre: Number(raw.ordre?.[i] ?? i),
     }));
     // Un profil invité configuré avec des tags Bujo ne doit voir que les
     // tâches correspondantes. Si le profil n'a jamais été configuré pour
@@ -4713,7 +4738,17 @@ function gBujoUpdate(t){
 }
 function gBujoAdd(t){
   if(typeof grist==='undefined')return;
-  OfflineSync.applyUserActions([['AddRecord','Bujo',null,{tache:t.name,date:t.date,termine:false,anniversaire:!!t.bday,projet:!!t.projet,archive:!!t.archive,urgent:!!t.urgent,tag:t.tag||''}]]).then(res => { if (res) loadBujo(); }).catch(console.error);
+  const fields = {tache:t.name,date:t.date,termine:false,anniversaire:!!t.bday,projet:!!t.projet,archive:!!t.archive,urgent:!!t.urgent,tag:t.tag||''};
+  if(bujoOrdreColExists) fields.ordre = tasks.length;
+  OfflineSync.applyUserActions([['AddRecord','Bujo',null,fields]]).then(res => { if (res) loadBujo(); }).catch(console.error);
+}
+function gBujoReorder(list){
+  if(typeof grist==='undefined'||!bujoOrdreColExists)return;
+  const withId = list.filter(t=>t.id!=null);
+  if(!withId.length)return;
+  const ids = withId.map(t=>t.id);
+  const ordreVals = withId.map(t=>t.ordre);
+  OfflineSync.applyUserActions([['BulkUpdateRecord','Bujo',ids,{ordre:ordreVals}]]).catch(console.error);
 }
 function gBujoDelete(t){
   if(typeof grist==='undefined'||!t.id)return;
