@@ -2049,6 +2049,26 @@ body.presentation #exitPresentBtn{ display:flex; }
 .kb-board-row:last-child { border-bottom: none; }
 .kb-board-row input[type=text] { flex: 1; padding: 6px 9px; border: .5px solid var(--border); border-radius: var(--radius); font-size: 12.5px; color: var(--text); background: var(--bg); font-family: inherit; }
 .kb-board-row .kb-ico-btn { flex-shrink: 0; }
+/* ══════════════════════════════════════════
+   ONGLET REPAS (préfixé repas- / rp-)
+   ══════════════════════════════════════════ */
+#page-repas { background: var(--bg-soft); display: flex; flex-direction: column; }
+.repas-topbar { background: var(--bg); border-bottom: 1px solid var(--border); padding: 9px 14px; display: flex; align-items: center; gap: 16px; flex-wrap: wrap; flex-shrink: 0; }
+.repas-start-label { font-size: 12px; color: var(--muted); display: flex; align-items: center; gap: 8px; }
+.repas-start-label input[type=date] { padding: 6px 10px; border: 1px solid var(--border); border-radius: 8px; font-size: 12.5px; color: var(--text); background: var(--bg-soft); font-family: inherit; }
+.repas-scroll { flex: 1; overflow: auto; padding: 14px; }
+.repas-table { display: grid; grid-template-columns: 90px repeat(var(--repas-cols), minmax(150px, 1fr)); gap: 8px; min-width: max-content; }
+.repas-row { display: contents; }
+.repas-daylbl { font-size: 12px; font-weight: 600; color: var(--text); text-align: center; padding: 6px 4px; }
+.repas-daylbl.rp-today { color: var(--accent); }
+.repas-momentlbl { font-size: 12px; font-weight: 600; color: var(--muted); display: flex; align-items: center; padding: 4px; }
+.repas-cell { position: relative; background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius); padding: 6px; min-height: 70px; transition: border-color .12s, background .12s; }
+.repas-cell.repas-drop-target { border-color: var(--accent); background: var(--accent-soft); }
+.repas-cell.repas-dragging { opacity: .4; }
+.repas-input { width: 100%; height: 100%; min-height: 56px; border: none; background: none; resize: none; outline: none; font-family: inherit; font-size: 12.5px; color: var(--text); line-height: 1.4; }
+.repas-drag { position: absolute; top: 4px; right: 5px; color: var(--light); cursor: grab; opacity: 0; transition: opacity .12s; display: inline-flex; }
+.repas-cell:hover .repas-drag { opacity: 1; }
+.repas-drag:active { cursor: grabbing; }
 </style>
 </head>
 <body>
@@ -2089,6 +2109,10 @@ body.presentation #exitPresentBtn{ display:flex; }
   <button class="app-tab" data-tab="kanban" onclick="switchTab('kanban')">
     <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="5" height="18" rx="1"/><rect x="10" y="3" width="5" height="12" rx="1"/><rect x="17" y="3" width="4" height="8" rx="1"/></svg>
     <span class="tab-label">Kanban</span>
+  </button>
+  <button class="app-tab" data-tab="repas" onclick="switchTab('repas')">
+    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+    <span class="tab-label">Repas</span>
   </button>
 </div>
   <span id="offlineDot" class="offline-dot" title=""></span>
@@ -2658,6 +2682,23 @@ body.presentation #exitPresentBtn{ display:flex; }
         <button class="btn-ico" onclick="closeFicheModal()" style="margin-left:4px">✕</button>
       </div>
       <div class="fiche-modal-body" id="ficheModalBody"></div>
+    </div>
+  </div>
+  <!-- ══════════════════════════════════════════
+       ONGLET REPAS
+       ══════════════════════════════════════════ -->
+  <div class="page" id="page-repas">
+    <div class="repas-topbar">
+      <label class="repas-start-label">Début du planning
+        <input type="date" id="repasStartDate" onchange="repasSetStartDate(this.value)">
+      </label>
+      <div class="fd-prec" id="repasDaysToggle">
+        <button class="fd-pb rp-db" data-n="4" onclick="repasSetNbJours(4)">4 jours</button>
+        <button class="fd-pb rp-db" data-n="5" onclick="repasSetNbJours(5)">5 jours</button>
+      </div>
+    </div>
+    <div class="repas-scroll">
+      <div id="repasGrid"></div>
     </div>
   </div>
 
@@ -3315,6 +3356,11 @@ const WCFG_REQUIRED_TABLES = [
     { id: 'cle',    type: 'Text' },
     { id: 'valeur', type: 'Text' },
   ]},
+  { id: 'Repas', cols: [
+    { id: 'date',   type: 'Text' },
+    { id: 'moment', type: 'Text' },
+    { id: 'texte',  type: 'Text' },
+  ]},
   { id: 'Lectures', cols: [
     { id: 'titre',        type: 'Text' },
     { id: 'auteur',       type: 'Text' },
@@ -3525,6 +3571,8 @@ let colsLoaded = false;
 let mindmapLoaded = false;
 let recettesLoaded = false;
 let kanbanLoaded = false;
+let repasLoaded = false;
+let repasTasks = [];
 
 let currentTabStored = null;
 function switchTab(tab) {
@@ -3555,6 +3603,11 @@ function switchTab(tab) {
     kanbanLoaded = true;
     if (typeof grist !== 'undefined') loadKanban();
     else kbInitDemo();
+  }
+  if (tab === 'repas' && !repasLoaded) {
+    repasLoaded = true;
+    if (typeof grist !== 'undefined') loadRepas();
+    else renderRepas();
   }
   if (typeof grist !== 'undefined' && tab !== currentTabStored) {
     currentTabStored = tab;
@@ -4753,6 +4806,157 @@ function gBujoReorder(list){
 function gBujoDelete(t){
   if(typeof grist==='undefined'||!t.id)return;
   OfflineSync.applyUserActions([['RemoveRecord','Bujo',t.id]]).then(res => { if (res) loadBujo(); }).catch(console.error);
+}
+
+// ══════════════════════════════════════════════════════
+//  REPAS — planning midi/soir sur N jours
+// ══════════════════════════════════════════════════════
+function repasAddDays(dateStr, n){
+  const d = new Date(dateStr+'T00:00:00');
+  d.setDate(d.getDate()+n);
+  return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+}
+function repasFind(date, moment){
+  return repasTasks.find(x=>x.date===date&&x.moment===moment);
+}
+function repasUpsertLocal(date, moment, texte){
+  let r = repasFind(date, moment);
+  if (r) { r.texte = texte; }
+  else { r = {id:null, date, moment, texte}; repasTasks.push(r); }
+  return r;
+}
+async function loadRepas(){
+  if (typeof grist === 'undefined') { renderRepas(); return; }
+  try {
+    const raw = await grist.docApi.fetchTable('Repas');
+    repasTasks = (raw.id||[]).map((id,i)=>({
+      id,
+      date: String(raw.date?.[i] ?? ''),
+      moment: String(raw.moment?.[i] ?? ''),
+      texte: String(raw.texte?.[i] ?? ''),
+    }));
+  } catch(e){ console.warn('Repas:', e); }
+  renderRepas();
+}
+function gRepasSave(date, moment, texte){
+  if (typeof grist === 'undefined') return;
+  const r = repasFind(date, moment);
+  if (!r) return;
+  if (r.id != null) {
+    if (texte.trim() === '') {
+      OfflineSync.applyUserActions([['RemoveRecord','Repas', r.id]]).catch(console.error);
+      r.id = null;
+    } else {
+      OfflineSync.applyUserActions([['UpdateRecord','Repas', r.id, {date, moment, texte}]]).catch(console.error);
+    }
+  } else if (texte.trim() !== '') {
+    OfflineSync.applyUserActions([['AddRecord','Repas', null, {date, moment, texte}]])
+      .then(res => { r.id = res?.retValues?.[0] ?? r.id; })
+      .catch(console.error);
+  }
+}
+const repasSaveTimers = {};
+function repasScheduleSave(el){
+  const date = el.dataset.date, moment = el.dataset.moment, texte = el.value;
+  const key = date+'|'+moment;
+  repasUpsertLocal(date, moment, texte);
+  clearTimeout(repasSaveTimers[key]);
+  repasSaveTimers[key] = setTimeout(() => gRepasSave(date, moment, texte), 500);
+}
+async function repasSaveConfigKey(cle, valeur){
+  CFG[cle] = String(valeur);
+  if (typeof grist === 'undefined') return;
+  try {
+    const action = wcfgRowIds[cle] !== undefined
+      ? ['UpdateRecord','Config', wcfgRowIds[cle], { cle, valeur: String(valeur) }]
+      : ['AddRecord','Config', null, { cle, valeur: String(valeur) }];
+    const res = await OfflineSync.applyUserActions([action]);
+    if (wcfgRowIds[cle] === undefined) wcfgRowIds[cle] = res?.retValues?.[0] ?? wcfgRowIds[cle];
+  } catch(e){ console.error(e); }
+}
+function repasSetStartDate(val){
+  if (!val) return;
+  repasSaveConfigKey('repas_start_date', val);
+  renderRepas();
+}
+function repasSetNbJours(n){
+  repasSaveConfigKey('repas_nb_jours', String(n));
+  renderRepas();
+}
+function repasDragStart(e){
+  const cell = e.target.closest('.repas-cell');
+  if (!cell) return;
+  e.dataTransfer.effectAllowed = 'move';
+  e.dataTransfer.setData('text/plain', JSON.stringify({date:cell.dataset.date, moment:cell.dataset.moment}));
+  cell.classList.add('repas-dragging');
+}
+function repasDragEnd(){
+  document.querySelectorAll('.repas-cell.repas-dragging').forEach(c=>c.classList.remove('repas-dragging'));
+  document.querySelectorAll('.repas-cell.repas-drop-target').forEach(c=>c.classList.remove('repas-drop-target'));
+}
+function repasDragOver(e){
+  e.preventDefault();
+  e.dataTransfer.dropEffect = 'move';
+  e.currentTarget.classList.add('repas-drop-target');
+}
+function repasDragLeave(e){
+  e.currentTarget.classList.remove('repas-drop-target');
+}
+function repasDrop(e){
+  e.preventDefault();
+  const cell = e.currentTarget;
+  cell.classList.remove('repas-drop-target');
+  let src;
+  try { src = JSON.parse(e.dataTransfer.getData('text/plain')); } catch(err){ return; }
+  const dstDate = cell.dataset.date, dstMoment = cell.dataset.moment;
+  if (!src || (src.date===dstDate && src.moment===dstMoment)) return;
+  repasSwap(src.date, src.moment, dstDate, dstMoment);
+}
+function repasSwap(d1,m1,d2,m2){
+  const r1 = repasFind(d1,m1), r2 = repasFind(d2,m2);
+  const t1 = r1 ? r1.texte : '', t2 = r2 ? r2.texte : '';
+  repasUpsertLocal(d1,m1,t2);
+  repasUpsertLocal(d2,m2,t1);
+  gRepasSave(d1,m1,t2);
+  gRepasSave(d2,m2,t1);
+  renderRepas();
+}
+function renderRepas(){
+  const el = document.getElementById('repasGrid');
+  if (!el) return;
+  const start = CFG.repas_start_date || todayStr;
+  const nbJours = parseInt(CFG.repas_nb_jours || '5', 10);
+  const startInput = document.getElementById('repasStartDate');
+  if (startInput) startInput.value = start;
+  document.querySelectorAll('.rp-db').forEach(b => b.classList.toggle('active', parseInt(b.dataset.n,10)===nbJours));
+
+  const DAYS = ['Dim','Lun','Mar','Mer','Jeu','Ven','Sam'];
+  const dates = [];
+  for (let i=0;i<nbJours;i++) dates.push(repasAddDays(start, i));
+
+  let html = `<div class="repas-table" style="--repas-cols:${nbJours}">`;
+  html += `<div class="repas-row repas-head"><div></div>`;
+  dates.forEach(d => {
+    const dt = new Date(d+'T00:00:00');
+    const isT = d===todayStr;
+    html += `<div class="repas-daylbl${isT?' rp-today':''}">${DAYS[dt.getDay()]} ${pad(dt.getDate())}/${pad(dt.getMonth()+1)}</div>`;
+  });
+  html += `</div>`;
+
+  ['midi','soir'].forEach(moment => {
+    html += `<div class="repas-row"><div class="repas-momentlbl">${moment==='midi'?'Midi':'Soir'}</div>`;
+    dates.forEach(d => {
+      const r = repasFind(d, moment);
+      const texte = r ? r.texte : '';
+      html += `<div class="repas-cell" data-date="${d}" data-moment="${moment}" ondragover="repasDragOver(event)" ondragleave="repasDragLeave(event)" ondrop="repasDrop(event)">
+        <span class="repas-drag" draggable="true" ondragstart="repasDragStart(event)" ondragend="repasDragEnd()" title="Déplacer"><svg width="10" height="14" viewBox="0 0 10 16" fill="currentColor"><circle cx="2" cy="2" r="1.3"/><circle cx="8" cy="2" r="1.3"/><circle cx="2" cy="8" r="1.3"/><circle cx="8" cy="8" r="1.3"/><circle cx="2" cy="14" r="1.3"/><circle cx="8" cy="14" r="1.3"/></svg></span>
+        <textarea class="repas-input" data-date="${d}" data-moment="${moment}" placeholder="Idée de repas…" oninput="repasScheduleSave(this)">${esc(texte)}</textarea>
+      </div>`;
+    });
+    html += `</div>`;
+  });
+  html += `</div>`;
+  el.innerHTML = html;
 }
 
 // ══════════════════════════════════════════════════════
