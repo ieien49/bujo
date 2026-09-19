@@ -2062,13 +2062,16 @@ body.presentation #exitPresentBtn{ display:flex; }
 .repas-daylbl { font-size: 12px; font-weight: 600; color: var(--text); text-align: center; padding: 6px 4px; }
 .repas-daylbl.rp-today { color: var(--accent); }
 .repas-momentlbl { font-size: 12px; font-weight: 600; color: var(--muted); display: flex; align-items: center; padding: 4px; }
-.repas-cell { position: relative; background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius); padding: 6px; min-height: 70px; transition: border-color .12s, background .12s; }
+.repas-cell { position: relative; background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius); padding: 6px; min-height: 70px; transition: border-color .12s, background .12s; cursor: grab; }
+.repas-cell:active { cursor: grabbing; }
+.repas-cell.repas-editing { cursor: text; }
 .repas-cell.repas-drop-target { border-color: var(--accent); background: var(--accent-soft); }
 .repas-cell.repas-dragging { opacity: .4; }
-.repas-input { width: 100%; height: 100%; min-height: 56px; border: none; background: none; resize: none; outline: none; font-family: inherit; font-size: 12.5px; color: var(--text); line-height: 1.4; }
-.repas-drag { position: absolute; top: 4px; right: 5px; color: var(--light); cursor: grab; opacity: 0; transition: opacity .12s; display: inline-flex; }
-.repas-cell:hover .repas-drag { opacity: 1; }
-.repas-drag:active { cursor: grabbing; }
+.repas-display { width: 100%; height: 100%; min-height: 56px; font-size: 12.5px; color: var(--text); line-height: 1.4; white-space: pre-wrap; }
+.repas-ph { color: var(--light); opacity: .5; }
+.repas-input { display: none; width: 100%; height: 100%; min-height: 56px; border: none; background: none; resize: none; outline: none; font-family: inherit; font-size: 12.5px; color: var(--text); line-height: 1.4; cursor: text; }
+.repas-cell.repas-editing .repas-input { display: block; }
+.repas-cell.repas-editing .repas-display { display: none; }
 </style>
 </head>
 <body>
@@ -4872,6 +4875,23 @@ function repasScheduleSave(el){
   clearTimeout(repasSaveTimers[key]);
   repasSaveTimers[key] = setTimeout(() => gRepasSave(date, moment, texte), 500);
 }
+function repasEnterEdit(cell){
+  if (cell.classList.contains('repas-editing')) return;
+  cell.classList.add('repas-editing');
+  cell.setAttribute('draggable', 'false');
+  const ta = cell.querySelector('.repas-input');
+  ta.focus();
+  const len = ta.value.length;
+  ta.setSelectionRange(len, len);
+}
+function repasExitEdit(ta){
+  const cell = ta.closest('.repas-cell');
+  cell.classList.remove('repas-editing');
+  cell.setAttribute('draggable', 'true');
+  const disp = cell.querySelector('.repas-display');
+  const texte = ta.value;
+  disp.innerHTML = texte ? esc(texte).replace(/\n/g,'<br>') : '<span class="repas-ph">Idée de repas…</span>';
+}
 async function repasSaveConfigKey(cle, valeur){
   CFG[cle] = String(valeur);
   if (typeof grist === 'undefined') return;
@@ -4957,9 +4977,12 @@ function renderRepas(){
     dates.forEach(d => {
       const r = repasFind(d, moment);
       const texte = r ? r.texte : '';
-      html += `<div class="repas-cell" data-date="${d}" data-moment="${moment}" ondragover="repasDragOver(event)" ondragleave="repasDragLeave(event)" ondrop="repasDrop(event)">
-        <span class="repas-drag" draggable="true" ondragstart="repasDragStart(event)" ondragend="repasDragEnd()" title="Déplacer"><svg width="10" height="14" viewBox="0 0 10 16" fill="currentColor"><circle cx="2" cy="2" r="1.3"/><circle cx="8" cy="2" r="1.3"/><circle cx="2" cy="8" r="1.3"/><circle cx="8" cy="8" r="1.3"/><circle cx="2" cy="14" r="1.3"/><circle cx="8" cy="14" r="1.3"/></svg></span>
-        <textarea class="repas-input" data-date="${d}" data-moment="${moment}" placeholder="Idée de repas…" oninput="repasScheduleSave(this)">${esc(texte)}</textarea>
+      html += `<div class="repas-cell" data-date="${d}" data-moment="${moment}" draggable="true"
+        ondragstart="repasDragStart(event)" ondragend="repasDragEnd()"
+        ondragover="repasDragOver(event)" ondragleave="repasDragLeave(event)" ondrop="repasDrop(event)"
+        ondblclick="repasEnterEdit(this)">
+        <div class="repas-display">${texte ? esc(texte).replace(/\n/g,'<br>') : '<span class="repas-ph">Idée de repas…</span>'}</div>
+        <textarea class="repas-input" data-date="${d}" data-moment="${moment}" oninput="repasScheduleSave(this)" onblur="repasExitEdit(this)">${esc(texte)}</textarea>
       </div>`;
     });
     html += `</div>`;
