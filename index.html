@@ -4665,6 +4665,7 @@ function toggleLate(){
 // ══════════════════════════════════════════════════════
 async function loadBujo(){
   if(typeof grist==='undefined')return;
+  const wasQuickAddFocused = document.activeElement && document.activeElement.id === 'quickAddInput';
   try{
     const raw = await grist.docApi.fetchTable('Bujo');
     let loaded = (raw.id||[]).map((id,i)=>({
@@ -4688,6 +4689,10 @@ async function loadBujo(){
     tasks = loaded;
     cacheSet('tasks', tasks);
     renderMain();
+    if (wasQuickAddFocused) {
+      const qi = document.getElementById('quickAddInput');
+      if (qi) qi.focus();
+    }
   }catch(e){console.warn('Bujo:',e);}
 }
 const BUJO_NOTAG = '__sans_tag__';
