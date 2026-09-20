@@ -899,7 +899,11 @@ async function boot(){
   await Promise.all([loadCourses(), loadRecettes(), loadRepas()]);
 }
 if(HAS_GRIST){
-  grist.ready({ requiredAccess:'full' }).then(boot);
+  (async () => {
+    try { await grist.ready({ requiredAccess:'full' }); }
+    catch(e){ console.warn('grist.ready:', e); }
+    boot();
+  })();
 } else {
   boot();
 }
