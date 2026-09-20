@@ -2067,7 +2067,10 @@ body.presentation #exitPresentBtn{ display:flex; }
 .repas-cell.repas-editing { cursor: text; }
 .repas-cell.repas-drop-target { border-color: var(--accent); background: var(--accent-soft); }
 .repas-cell.repas-dragging { opacity: .4; }
-.repas-subtabs { margin-right: 6px; }
+.repas-subtabs { display: inline-flex; align-items: center; gap: 2px; padding: 3px; background: var(--bg-hover); border-radius: 10px; margin-right: 6px; }
+.repas-subtab-btn { font-family: 'DM Sans', inherit; font-size: 12.5px; font-weight: 600; padding: 6px 14px; border-radius: 7px; border: none; background: none; color: var(--muted); cursor: pointer; transition: background .15s ease, color .15s ease, box-shadow .15s ease; white-space: nowrap; }
+.repas-subtab-btn:hover { color: var(--text); }
+.repas-subtab-btn.active { background: var(--bg); color: var(--accent); box-shadow: 0 1px 3px rgba(0,0,0,0.14); }
 .repas-display { width: 100%; height: 100%; min-height: 112px; font-size: 12.5px; color: var(--text); line-height: 1.4; white-space: pre-wrap; display: flex; align-items: center; justify-content: center; text-align: center; }
 .repas-ph { color: var(--light); opacity: .5; }
 .repas-input { display: none; width: 100%; height: 100%; min-height: 112px; border: none; background: none; resize: none; outline: none; font-family: inherit; font-size: 12.5px; color: var(--text); line-height: 1.4; cursor: text; text-align: center; }
@@ -2603,10 +2606,10 @@ select.cour-input-field { -webkit-appearance: menulist; appearance: menulist; }
 <!-- ── PAGE RECETTES ── -->
 <div class="page" id="page-recettes">
   <div id="recTopbar">
-    <div class="fd-prec repas-subtabs">
-      <button class="fd-pb repas-subtab-btn" data-sub="courses" onclick="switchRepasSubTab('courses')">Courses</button>
-      <button class="fd-pb repas-subtab-btn" data-sub="menus" onclick="switchRepasSubTab('menus')">Menus</button>
-      <button class="fd-pb repas-subtab-btn" data-sub="recettes" onclick="switchRepasSubTab('recettes')">Recettes</button>
+    <div class="repas-subtabs">
+      <button class="repas-subtab-btn" data-sub="courses" onclick="switchRepasSubTab('courses')">Courses</button>
+      <button class="repas-subtab-btn" data-sub="menus" onclick="switchRepasSubTab('menus')">Menus</button>
+      <button class="repas-subtab-btn" data-sub="recettes" onclick="switchRepasSubTab('recettes')">Recettes</button>
     </div>
     <input type="text" id="recSearchInput" placeholder="Rechercher…" oninput="recApplyFilters()">
     <button class="rec-filter-btn active" onclick="recSetFilter(this,'')">Tout</button>
@@ -2865,10 +2868,10 @@ select.cour-input-field { -webkit-appearance: menulist; appearance: menulist; }
        ══════════════════════════════════════════ -->
   <div class="page" id="page-repas">
     <div class="repas-topbar">
-      <div class="fd-prec repas-subtabs">
-        <button class="fd-pb repas-subtab-btn" data-sub="courses" onclick="switchRepasSubTab('courses')">Courses</button>
-        <button class="fd-pb repas-subtab-btn" data-sub="menus" onclick="switchRepasSubTab('menus')">Menus</button>
-        <button class="fd-pb repas-subtab-btn" data-sub="recettes" onclick="switchRepasSubTab('recettes')">Recettes</button>
+      <div class="repas-subtabs">
+        <button class="repas-subtab-btn" data-sub="courses" onclick="switchRepasSubTab('courses')">Courses</button>
+        <button class="repas-subtab-btn" data-sub="menus" onclick="switchRepasSubTab('menus')">Menus</button>
+        <button class="repas-subtab-btn" data-sub="recettes" onclick="switchRepasSubTab('recettes')">Recettes</button>
       </div>
       <label class="repas-start-label">Début du planning
         <input type="date" id="repasStartDate" onchange="repasSetStartDate(this.value)">
@@ -5680,10 +5683,10 @@ function courRender() {
 
   const addBtnHtml = isAll ? '<button class="cour-btn-add" onclick="courOpenAddForm()">＋ Ajouter</button>' : '';
 
-  const subtabsHtml = '<div class="fd-prec repas-subtabs">'
-    + '<button class="fd-pb repas-subtab-btn active" data-sub="courses" onclick="switchRepasSubTab(\'courses\')">Courses</button>'
-    + '<button class="fd-pb repas-subtab-btn" data-sub="menus" onclick="switchRepasSubTab(\'menus\')">Menus</button>'
-    + '<button class="fd-pb repas-subtab-btn" data-sub="recettes" onclick="switchRepasSubTab(\'recettes\')">Recettes</button>'
+  const subtabsHtml = '<div class="repas-subtabs">'
+    + '<button class="repas-subtab-btn active" data-sub="courses" onclick="switchRepasSubTab(\'courses\')">Courses</button>'
+    + '<button class="repas-subtab-btn" data-sub="menus" onclick="switchRepasSubTab(\'menus\')">Menus</button>'
+    + '<button class="repas-subtab-btn" data-sub="recettes" onclick="switchRepasSubTab(\'recettes\')">Recettes</button>'
     + '</div>';
 
   app.innerHTML =
