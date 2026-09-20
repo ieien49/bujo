@@ -437,6 +437,7 @@ function switchTab(tab){
   document.querySelectorAll('.tabbtn').forEach(b=>b.classList.remove('active'));
   document.getElementById('tb-'+tab).classList.add('active');
   document.getElementById('fabBtn').style.display = (tab==='menus') ? 'none' : 'flex';
+  if(tab==='menus') document.querySelectorAll('#menuContent .meal-input').forEach(menuAutoGrow);
 }
 function fabAction(){
   if(currentTab==='courses') courOpenForm(null);
