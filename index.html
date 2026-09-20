@@ -2077,6 +2077,29 @@ body.presentation #exitPresentBtn{ display:flex; }
 .repas-cell.repas-editing .repas-input { display: block; }
 .repas-cell.repas-editing .repas-display { display: none; }
 
+/* bouton "choisir une recette" sur chaque case du planning */
+.repas-cell-pick { position: absolute; top: 4px; right: 4px; width: 22px; height: 22px; border-radius: 50%; background: var(--bg-hover); border: none; color: var(--accent); font-size: 12px; display: flex; align-items: center; justify-content: center; cursor: pointer; opacity: .55; transition: opacity .15s, background .15s; z-index: 2; line-height: 1; }
+.repas-cell-pick:hover { opacity: 1; background: var(--accent-soft); }
+.repas-cell.repas-editing .repas-cell-pick { display: none; }
+
+/* ── Sélecteur de recette pour un repas ── */
+#repasPickOverlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.35); z-index: 40; align-items: center; justify-content: center; }
+#repasPickOverlay.open { display: flex; }
+#repasPickModal { background: #fff; border-radius: 16px; width: min(420px, 94vw); max-height: 80vh; overflow: hidden; display: flex; flex-direction: column; box-shadow: 0 16px 48px rgba(0,0,0,.18); font-family: 'DM Sans', -apple-system, sans-serif; }
+#repasPickHeader { padding: 14px 16px 10px; border-bottom: 1px solid #e8e4dc; }
+#repasPickHeader h2 { font-size: 15px; font-weight: 700; color: #3c3489; margin: 0 0 8px; }
+#repasPickSearch { width: 100%; padding: 7px 12px; border: 1px solid #d3d1c7; border-radius: 20px; font-size: 13px; outline: none; background: #f8f5f0; font-family: inherit; box-sizing: border-box; }
+#repasPickSearch:focus { border-color: #7f77dd; }
+#repasPickClose { position: absolute; top: 10px; right: 12px; background: none; border: none; cursor: pointer; font-size: 20px; color: #888780; padding: 2px 6px; border-radius: 6px; }
+#repasPickClose:hover { background: #f1efe8; }
+#repasPickList { overflow-y: auto; padding: 8px; }
+.repas-pick-row { display: flex; align-items: center; gap: 10px; padding: 9px 10px; border-radius: 10px; cursor: pointer; }
+.repas-pick-row:hover { background: #f1efe8; }
+.repas-pick-emoji { font-size: 20px; flex-shrink: 0; width: 28px; text-align: center; }
+.repas-pick-name { flex: 1; font-size: 13.5px; color: #1a1a1a; }
+.repas-pick-cat { font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 10px; flex-shrink: 0; }
+#repasPickEmpty { text-align: center; padding: 30px 20px; color: #888780; font-size: 13px; }
+
 /* ── COURSES (sous-onglet de Repas) ── */
 #page-courses {
   --cour-bg: #FFFFFF; --cour-surface: #FFFFFF; --cour-text: #1A1A18; --cour-text-muted: #8A8880;
@@ -2883,6 +2906,16 @@ select.cour-input-field { -webkit-appearance: menulist; appearance: menulist; }
     </div>
     <div class="repas-scroll">
       <div id="repasGrid"></div>
+    </div>
+  </div>
+  <div id="repasPickOverlay">
+    <div id="repasPickModal">
+      <div id="repasPickHeader" style="position:relative;">
+        <h2>Choisir une recette</h2>
+        <button id="repasPickClose" onclick="repasClosePicker()">×</button>
+        <input type="text" id="repasPickSearch" placeholder="Rechercher une recette…" oninput="repasRenderPickList()">
+      </div>
+      <div id="repasPickList"></div>
     </div>
   </div>
   <div class="page" id="page-courses">
@@ -5192,6 +5225,9 @@ function renderRepas(){
         ondragstart="repasDragStart(event)" ondragend="repasDragEnd()"
         ondragover="repasDragOver(event)" ondragleave="repasDragLeave(event)" ondrop="repasDrop(event)"
         ondblclick="repasEnterEdit(this)">
+        <button type="button" class="repas-cell-pick" draggable="false" title="Choisir une recette"
+          onmousedown="event.stopPropagation()" ondblclick="event.stopPropagation()"
+          onclick="event.stopPropagation(); repasOpenPicker('${d}','${moment}')">🍽</button>
         <div class="repas-display">${texte ? esc(texte).replace(/\n/g,'<br>') : '<span class="repas-ph">Idée de repas…</span>'}</div>
         <textarea class="repas-input" data-date="${d}" data-moment="${moment}" oninput="repasScheduleSave(this)" onblur="repasExitEdit(this)">${esc(texte)}</textarea>
       </div>`;
@@ -5200,6 +5236,58 @@ function renderRepas(){
   });
   html += `</div>`;
   el.innerHTML = html;
+}
+
+/* ── Sélecteur de recette pour un repas (reprend recAllRecipes de l'onglet Recettes) ── */
+let repasPickTarget = null;
+function repasOpenPicker(date, moment) {
+  repasPickTarget = { date, moment };
+  const search = document.getElementById('repasPickSearch');
+  if (search) search.value = '';
+  if (typeof grist !== 'undefined' && recAllRecipes.length === 0) {
+    recLoadRecipes(function () { repasRenderPickList(); });
+  } else {
+    repasRenderPickList();
+  }
+  document.getElementById('repasPickOverlay').classList.add('open');
+}
+function repasClosePicker() {
+  document.getElementById('repasPickOverlay').classList.remove('open');
+  repasPickTarget = null;
+}
+function repasRenderPickList() {
+  const q = (document.getElementById('repasPickSearch').value || '').trim().toLowerCase();
+  const list = recAllRecipes
+    .filter(r => !q || (r.Nom || '').toLowerCase().includes(q))
+    .sort((a, b) => (a.Nom || '').localeCompare(b.Nom || '', 'fr'));
+  const box = document.getElementById('repasPickList');
+  if (!list.length) {
+    box.innerHTML = '<div id="repasPickEmpty">Aucune recette trouvée.</div>';
+    return;
+  }
+  box.innerHTML = list.map(r =>
+    `<div class="repas-pick-row" onclick="repasPickChoose(${r.id})">
+      <span class="repas-pick-emoji">${recCatEmoji(r.Categorie)}</span>
+      <span class="repas-pick-name">${esc(r.Nom || 'Sans titre')}</span>
+      ${r.Categorie ? `<span class="repas-pick-cat ${recCatClass(r.Categorie)}">${esc(r.Categorie)}</span>` : ''}
+    </div>`
+  ).join('');
+}
+function repasPickChoose(recipeId) {
+  const r = recAllRecipes.find(x => x.id === recipeId);
+  if (!r || !repasPickTarget) return;
+  const { date, moment } = repasPickTarget;
+  const cell = document.querySelector(`.repas-cell[data-date="${date}"][data-moment="${moment}"]`);
+  if (!cell) return;
+  const ta = cell.querySelector('.repas-input');
+  const prev = ta.value.trim();
+  const nv = prev ? prev + ', ' + r.Nom : r.Nom;
+  ta.value = nv;
+  repasUpsertLocal(date, moment, nv);
+  gRepasSave(date, moment, nv);
+  const disp = cell.querySelector('.repas-display');
+  disp.innerHTML = esc(nv).replace(/\n/g, '<br>');
+  repasClosePicker();
 }
 
 // ══════════════════════════════════════════════════════
