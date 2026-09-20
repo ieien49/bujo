@@ -1,1 +1,908 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
+<title>Maison</title>
+<script src="https://docs.getgrist.com/grist-plugin-api.js"></script>
+<style>
+:root {
+  color-scheme: light dark;
+  --blue:#007AFF; --red:#FF3B30; --green:#34C759; --orange:#FF9500; --yellow:#FFCC00; --purple:#AF52DE; --pink:#FF2D55;
+  --bg:#F2F2F7; --grouped:#FFFFFF; --card:#FFFFFF; --sep:rgba(60,60,67,.29); --sep-op:rgba(60,60,67,.13);
+  --label:#000000; --label2:rgba(60,60,67,.6); --label3:rgba(60,60,67,.3);
+  --bar-bg:rgba(249,249,249,.94); --fab-shadow:rgba(0,0,0,.22);
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg:#000000; --grouped:#1C1C1E; --card:#1C1C1E; --sep:rgba(84,84,88,.6); --sep-op:rgba(84,84,88,.4);
+    --label:#FFFFFF; --label2:rgba(235,235,245,.6); --label3:rgba(235,235,245,.3);
+    --bar-bg:rgba(28,28,30,.9); --fab-shadow:rgba(0,0,0,.6);
+  }
+}
+* { box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+html,body { margin:0; padding:0; height:100%; overscroll-behavior:none; }
+body {
+  font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",Roboto,sans-serif;
+  background:var(--bg); color:var(--label);
+  padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+  display:flex; flex-direction:column; height:100%; overflow:hidden;
+}
+button, input, textarea, select { font-family:inherit; }
+::-webkit-scrollbar { display:none; }
 
+/* ============ TOPBAR ============ */
+.topbar { flex-shrink:0; padding:8px 16px 10px; background:var(--bg); position:relative; z-index:5; }
+.topbar-title { font-size:30px; font-weight:750; letter-spacing:-.01em; margin-bottom:8px; }
+.searchbar { display:flex; align-items:center; gap:6px; background:var(--sep-op); border-radius:10px; padding:7px 10px; margin-bottom:8px; }
+.searchbar svg { flex-shrink:0; color:var(--label2); }
+.searchbar input { flex:1; border:none; background:none; outline:none; font-size:16px; color:var(--label); min-width:0; }
+.searchbar input::placeholder { color:var(--label2); }
+.searchbar .clr { color:var(--label2); font-size:14px; display:none; padding:2px; }
+.searchbar.has-text .clr { display:block; }
+
+.segctl { display:flex; background:var(--sep-op); border-radius:9px; padding:2px; gap:2px; }
+.segctl button { flex:1; border:none; background:none; padding:6px 4px; font-size:13px; font-weight:600; color:var(--label); border-radius:7px; cursor:pointer; transition:background .15s; }
+.segctl button.active { background:var(--card); box-shadow:0 1px 2px rgba(0,0,0,.12); }
+
+.chipsrow { display:flex; gap:7px; overflow-x:auto; padding:2px 0 4px; scrollbar-width:none; }
+.chip { flex-shrink:0; padding:6px 13px; border-radius:100px; background:var(--sep-op); font-size:13px; font-weight:600; color:var(--label); border:none; cursor:pointer; white-space:nowrap; }
+.chip.active { background:var(--blue); color:#fff; }
+
+/* ============ CONTENT ============ */
+.content { flex:1; overflow-y:auto; -webkit-overflow-scrolling:touch; padding-bottom:110px; }
+.tabpage { display:none; height:100%; flex-direction:column; }
+.tabpage.active { display:flex; }
+.tabpage > .content { }
+
+.empty-state { text-align:center; padding:60px 30px; color:var(--label2); }
+.empty-state .ico { font-size:44px; margin-bottom:10px; display:block; }
+.empty-state .t { font-size:16px; font-weight:600; color:var(--label); margin-bottom:4px; }
+.empty-state .s { font-size:14px; line-height:1.4; }
+
+/* section headers (grouped list style) */
+.sec-hdr { display:flex; align-items:center; justify-content:space-between; padding:16px 16px 6px; }
+.sec-hdr-left { display:flex; align-items:center; gap:6px; font-size:13px; font-weight:600; color:var(--label2); text-transform:uppercase; letter-spacing:.03em; }
+.sec-count { font-size:12px; font-weight:700; color:var(--label2); background:var(--sep-op); border-radius:100px; padding:1px 8px; }
+.sec-chevron { color:var(--label3); transition:transform .18s; }
+.sec-chevron.collapsed { transform:rotate(-90deg); }
+.sec-hdr { cursor:pointer; }
+
+.grouped-list { background:var(--card); margin:0 16px 18px; border-radius:14px; overflow:hidden; }
+.row { display:flex; align-items:center; gap:11px; padding:11px 14px; position:relative; background:var(--card); }
+.row + .row::before { content:''; position:absolute; top:0; left:14px; right:0; height:.5px; background:var(--sep); }
+.row:active { background:var(--sep-op); }
+
+/* swipe-to-delete wrapper */
+.swipe-wrap { position:relative; overflow:hidden; }
+.swipe-actions { position:absolute; top:0; right:0; bottom:0; display:flex; }
+.swipe-actions button { width:74px; border:none; color:#fff; font-size:13px; font-weight:600; cursor:pointer; }
+.swipe-actions .del { background:var(--red); }
+.swipe-front { position:relative; background:var(--card); transition:transform .18s ease; touch-action:pan-y; }
+
+/* ============ COURSES ============ */
+.chk { width:23px; height:23px; border-radius:50%; border:2px solid var(--label3); flex-shrink:0; display:flex; align-items:center; justify-content:center; transition:background .15s,border-color .15s; }
+.chk.on { background:var(--blue); border-color:var(--blue); }
+.chk svg { opacity:0; transform:scale(.5); transition:opacity .12s,transform .12s; }
+.chk.on svg { opacity:1; transform:scale(1); }
+.row-body { flex:1; min-width:0; }
+.row-title { font-size:16px; color:var(--label); line-height:1.3; }
+.row-title.done { color:var(--label3); text-decoration:line-through; }
+.row-sub { font-size:13px; color:var(--label2); margin-top:1px; }
+.row-star { color:var(--yellow); flex-shrink:0; }
+.row-chevron { color:var(--label3); flex-shrink:0; }
+.rayon-icn { font-size:15px; }
+
+.fab { position:fixed; right:18px; bottom:calc(66px + env(safe-area-inset-bottom,0px)); width:56px; height:56px; border-radius:50%; background:var(--blue); color:#fff; border:none; font-size:28px; font-weight:400; display:flex; align-items:center; justify-content:center; box-shadow:0 4px 14px var(--fab-shadow); cursor:pointer; z-index:20; line-height:0; }
+.fab:active { transform:scale(.94); }
+
+/* ============ RECETTES ============ */
+.rec-list { padding:0 16px; display:flex; flex-direction:column; gap:10px; }
+.rec-row { display:flex; gap:12px; background:var(--card); border-radius:14px; padding:10px; align-items:center; }
+.rec-row:active { background:var(--sep-op); }
+.rec-thumb { width:60px; height:60px; border-radius:11px; flex-shrink:0; display:flex; align-items:center; justify-content:center; font-size:26px; background:var(--sep-op); overflow:hidden; }
+.rec-thumb img { width:100%; height:100%; object-fit:cover; }
+.rec-info { flex:1; min-width:0; }
+.rec-name { font-size:16px; font-weight:600; margin-bottom:3px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.rec-meta { font-size:12.5px; color:var(--label2); display:flex; align-items:center; gap:6px; flex-wrap:wrap; }
+.rec-badge { font-size:11px; font-weight:700; padding:2px 8px; border-radius:100px; }
+.rec-stars { color:var(--yellow); font-size:11px; letter-spacing:1px; }
+
+.cat-entree{background:#E3F5EA;color:#1F7A45;} .cat-plat{background:#FDEBD3;color:#B9660B;}
+.cat-dessert{background:#FCE4EC;color:#C21E56;} .cat-aperitif{background:#F1E6FB;color:#7A2FC4;}
+.cat-boisson{background:#E2F1FC;color:#0A73C4;} .cat-petitdej{background:#FFF6D6;color:#9A7B00;}
+.cat-default{background:var(--sep-op);color:var(--label2);}
+@media (prefers-color-scheme: dark) {
+  .cat-entree{background:#123521;color:#7FE0A8;} .cat-plat{background:#3A2610;color:#F5B15C;}
+  .cat-dessert{background:#3A1424;color:#F792B4;} .cat-aperitif{background:#291A38;color:#CC9CF2;}
+  .cat-boisson{background:#0E2A3D;color:#7FC4F5;} .cat-petitdej{background:#332B08;color:#F2D875;}
+}
+
+/* recipe detail sheet */
+.rec-hero { width:100%; height:220px; background:var(--sep-op); display:flex; align-items:center; justify-content:center; font-size:64px; overflow:hidden; }
+.rec-hero img { width:100%; height:100%; object-fit:cover; }
+.rec-detail-body { padding:16px; }
+.rec-detail-name { font-size:24px; font-weight:750; margin-bottom:8px; letter-spacing:-.01em; }
+.rec-badges { display:flex; gap:6px; flex-wrap:wrap; margin-bottom:14px; }
+.rec-metagrid { display:flex; background:var(--card); border-radius:14px; padding:12px 6px; margin-bottom:18px; }
+.rec-metaitem { flex:1; text-align:center; border-right:.5px solid var(--sep); }
+.rec-metaitem:last-child { border-right:none; }
+.rec-metaitem .v { font-size:15px; font-weight:700; display:block; }
+.rec-metaitem .l { font-size:11px; color:var(--label2); margin-top:2px; }
+.rec-section-title { font-size:19px; font-weight:700; margin:0 0 8px; }
+.rec-section { margin-bottom:20px; }
+.rec-text { font-size:15px; line-height:1.55; color:var(--label); white-space:pre-wrap; background:var(--card); border-radius:14px; padding:14px; }
+
+/* ============ MENUS ============ */
+.week-nav { display:flex; align-items:center; justify-content:space-between; padding:0 16px 10px; }
+.week-nav button { background:var(--sep-op); border:none; width:32px; height:32px; border-radius:50%; color:var(--blue); font-size:16px; display:flex; align-items:center; justify-content:center; cursor:pointer; }
+.week-nav .lbl { font-size:15px; font-weight:600; color:var(--label2); }
+.day-card { background:var(--card); margin:0 16px 12px; border-radius:14px; overflow:hidden; }
+.day-hdr { display:flex; align-items:baseline; gap:8px; padding:12px 14px 6px; }
+.day-hdr .dname { font-size:15px; font-weight:700; text-transform:capitalize; }
+.day-hdr .ddate { font-size:13px; color:var(--label2); }
+.day-hdr .today-pill { margin-left:auto; font-size:11px; font-weight:700; color:#fff; background:var(--blue); padding:2px 8px; border-radius:100px; }
+.meal-row { display:flex; align-items:flex-start; gap:10px; padding:8px 14px; }
+.meal-row + .meal-row { border-top:.5px solid var(--sep); }
+.meal-lbl { width:46px; flex-shrink:0; font-size:12px; font-weight:700; color:var(--label2); padding-top:8px; text-transform:uppercase; letter-spacing:.02em; }
+.meal-input { flex:1; border:none; background:none; outline:none; font-size:15px; color:var(--label); resize:none; line-height:1.4; padding:6px 0; font-family:inherit; min-height:20px; }
+.meal-input::placeholder { color:var(--label3); }
+.meal-pick { flex-shrink:0; width:30px; height:30px; border-radius:50%; background:var(--sep-op); border:none; color:var(--blue); font-size:14px; display:flex; align-items:center; justify-content:center; cursor:pointer; margin-top:4px; }
+
+/* ============ TABBAR ============ */
+.tabbar { flex-shrink:0; display:flex; background:var(--bar-bg); backdrop-filter:blur(20px); -webkit-backdrop-filter:blur(20px); border-top:.5px solid var(--sep); padding-bottom:env(safe-area-inset-bottom,0px); position:relative; z-index:30; }
+.tabbtn { flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; padding:6px 0 4px; border:none; background:none; color:var(--label3); cursor:pointer; }
+.tabbtn svg { display:block; }
+.tabbtn .lbl { font-size:10px; font-weight:600; }
+.tabbtn.active { color:var(--blue); }
+
+/* ============ SHEET (modal) ============ */
+.sheet-scrim { position:fixed; inset:0; background:rgba(0,0,0,.35); z-index:90; opacity:0; pointer-events:none; transition:opacity .22s; }
+.sheet-scrim.open { opacity:1; pointer-events:auto; }
+.sheet { position:fixed; left:0; right:0; bottom:0; max-height:88vh; background:var(--bg); border-radius:16px 16px 0 0; z-index:91; transform:translateY(101%); transition:transform .28s cubic-bezier(.32,.72,0,1); display:flex; flex-direction:column; padding-bottom:env(safe-area-inset-bottom,0px); }
+.sheet.open { transform:translateY(0); }
+.sheet-handle { width:36px; height:5px; background:var(--label3); border-radius:100px; margin:8px auto 2px; flex-shrink:0; }
+.sheet-hdr { display:flex; align-items:center; justify-content:space-between; padding:8px 16px 10px; flex-shrink:0; }
+.sheet-hdr .t { font-size:17px; font-weight:700; }
+.sheet-hdr button { border:none; background:none; font-size:16px; color:var(--blue); cursor:pointer; padding:4px; }
+.sheet-hdr button.save { font-weight:700; }
+.sheet-hdr button.del { color:var(--red); }
+.sheet-hdr button:disabled { opacity:.4; }
+.sheet-body { overflow-y:auto; padding:4px 16px 24px; -webkit-overflow-scrolling:touch; }
+
+.field-group { background:var(--card); border-radius:12px; margin-bottom:16px; overflow:hidden; }
+.field { display:flex; align-items:center; padding:11px 14px; min-height:44px; gap:10px; }
+.field + .field { border-top:.5px solid var(--sep); }
+.field label { width:96px; flex-shrink:0; font-size:15px; color:var(--label); }
+.field input[type=text], .field input[type=number], .field input[type=url], .field select { flex:1; border:none; background:none; outline:none; font-size:15px; color:var(--label); text-align:right; min-width:0; }
+.field input[type=text]::placeholder, .field input[type=number]::placeholder, .field input[type=url]::placeholder { color:var(--label3); }
+.field select { -webkit-appearance:none; appearance:none; text-align:right; direction:rtl; }
+.field textarea { width:100%; border:none; background:none; outline:none; font-size:15px; color:var(--label); resize:none; font-family:inherit; line-height:1.45; min-height:80px; }
+.field-full { display:block; padding:11px 14px; }
+.field-full label { display:block; font-size:13px; color:var(--label2); margin-bottom:6px; text-transform:uppercase; letter-spacing:.02em; font-weight:600; }
+.toggle { width:50px; height:30px; border-radius:100px; background:var(--sep); position:relative; flex-shrink:0; cursor:pointer; transition:background .18s; border:none; margin-left:auto; }
+.toggle.on { background:var(--green); }
+.toggle::after { content:''; position:absolute; top:2px; left:2px; width:26px; height:26px; border-radius:50%; background:#fff; box-shadow:0 2px 4px rgba(0,0,0,.25); transition:transform .18s; }
+.toggle.on::after { transform:translateX(20px); }
+.star-picker { display:flex; gap:6px; padding:4px 0; }
+.star-picker span { font-size:26px; color:var(--label3); cursor:pointer; }
+.star-picker span.on { color:var(--yellow); }
+.rayon-picker-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; padding:10px 16px 4px; }
+.rayon-opt { display:flex; flex-direction:column; align-items:center; gap:5px; padding:10px 4px; border-radius:12px; background:var(--card); cursor:pointer; font-size:11px; text-align:center; color:var(--label2); border:1.5px solid transparent; }
+.rayon-opt .e { font-size:20px; }
+.rayon-opt.on { border-color:var(--blue); color:var(--blue); background:var(--sep-op); }
+
+.picklist-row { display:flex; align-items:center; justify-content:space-between; padding:13px 16px; }
+.picklist-row + .picklist-row { border-top:.5px solid var(--sep); }
+.picklist-row .c { color:var(--blue); font-weight:700; opacity:0; }
+.picklist-row.on .c { opacity:1; }
+
+/* toast */
+.toast-wrap { position:fixed; top:calc(env(safe-area-inset-top,0px) + 8px); left:0; right:0; display:flex; justify-content:center; z-index:120; pointer-events:none; }
+.toast { background:rgba(28,28,30,.92); color:#fff; font-size:13.5px; font-weight:600; padding:9px 16px; border-radius:100px; box-shadow:0 4px 16px rgba(0,0,0,.25); }
+
+/* offline dot */
+#connDot { position:fixed; top:calc(env(safe-area-inset-top,0px) + 8px); right:10px; width:9px; height:9px; border-radius:50%; background:var(--orange); z-index:15; display:none; }
+#connDot.show { display:block; }
+</style>
+</head>
+<body>
+
+<div id="connDot" title="Hors ligne"></div>
+<div class="toast-wrap" id="toastWrap"></div>
+
+<!-- ============ ONGLET COURSES ============ -->
+<div class="tabpage active" id="tab-courses">
+  <div class="topbar">
+    <div class="topbar-title">Courses</div>
+    <div class="segctl" id="courSeg">
+      <button class="active" data-v="liste" onclick="courSetView('liste')">À acheter</button>
+      <button data-v="tout" onclick="courSetView('tout')">Tous les articles</button>
+    </div>
+  </div>
+  <div class="content" id="courContent"></div>
+</div>
+
+<!-- ============ ONGLET RECETTES ============ -->
+<div class="tabpage" id="tab-recettes">
+  <div class="topbar">
+    <div class="topbar-title">Recettes</div>
+    <div class="searchbar" id="recSearchBar">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+      <input type="text" id="recSearchInput" placeholder="Rechercher une recette" oninput="recRender()">
+      <span class="clr" onclick="recClearSearch()">✕</span>
+    </div>
+    <div class="chipsrow" id="recChips"></div>
+  </div>
+  <div class="content" id="recContent"></div>
+</div>
+
+<!-- ============ ONGLET MENUS ============ -->
+<div class="tabpage" id="tab-menus">
+  <div class="topbar">
+    <div class="topbar-title">Menus</div>
+  </div>
+  <div class="week-nav">
+    <button onclick="menuShiftWeek(-1)">‹</button>
+    <span class="lbl" id="menuWeekLbl">Cette semaine</span>
+    <button onclick="menuShiftWeek(1)">›</button>
+  </div>
+  <div class="content" id="menuContent"></div>
+</div>
+
+<!-- ============ TAB BAR ============ -->
+<div class="tabbar">
+  <button class="tabbtn active" id="tb-courses" onclick="switchTab('courses')">
+    <svg width="25" height="25" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1.4" fill="currentColor" stroke="none"/><circle cx="18" cy="21" r="1.4" fill="currentColor" stroke="none"/><path d="M2.5 3h2l2.4 12.2a2 2 0 0 0 2 1.6h8.2a2 2 0 0 0 2-1.6L21 7H6"/></svg>
+    <span class="lbl">Courses</span>
+  </button>
+  <button class="tabbtn" id="tb-recettes" onclick="switchTab('recettes')">
+    <svg width="25" height="25" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5V4.8C4 3.8 4.8 3 5.8 3H18a1 1 0 0 1 1 1v14.2"/><path d="M4 19.5A1.5 1.5 0 0 0 5.5 21H19a1 1 0 0 0 1-1v-1H6.2c-1.2 0-2.2.9-2.2 2Z"/><path d="M8 7h8M8 10.3h8"/></svg>
+    <span class="lbl">Recettes</span>
+  </button>
+  <button class="tabbtn" id="tb-menus" onclick="switchTab('menus')">
+    <svg width="25" height="25" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="4.5" width="17" height="16" rx="2.4"/><path d="M3.5 9.3h17M8 3v3M16 3v3"/><path d="M7.8 13.2h2.2M7.8 16.3h2.2M11.9 13.2h2.2M11.9 16.3h2.2M16 13.2h1.6M16 16.3h1.6"/></svg>
+    <span class="lbl">Menus</span>
+  </button>
+</div>
+
+<!-- FAB (contextuel selon onglet) -->
+<button class="fab" id="fabBtn" onclick="fabAction()">+</button>
+
+<!-- ============ SHEET GÉNÉRIQUE ============ -->
+<div class="sheet-scrim" id="scrim" onclick="closeAllSheets()"></div>
+
+<!-- --- Sheet : formulaire article courses --- -->
+<div class="sheet" id="sheetCourForm">
+  <div class="sheet-handle"></div>
+  <div class="sheet-hdr">
+    <button onclick="courCloseForm()">Annuler</button>
+    <div class="t" id="courFormTitle">Nouvel article</div>
+    <button class="save" id="courSaveBtn" onclick="courSaveItem()">Enregistrer</button>
+  </div>
+  <div class="sheet-body">
+    <div class="field-group">
+      <div class="field"><label>Nom</label><input type="text" id="cfNom" placeholder="ex. Tomates"></div>
+      <div class="field"><label>Détail</label><input type="text" id="cfDetail" placeholder="ex. 1 kg"></div>
+      <div class="field"><label>Favori</label><button class="toggle" id="cfFavori" onclick="this.classList.toggle('on')"></button></div>
+    </div>
+    <div class="field-group">
+      <div class="field-full"><label>Rayon</label></div>
+      <div class="rayon-picker-grid" id="cfRayonGrid"></div>
+    </div>
+    <button onclick="courDeleteFromForm()" id="cfDelBtn" style="display:none;width:100%;padding:13px;background:var(--card);border:none;border-radius:12px;color:var(--red);font-size:16px;font-weight:600;">Supprimer l'article</button>
+  </div>
+</div>
+
+<!-- --- Sheet : détail recette --- -->
+<div class="sheet" id="sheetRecDetail" style="max-height:94vh;">
+  <div class="sheet-handle"></div>
+  <div class="sheet-hdr">
+    <button onclick="recCloseDetail()">Fermer</button>
+    <div class="t"></div>
+    <button onclick="recEditFromDetail()">Modifier</button>
+  </div>
+  <div class="sheet-body" id="recDetailBody" style="padding:0 0 24px;"></div>
+</div>
+
+<!-- --- Sheet : formulaire recette --- -->
+<div class="sheet" id="sheetRecForm" style="max-height:94vh;">
+  <div class="sheet-handle"></div>
+  <div class="sheet-hdr">
+    <button onclick="recCloseForm()">Annuler</button>
+    <div class="t" id="recFormTitle">Nouvelle recette</div>
+    <button class="save" id="recSaveBtn" onclick="recSaveRecipe()">Enregistrer</button>
+  </div>
+  <div class="sheet-body">
+    <div class="field-group">
+      <div class="field"><label>Nom</label><input type="text" id="rfNom" placeholder="Nom de la recette"></div>
+      <div class="field"><label>Catégorie</label>
+        <select id="rfCategorie">
+          <option value="">—</option>
+          <option>Entrée</option><option>Plat</option><option>Dessert</option>
+          <option>Apéritif</option><option>Boisson</option><option>Petit déjeuner</option>
+        </select>
+      </div>
+      <div class="field"><label>Difficulté</label>
+        <select id="rfDifficulte"><option value="">—</option><option>Facile</option><option>Moyen</option><option>Difficile</option></select>
+      </div>
+    </div>
+    <div class="field-group">
+      <div class="field"><label>Préparation</label><input type="number" id="rfPrep" placeholder="min" inputmode="numeric"></div>
+      <div class="field"><label>Cuisson</label><input type="number" id="rfCuisson" placeholder="min" inputmode="numeric"></div>
+      <div class="field"><label>Portions</label><input type="number" id="rfPersonnes" placeholder="pers." inputmode="numeric"></div>
+    </div>
+    <div class="field-group">
+      <div class="field-full"><label>Note</label><div class="star-picker" id="rfStars"></div></div>
+    </div>
+    <div class="field-group">
+      <div class="field-full"><label>Ingrédients</label><textarea id="rfIngredients" placeholder="Un ingrédient par ligne…" rows="4"></textarea></div>
+    </div>
+    <div class="field-group">
+      <div class="field-full"><label>Préparation</label><textarea id="rfInstructions" placeholder="Étapes de la recette…" rows="5"></textarea></div>
+    </div>
+    <div class="field-group">
+      <div class="field"><label>Image (URL)</label><input type="url" id="rfImage" placeholder="https://…"></div>
+      <div class="field"><label>Tags</label><input type="text" id="rfTags" placeholder="rapide, végé…"></div>
+    </div>
+    <button onclick="recDeleteFromForm()" id="rfDelBtn" style="display:none;width:100%;padding:13px;background:var(--card);border:none;border-radius:12px;color:var(--red);font-size:16px;font-weight:600;">Supprimer la recette</button>
+  </div>
+</div>
+
+<!-- --- Sheet : choisir une recette pour un repas --- -->
+<div class="sheet" id="sheetRecPick">
+  <div class="sheet-handle"></div>
+  <div class="sheet-hdr">
+    <button onclick="closeAllSheets()">Annuler</button>
+    <div class="t">Choisir une recette</div>
+    <span style="width:60px"></span>
+  </div>
+  <div class="searchbar" style="margin:0 16px 8px;">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+    <input type="text" id="pickSearchInput" placeholder="Rechercher" oninput="renderRecPickList()">
+  </div>
+  <div class="sheet-body" id="recPickList"></div>
+</div>
+
+<script>
+/* =====================================================================
+   UTILITAIRES
+===================================================================== */
+function esc(s){ if(s==null) return ''; return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function pad(n){ return String(n).padStart(2,'0'); }
+function toast(msg){
+  const w=document.getElementById('toastWrap');
+  w.innerHTML='<div class="toast">'+esc(msg)+'</div>';
+  setTimeout(()=>{ w.innerHTML=''; },2000);
+}
+function todayISO(){ const d=new Date(); return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate()); }
+
+/* =====================================================================
+   ACCÈS DONNÉES GRIST (avec repli démo hors Grist)
+===================================================================== */
+const HAS_GRIST = (typeof grist !== 'undefined');
+async function gristApply(actions){
+  if(!HAS_GRIST) return { retValues: actions.map(()=> Math.floor(Math.random()*1e6)) };
+  try { return await grist.docApi.applyUserActions(actions); }
+  catch(e){ console.warn(e); toast('Connexion perdue, réessaie'); document.getElementById('connDot').classList.add('show'); throw e; }
+}
+
+/* =====================================================================
+   ONGLETS
+===================================================================== */
+let currentTab='courses';
+function switchTab(tab){
+  currentTab=tab;
+  document.querySelectorAll('.tabpage').forEach(p=>p.classList.remove('active'));
+  document.getElementById('tab-'+tab).classList.add('active');
+  document.querySelectorAll('.tabbtn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('tb-'+tab).classList.add('active');
+  document.getElementById('fabBtn').style.display = (tab==='menus') ? 'none' : 'flex';
+}
+function fabAction(){
+  if(currentTab==='courses') courOpenForm(null);
+  else if(currentTab==='recettes') recOpenForm(null);
+}
+function closeAllSheets(){
+  document.querySelectorAll('.sheet').forEach(s=>s.classList.remove('open'));
+  document.getElementById('scrim').classList.remove('open');
+}
+function openSheet(id){
+  document.getElementById('scrim').classList.add('open');
+  document.getElementById(id).classList.add('open');
+}
+
+/* =====================================================================
+   RAYONS (courses) — id + emoji
+===================================================================== */
+const RAYONS = [
+  {id:'Fruits et légumes', e:'🥦'},
+  {id:'Boulangerie / Pâtisserie', e:'🥖'},
+  {id:'Crèmerie', e:'🧀'},
+  {id:'Boucherie / Charcuterie', e:'🥩'},
+  {id:'Poissonnerie', e:'🐟'},
+  {id:'Épicerie salée', e:'🥫'},
+  {id:'Épicerie sucrée', e:'🍫'},
+  {id:'Boissons', e:'🥤'},
+  {id:'Surgelés', e:'❄️'},
+  {id:'Hygiène / Beauté', e:'🧴'},
+  {id:'Entretien / Droguerie', e:'🧽'},
+  {id:'Autre', e:'📦'},
+];
+function rayonEmoji(id){ const r=RAYONS.find(x=>x.id===id); return r?r.e:'📦'; }
+function rayonIndex(id){ const i=RAYONS.findIndex(x=>x.id===id); return i===-1?RAYONS.length:i; }
+
+/* =====================================================================
+   ONGLET COURSES
+===================================================================== */
+let courItems=[];        // tous les articles (table Courses)
+let courView='liste';    // 'liste' = à acheter | 'tout' = catalogue complet
+let courEditId=null;
+let courFormRayon='';
+
+async function loadCourses(){
+  if(!HAS_GRIST){
+    courItems=[
+      {id:1,nom:'Tomates',detail:'1 kg',favori:true,acheter:true,rayon:'Fruits et légumes',ordre:0},
+      {id:2,nom:'Pain de campagne',detail:'',favori:false,acheter:true,rayon:'Boulangerie / Pâtisserie',ordre:1},
+      {id:3,nom:'Lait demi-écrémé',detail:'1 L',favori:false,acheter:true,rayon:'Crèmerie',ordre:2},
+      {id:4,nom:'Escalopes de poulet',detail:'4 pièces',favori:false,acheter:false,rayon:'Boucherie / Charcuterie',ordre:3},
+      {id:5,nom:'Pâtes',detail:'',favori:true,acheter:false,rayon:'Épicerie salée',ordre:4},
+      {id:6,nom:'Café',detail:'',favori:false,acheter:false,rayon:'Épicerie sucrée',ordre:5},
+    ];
+    courRender(); return;
+  }
+  try{
+    const raw = await grist.docApi.fetchTable('Courses');
+    courItems=(raw.id||[]).map((id,i)=>({
+      id,
+      nom:String(raw.nom?.[i]??''),
+      detail:String(raw.detail?.[i]??''),
+      favori:!!raw.favori?.[i],
+      acheter:!!raw.acheter?.[i],
+      rayon:String(raw.rayon?.[i]??''),
+      ordre:Number(raw.ordre?.[i]??i),
+    }));
+  }catch(e){ console.warn('Courses:',e); courItems=[]; }
+  courRender();
+}
+function courMaxOrdre(){ return courItems.length ? Math.max(...courItems.map(r=>r.ordre||0)) : 0; }
+
+function courSetView(v){
+  courView=v;
+  document.querySelectorAll('#courSeg button').forEach(b=>b.classList.toggle('active', b.dataset.v===v));
+  courRender();
+}
+
+function courRender(){
+  const box=document.getElementById('courContent');
+  if(courView==='liste'){
+    const items=courItems.filter(r=>r.acheter).sort((a,b)=> rayonIndex(a.rayon)-rayonIndex(b.rayon) || (a.ordre||0)-(b.ordre||0));
+    if(!items.length){ box.innerHTML=emptyState('🛒','Liste vide','Ajoute un article ou passe dans « Tous les articles » pour en cocher.'); return; }
+    const groups={};
+    items.forEach(it=>{ (groups[it.rayon]=groups[it.rayon]||[]).push(it); });
+    let html='';
+    Object.keys(groups).sort((a,b)=>rayonIndex(a)-rayonIndex(b)).forEach(rayon=>{
+      const g=groups[rayon];
+      html += `<div class="sec-hdr"><div class="sec-hdr-left"><span class="rayon-icn">${rayonEmoji(rayon)}</span>${esc(rayon||'Autre')}</div><span class="sec-count">${g.length}</span></div>`;
+      html += '<div class="grouped-list">' + g.map(it => courRowHtml(it,true)).join('') + '</div>';
+    });
+    box.innerHTML=html;
+  } else {
+    const items=courItems.slice().sort((a,b)=> a.nom.localeCompare(b.nom,'fr'));
+    if(!items.length){ box.innerHTML=emptyState('📋','Aucun article','Touche le bouton + pour créer ton premier article.'); return; }
+    box.innerHTML = '<div class="grouped-list" style="margin-top:6px;">' + items.map(it => courRowHtml(it,false)).join('') + '</div>';
+  }
+}
+function courRowHtml(it, inList){
+  const sub=[it.detail, it.favori?'★ favori':''].filter(Boolean).join(' · ');
+  return `<div class="swipe-wrap" data-id="${it.id}">
+    <div class="swipe-actions"><button class="del" onclick="courDeleteItem(${it.id})">Supprimer</button></div>
+    <div class="swipe-front row" ontouchstart="swipeStart(event)" ontouchmove="swipeMove(event)" ontouchend="swipeEnd(event)">
+      <div class="chk ${it.acheter?'on':''}" onclick="event.stopPropagation();courToggleAcheter(${it.id})">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 13l4 4L19 7"/></svg>
+      </div>
+      <div class="row-body" onclick="courOpenForm(${it.id})">
+        <div class="row-title">${esc(it.nom)}</div>
+        ${sub?`<div class="row-sub">${esc(sub)}</div>`:''}
+      </div>
+      <div class="row-chevron">›</div>
+    </div>
+  </div>`;
+}
+function emptyState(ico,t,s){ return `<div class="empty-state"><span class="ico">${ico}</span><div class="t">${esc(t)}</div><div class="s">${esc(s)}</div></div>`; }
+
+async function courToggleAcheter(id){
+  const it=courItems.find(x=>x.id===id); if(!it) return;
+  it.acheter=!it.acheter;
+  courRender();
+  try{ await gristApply([['UpdateRecord','Courses',id,{acheter:it.acheter}]]); }
+  catch(e){ it.acheter=!it.acheter; courRender(); }
+}
+async function courDeleteItem(id){
+  courItems=courItems.filter(x=>x.id!==id);
+  courRender();
+  try{ await gristApply([['RemoveRecord','Courses',id]]); toast('Article supprimé'); }
+  catch(e){ await loadCourses(); }
+}
+
+function courOpenForm(id){
+  courEditId=id;
+  const it = id ? courItems.find(x=>x.id===id) : null;
+  document.getElementById('courFormTitle').textContent = it ? 'Modifier l\u2019article' : 'Nouvel article';
+  document.getElementById('cfNom').value = it ? it.nom : '';
+  document.getElementById('cfDetail').value = it ? it.detail : '';
+  document.getElementById('cfFavori').classList.toggle('on', !!(it && it.favori));
+  courFormRayon = it ? it.rayon : '';
+  document.getElementById('cfRayonGrid').innerHTML = RAYONS.map(r =>
+    `<div class="rayon-opt ${r.id===courFormRayon?'on':''}" onclick="courPickRayon('${r.id.replace(/'/g,"\\'")}')"><span class="e">${r.e}</span>${esc(r.id)}</div>`
+  ).join('');
+  document.getElementById('cfDelBtn').style.display = it ? 'block' : 'none';
+  openSheet('sheetCourForm');
+  setTimeout(()=>document.getElementById('cfNom').focus(),260);
+}
+function courPickRayon(id){
+  courFormRayon = (courFormRayon===id) ? '' : id;
+  document.querySelectorAll('#cfRayonGrid .rayon-opt').forEach(el=>{});
+  document.getElementById('cfRayonGrid').innerHTML = RAYONS.map(r =>
+    `<div class="rayon-opt ${r.id===courFormRayon?'on':''}" onclick="courPickRayon('${r.id.replace(/'/g,"\\'")}')"><span class="e">${r.e}</span>${esc(r.id)}</div>`
+  ).join('');
+}
+function courCloseForm(){ closeAllSheets(); }
+async function courSaveItem(){
+  const nom=document.getElementById('cfNom').value.trim();
+  if(!nom){ document.getElementById('cfNom').focus(); return; }
+  const fields={
+    nom,
+    detail:document.getElementById('cfDetail').value.trim(),
+    favori:document.getElementById('cfFavori').classList.contains('on'),
+    rayon:courFormRayon || null,
+  };
+  const btn=document.getElementById('courSaveBtn'); btn.disabled=true; btn.textContent='…';
+  try{
+    if(courEditId){
+      await gristApply([['UpdateRecord','Courses',courEditId,fields]]);
+    } else {
+      fields.acheter=true; fields.ordre=courMaxOrdre()+1;
+      await gristApply([['AddRecord','Courses',null,fields]]);
+    }
+    await loadCourses();
+    closeAllSheets(); toast(courEditId?'Article modifié ✓':'Article ajouté ✓');
+  }catch(e){}
+  btn.disabled=false; btn.textContent='Enregistrer';
+}
+async function courDeleteFromForm(){
+  if(!courEditId) return;
+  if(!confirm('Supprimer cet article ?')) return;
+  await courDeleteItem(courEditId);
+  closeAllSheets();
+}
+
+/* --- swipe-to-delete tactile --- */
+let swipeState=null;
+function swipeStart(e){
+  const wrap=e.currentTarget.closest('.swipe-wrap');
+  swipeState={wrap, x0:e.touches[0].clientX, dx:0};
+}
+function swipeMove(e){
+  if(!swipeState) return;
+  const dx=e.touches[0].clientX - swipeState.x0;
+  swipeState.dx=dx;
+  if(dx<0){ e.currentTarget.style.transform=`translateX(${Math.max(dx,-74)}px)`; }
+}
+function swipeEnd(e){
+  if(!swipeState) return;
+  const front=e.currentTarget;
+  if(swipeState.dx < -40){ front.style.transform='translateX(-74px)'; }
+  else { front.style.transform='translateX(0)'; }
+  swipeState=null;
+}
+
+/* =====================================================================
+   ONGLET RECETTES
+===================================================================== */
+let recAll=[];
+let recActiveCat='';
+let recEditId=null;
+let recDetailId=null;
+let recFormNote=0;
+
+const REC_CATS=['Entrée','Plat','Dessert','Apéritif','Boisson','Petit déjeuner'];
+function recCatClass(c){ return {'Entrée':'cat-entree','Plat':'cat-plat','Dessert':'cat-dessert','Apéritif':'cat-aperitif','Boisson':'cat-boisson','Petit déjeuner':'cat-petitdej'}[c] || 'cat-default'; }
+function recCatEmoji(c){ return {'Entrée':'🥗','Plat':'🍲','Dessert':'🍰','Apéritif':'🪙','Boisson':'🥤','Petit déjeuner':'🥐'}[c] || '🍽'; }
+function recStarsHtml(n){ n=Math.round(n||0); return n ? '<span class="rec-stars">'+'★'.repeat(n)+'☆'.repeat(5-n)+'</span>' : ''; }
+
+async function loadRecettes(){
+  if(!HAS_GRIST){
+    recAll=[
+      {id:1,Nom:'Poulet rôti aux herbes',Categorie:'Plat',Difficulte:'Facile',Temps_preparation:15,Temps_cuisson:60,Nb_personnes:4,Note:4,Ingredients:'1 poulet fermier\n4 gousses d\u2019ail\nThym, romarin\nHuile d\u2019olive',Instructions:'Préchauffer le four à 200°C.\nFrotter le poulet d\u2019huile et d\u2019herbes.\nEnfourner 1h en arrosant régulièrement.',Image_url:'',Tags:'facile,dimanche'},
+      {id:2,Nom:'Tarte aux pommes',Categorie:'Dessert',Difficulte:'Moyen',Temps_preparation:25,Temps_cuisson:35,Nb_personnes:6,Note:5,Ingredients:'1 pâte brisée\n5 pommes\n50 g de sucre\nCannelle',Instructions:'Étaler la pâte.\nDisposer les pommes en rosace.\nSaupoudrer de sucre et cannelle.\nCuire 35 min à 180°C.',Image_url:'',Tags:'dessert,fruits'},
+      {id:3,Nom:'Houmous maison',Categorie:'Apéritif',Difficulte:'Facile',Temps_preparation:10,Temps_cuisson:0,Nb_personnes:4,Note:4,Ingredients:'1 boîte de pois chiches\nTahini\nCitron\nAil, cumin',Instructions:'Mixer tous les ingrédients.\nRectifier l\u2019assaisonnement.',Image_url:'',Tags:'végé,rapide'},
+    ];
+    recRender(); return;
+  }
+  try{
+    const raw = await grist.docApi.fetchTable('Recettes');
+    recAll=(raw.id||[]).map((id,i)=>({
+      id,
+      Nom:raw.Nom?.[i]||'',
+      Categorie:raw.Categorie?.[i]||'',
+      Difficulte:raw.Difficulte?.[i]||'',
+      Temps_preparation:raw.Temps_preparation?.[i]||null,
+      Temps_cuisson:raw.Temps_cuisson?.[i]||null,
+      Nb_personnes:raw.Nb_personnes?.[i]||null,
+      Note:raw.Note?.[i]||null,
+      Ingredients:raw.Ingredients?.[i]||'',
+      Instructions:raw.Instructions?.[i]||'',
+      Image_url:raw.Image_url?.[i]||'',
+      Tags:raw.Tags?.[i]||'',
+    }));
+  }catch(e){ console.warn('Recettes:',e); recAll=[]; }
+  recRenderChips();
+  recRender();
+}
+function recRenderChips(){
+  const box=document.getElementById('recChips');
+  box.innerHTML = ['<button class="chip '+(recActiveCat===''?'active':'')+'" onclick="recSetCat(\'\')">Toutes</button>']
+    .concat(REC_CATS.map(c=>`<button class="chip ${recActiveCat===c?'active':''}" onclick="recSetCat('${c.replace(/'/g,"\\'")}')">${recCatEmoji(c)} ${esc(c)}</button>`)).join('');
+}
+function recSetCat(c){ recActiveCat=c; recRenderChips(); recRender(); }
+function recClearSearch(){ document.getElementById('recSearchInput').value=''; recRender(); }
+
+function recRender(){
+  const q=document.getElementById('recSearchInput').value.trim().toLowerCase();
+  document.getElementById('recSearchBar').classList.toggle('has-text', !!q);
+  const list=recAll.filter(r=>{
+    const mc = !recActiveCat || r.Categorie===recActiveCat;
+    const mq = !q || (r.Nom||'').toLowerCase().includes(q) || (r.Tags||'').toLowerCase().includes(q) || (r.Ingredients||'').toLowerCase().includes(q);
+    return mc && mq;
+  }).sort((a,b)=>(a.Nom||'').localeCompare(b.Nom||'','fr'));
+  const box=document.getElementById('recContent');
+  if(!list.length){ box.innerHTML=emptyState('🍽','Aucune recette','Touche + pour ajouter ta première recette.'); return; }
+  box.innerHTML='<div class="rec-list" style="padding-top:4px;">' + list.map(r=>{
+    const img = r.Image_url ? `<img src="${esc(r.Image_url)}" onerror="this.parentNode.textContent='${recCatEmoji(r.Categorie)}'">` : recCatEmoji(r.Categorie);
+    const temps=[r.Temps_preparation?r.Temps_preparation+' min':'',r.Temps_cuisson?'+ '+r.Temps_cuisson+' min':''].filter(Boolean).join(' ');
+    return `<div class="rec-row" onclick="recOpenDetail(${r.id})">
+      <div class="rec-thumb">${img}</div>
+      <div class="rec-info">
+        <div class="rec-name">${esc(r.Nom||'Sans titre')}</div>
+        <div class="rec-meta">
+          ${r.Categorie?`<span class="rec-badge ${recCatClass(r.Categorie)}">${esc(r.Categorie)}</span>`:''}
+          ${temps?`<span>⏱ ${esc(temps)}</span>`:''}
+          ${recStarsHtml(r.Note)}
+        </div>
+      </div>
+      <div class="row-chevron">›</div>
+    </div>`;
+  }).join('') + '</div>';
+}
+
+function recOpenDetail(id){
+  const r=recAll.find(x=>x.id===id); if(!r) return;
+  recDetailId=id;
+  document.querySelector('#sheetRecDetail .t').textContent = r.Nom || 'Sans titre';
+  const img = r.Image_url ? `<img src="${esc(r.Image_url)}" onerror="this.parentNode.textContent='${recCatEmoji(r.Categorie)}'">` : recCatEmoji(r.Categorie);
+  let badges='';
+  if(r.Categorie) badges+=`<span class="rec-badge ${recCatClass(r.Categorie)}">${esc(r.Categorie)}</span>`;
+  if(r.Difficulte) badges+=`<span class="rec-badge cat-default">${esc(r.Difficulte)}</span>`;
+  (r.Tags||'').split(',').map(t=>t.trim()).filter(Boolean).forEach(t=> badges+=`<span class="rec-badge cat-default">${esc(t)}</span>`);
+  const total=(r.Temps_preparation||0)+(r.Temps_cuisson||0);
+  let meta='';
+  if(r.Temps_preparation) meta+=`<div class="rec-metaitem"><span class="v">${r.Temps_preparation} min</span><span class="l">Préparation</span></div>`;
+  if(r.Temps_cuisson) meta+=`<div class="rec-metaitem"><span class="v">${r.Temps_cuisson} min</span><span class="l">Cuisson</span></div>`;
+  if(total) meta+=`<div class="rec-metaitem"><span class="v">${total} min</span><span class="l">Total</span></div>`;
+  if(r.Nb_personnes) meta+=`<div class="rec-metaitem"><span class="v">${r.Nb_personnes}</span><span class="l">Portions</span></div>`;
+  document.getElementById('recDetailBody').innerHTML =
+    `<div class="rec-hero">${img}</div>
+     <div class="rec-detail-body">
+       <div class="rec-detail-name">${esc(r.Nom||'Sans titre')}</div>
+       <div class="rec-badges">${badges}</div>
+       ${meta?`<div class="rec-metagrid">${meta}</div>`:''}
+       ${r.Ingredients?`<div class="rec-section"><div class="rec-section-title">Ingrédients</div><div class="rec-text">${esc(r.Ingredients)}</div></div>`:''}
+       ${r.Instructions?`<div class="rec-section"><div class="rec-section-title">Préparation</div><div class="rec-text">${esc(r.Instructions)}</div></div>`:''}
+     </div>`;
+  openSheet('sheetRecDetail');
+}
+function recCloseDetail(){ closeAllSheets(); recDetailId=null; }
+function recEditFromDetail(){ const r=recAll.find(x=>x.id===recDetailId); closeAllSheets(); setTimeout(()=>recOpenForm(r),260); }
+
+function recOpenForm(recipe){
+  recEditId = recipe ? recipe.id : null;
+  document.getElementById('recFormTitle').textContent = recipe ? 'Modifier la recette' : 'Nouvelle recette';
+  document.getElementById('rfNom').value = recipe ? (recipe.Nom||'') : '';
+  document.getElementById('rfCategorie').value = recipe ? (recipe.Categorie||'') : '';
+  document.getElementById('rfDifficulte').value = recipe ? (recipe.Difficulte||'') : '';
+  document.getElementById('rfPrep').value = recipe ? (recipe.Temps_preparation||'') : '';
+  document.getElementById('rfCuisson').value = recipe ? (recipe.Temps_cuisson||'') : '';
+  document.getElementById('rfPersonnes').value = recipe ? (recipe.Nb_personnes||'') : '';
+  document.getElementById('rfIngredients').value = recipe ? (recipe.Ingredients||'') : '';
+  document.getElementById('rfInstructions').value = recipe ? (recipe.Instructions||'') : '';
+  document.getElementById('rfImage').value = recipe ? (recipe.Image_url||'') : '';
+  document.getElementById('rfTags').value = recipe ? (recipe.Tags||'') : '';
+  recFormNote = recipe ? Math.round(recipe.Note||0) : 0;
+  renderStarPicker();
+  document.getElementById('rfDelBtn').style.display = recipe ? 'block' : 'none';
+  openSheet('sheetRecForm');
+  setTimeout(()=>document.getElementById('rfNom').focus(),260);
+}
+function renderStarPicker(){
+  const box=document.getElementById('rfStars');
+  box.innerHTML='';
+  for(let i=1;i<=5;i++){
+    const s=document.createElement('span');
+    s.textContent='★'; s.className = i<=recFormNote ? 'on' : '';
+    s.onclick=()=>{ recFormNote = (recFormNote===i) ? 0 : i; renderStarPicker(); };
+    box.appendChild(s);
+  }
+}
+function recCloseForm(){ closeAllSheets(); recEditId=null; }
+async function recSaveRecipe(){
+  const nom=document.getElementById('rfNom').value.trim();
+  if(!nom){ document.getElementById('rfNom').focus(); return; }
+  const fields={
+    Nom:nom,
+    Categorie:document.getElementById('rfCategorie').value || null,
+    Difficulte:document.getElementById('rfDifficulte').value || null,
+    Temps_preparation:parseInt(document.getElementById('rfPrep').value)||null,
+    Temps_cuisson:parseInt(document.getElementById('rfCuisson').value)||null,
+    Nb_personnes:parseInt(document.getElementById('rfPersonnes').value)||null,
+    Note:recFormNote||null,
+    Ingredients:document.getElementById('rfIngredients').value.trim()||null,
+    Instructions:document.getElementById('rfInstructions').value.trim()||null,
+    Image_url:document.getElementById('rfImage').value.trim()||null,
+    Tags:document.getElementById('rfTags').value.trim()||null,
+  };
+  const btn=document.getElementById('recSaveBtn'); btn.disabled=true; btn.textContent='…';
+  try{
+    if(recEditId) await gristApply([['UpdateRecord','Recettes',recEditId,fields]]);
+    else await gristApply([['AddRecord','Recettes',null,fields]]);
+    await loadRecettes();
+    closeAllSheets(); toast(recEditId?'Recette modifiée ✓':'Recette ajoutée ✓');
+  }catch(e){}
+  btn.disabled=false; btn.textContent='Enregistrer';
+}
+async function recDeleteFromForm(){
+  if(!recEditId) return;
+  if(!confirm('Supprimer cette recette ?')) return;
+  try{ await gristApply([['RemoveRecord','Recettes',recEditId]]); await loadRecettes(); closeAllSheets(); toast('Recette supprimée'); }
+  catch(e){}
+}
+
+/* =====================================================================
+   ONGLET MENUS (table Repas)
+===================================================================== */
+let repasAll=[];
+let menuWeekOffset=0;
+const JOURS=['dimanche','lundi','mardi','mercredi','jeudi','vendredi','samedi'];
+const MOIS=['janv.','févr.','mars','avr.','mai','juin','juil.','août','sept.','oct.','nov.','déc.'];
+
+function isoDate(d){ return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate()); }
+function addDays(dateStr,n){ const d=new Date(dateStr+'T00:00:00'); d.setDate(d.getDate()+n); return isoDate(d); }
+function mondayOfWeek(offset){
+  const d=new Date(); const day=(d.getDay()+6)%7; // lundi=0
+  d.setDate(d.getDate()-day+offset*7);
+  return isoDate(d);
+}
+
+async function loadRepas(){
+  if(!HAS_GRIST){
+    const t=todayISO();
+    repasAll=[
+      {id:1,date:t,moment:'midi',texte:'Salade de tomates, poulet rôti'},
+      {id:2,date:t,moment:'soir',texte:'Soupe de légumes'},
+      {id:3,date:addDays(t,1),moment:'soir',texte:'Pâtes au pesto'},
+    ];
+    menuRender(); return;
+  }
+  try{
+    const raw = await grist.docApi.fetchTable('Repas');
+    repasAll=(raw.id||[]).map((id,i)=>({ id, date:String(raw.date?.[i]??''), moment:String(raw.moment?.[i]??''), texte:String(raw.texte?.[i]??'') }));
+  }catch(e){ console.warn('Repas:',e); repasAll=[]; }
+  menuRender();
+}
+function repasFind(date,moment){ return repasAll.find(x=>x.date===date && x.moment===moment); }
+
+function menuShiftWeek(dir){ menuWeekOffset+=dir; menuRender(); }
+
+function menuRender(){
+  const monday=mondayOfWeek(menuWeekOffset);
+  const lbl = menuWeekOffset===0 ? 'Cette semaine' : (menuWeekOffset===1?'Semaine prochaine':(menuWeekOffset===-1?'Semaine dernière':(menuWeekOffset>0?'Dans '+menuWeekOffset+' semaines':'Il y a '+(-menuWeekOffset)+' semaines')));
+  document.getElementById('menuWeekLbl').textContent=lbl;
+  const t=todayISO();
+  let html='';
+  for(let i=0;i<7;i++){
+    const date=addDays(monday,i);
+    const d=new Date(date+'T00:00:00');
+    const isToday = date===t;
+    const rMidi=repasFind(date,'midi');
+    const rSoir=repasFind(date,'soir');
+    html += `<div class="day-card">
+      <div class="day-hdr">
+        <span class="dname">${JOURS[d.getDay()]}</span>
+        <span class="ddate">${d.getDate()} ${MOIS[d.getMonth()]}</span>
+        ${isToday?'<span class="today-pill">Aujourd\u2019hui</span>':''}
+      </div>
+      ${menuMealRow(date,'midi','Midi',rMidi?rMidi.texte:'')}
+      ${menuMealRow(date,'soir','Soir',rSoir?rSoir.texte:'')}
+    </div>`;
+  }
+  document.getElementById('menuContent').innerHTML = html;
+}
+function menuMealRow(date,moment,label,texte){
+  return `<div class="meal-row">
+    <div class="meal-lbl">${label}</div>
+    <textarea class="meal-input" rows="1" placeholder="Rien de prévu" data-date="${date}" data-moment="${moment}"
+      oninput="menuAutoGrow(this)" onblur="menuSave(this)">${esc(texte)}</textarea>
+    <button class="meal-pick" onclick="openRecPicker('${date}','${moment}')" title="Choisir une recette">🍽</button>
+  </div>`;
+}
+function menuAutoGrow(ta){ ta.style.height='auto'; ta.style.height=ta.scrollHeight+'px'; }
+
+const menuSaveTimers={};
+function menuSave(ta){
+  const date=ta.dataset.date, moment=ta.dataset.moment, texte=ta.value;
+  const key=date+'|'+moment;
+  clearTimeout(menuSaveTimers[key]);
+  menuSaveTimers[key]=setTimeout(()=>menuCommit(date,moment,texte),400);
+}
+async function menuCommit(date,moment,texte){
+  let r=repasFind(date,moment);
+  try{
+    if(r){
+      if(texte.trim()===''){ await gristApply([['RemoveRecord','Repas',r.id]]); repasAll=repasAll.filter(x=>x!==r); }
+      else { await gristApply([['UpdateRecord','Repas',r.id,{date,moment,texte}]]); r.texte=texte; }
+    } else if(texte.trim()!==''){
+      const res=await gristApply([['AddRecord','Repas',null,{date,moment,texte}]]);
+      const newId = res?.retValues?.[0] ?? Math.floor(Math.random()*1e6);
+      repasAll.push({id:newId,date,moment,texte});
+    }
+  }catch(e){}
+}
+
+/* --- sélecteur de recette pour un repas --- */
+let pickTarget=null;
+function openRecPicker(date,moment){
+  pickTarget={date,moment};
+  document.getElementById('pickSearchInput').value='';
+  renderRecPickList();
+  openSheet('sheetRecPick');
+}
+function renderRecPickList(){
+  const q=document.getElementById('pickSearchInput').value.trim().toLowerCase();
+  const list=recAll.filter(r=>!q || (r.Nom||'').toLowerCase().includes(q)).sort((a,b)=>(a.Nom||'').localeCompare(b.Nom||'','fr'));
+  const box=document.getElementById('recPickList');
+  if(!list.length){ box.innerHTML=emptyState('🔍','Aucun résultat','Essaie un autre mot-clé.'); return; }
+  box.innerHTML='<div class="grouped-list" style="margin:0;">' + list.map(r=>
+    `<div class="row" onclick="pickRecipeForMeal(${r.id})" style="cursor:pointer;">
+      <span style="font-size:20px;">${recCatEmoji(r.Categorie)}</span>
+      <div class="row-body"><div class="row-title">${esc(r.Nom)}</div></div>
+      <div class="row-chevron">›</div>
+    </div>`
+  ).join('') + '</div>';
+}
+function pickRecipeForMeal(recipeId){
+  const r=recAll.find(x=>x.id===recipeId); if(!r || !pickTarget) return;
+  const {date,moment}=pickTarget;
+  const ta=document.querySelector(`.meal-input[data-date="${date}"][data-moment="${moment}"]`);
+  const prev=ta.value.trim();
+  const nv = prev ? prev+', '+r.Nom : r.Nom;
+  ta.value=nv; menuAutoGrow(ta);
+  menuCommit(date,moment,nv);
+  closeAllSheets();
+  toast('Ajouté au menu ✓');
+}
+
+/* =====================================================================
+   INIT
+===================================================================== */
+async function boot(){
+  await Promise.all([loadCourses(), loadRecettes(), loadRepas()]);
+}
+if(HAS_GRIST){
+  grist.ready({ requiredAccess:'full' }).then(boot);
+} else {
+  boot();
+}
+</script>
+</body>
+</html>
