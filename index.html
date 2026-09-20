@@ -2077,8 +2077,8 @@ body.presentation #exitPresentBtn{ display:flex; }
 /* ── COURSES (sous-onglet de Repas) ── */
 #page-courses {
   --cour-bg: #FFFFFF; --cour-surface: #FFFFFF; --cour-text: #1A1A18; --cour-text-muted: #8A8880;
-  --cour-accent: #2D5016; --cour-accent-light: #E8F0DE; --cour-accent-mid: #6B9B3A; --cour-border: #E4E2DC;
-  --cour-checked: #C8D8B4; --cour-star: #D4A017; --cour-star-off: #D9D7D1; --cour-radius: 16px;
+  --cour-accent: var(--accent); --cour-accent-light: color-mix(in srgb, var(--accent) 18%, #fff); --cour-accent-mid: color-mix(in srgb, var(--accent) 75%, #fff); --cour-border: #E4E2DC;
+  --cour-checked: color-mix(in srgb, var(--accent) 30%, #fff); --cour-star: #D4A017; --cour-star-off: #D9D7D1; --cour-radius: 16px;
   --cour-shadow: 0 2px 12px rgba(0,0,0,0.06); --cour-shadow-lg: 0 8px 32px rgba(0,0,0,0.12);
   background: var(--cour-bg); color: var(--cour-text); font-family: 'DM Sans', sans-serif; -webkit-font-smoothing: antialiased;
 }
@@ -2090,8 +2090,8 @@ body.presentation #exitPresentBtn{ display:flex; }
 .cour-store-chips { display: flex; gap: 6px; flex-wrap: wrap; }
 .cour-chip { display: flex; align-items: center; gap: 5px; padding: 5px 11px; border-radius: 100px; border: 1.5px solid var(--cour-border); background: var(--cour-surface); font-size: 12px; font-weight: 400; color: var(--cour-text-muted); cursor: pointer; transition: all 0.2s ease; user-select: none; white-space: nowrap; }
 .cour-chip:active { transform: scale(0.96); }
-.cour-chip.active { background: var(--cour-accent); border-color: var(--cour-accent); color: #fff; box-shadow: 0 3px 10px rgba(45,80,22,0.25); }
-.cour-chip-icon { font-size: 13px; }
+.cour-chip.active { background: var(--cour-accent); border-color: var(--cour-accent); color: #fff; box-shadow: 0 3px 10px color-mix(in srgb, var(--cour-accent) 25%, transparent); }
+.cour-chip-icon { font-size: 13px; display: inline-flex; align-items: center; }
 .cour-toolbar { padding: 0 12px 6px; display: flex; flex-direction: column; gap: 6px; }
 .cour-toolbar-store { padding-top: 4px; }
 .cour-search-input { width: 100%; padding: 8px 14px 8px 34px; border: 1.5px solid var(--cour-border); border-radius: 10px; background: var(--cour-surface); font-family: 'DM Sans', sans-serif; font-size: 13px; color: var(--cour-text); outline: none; transition: border-color 0.2s; -webkit-appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%238A8880' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='11' cy='11' r='8'/%3E%3Cline x1='21' y1='21' x2='16.65' y2='16.65'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: 11px center; }
@@ -2124,7 +2124,7 @@ body.presentation #exitPresentBtn{ display:flex; }
   .cour-list-empty { grid-column: 1 / -1; }
 }
 .cour-list-empty { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 60px 24px; text-align: center; color: var(--cour-text-muted); gap: 12px; }
-.cour-list-empty-icon { font-size: 40px; opacity: 0.4; }
+.cour-list-empty-icon { font-size: 40px; opacity: 0.4; display: inline-flex; align-items: center; justify-content: center; }
 .cour-list-empty-text { font-size: 15px; font-weight: 300; line-height: 1.5; }
 .cour-item-card { display: flex; flex-direction: column; gap: 0; padding: 9px 13px; background: var(--cour-surface); border-radius: 12px; margin-bottom: 5px; box-shadow: var(--cour-shadow); border: 1.5px solid transparent; transition: all 0.25s ease; cursor: pointer; position: relative; overflow: visible; animation: courSlideIn 0.2s ease both; }
 .cour-item-card-top { display: flex; align-items: center; gap: 10px; width: 100%; flex-wrap: wrap; }
@@ -2136,7 +2136,7 @@ body.presentation #exitPresentBtn{ display:flex; }
 .cour-item-card.inactive { opacity: 0.38; cursor: default; box-shadow: none; background: var(--cour-bg); border-color: var(--cour-border); }
 .cour-item-card.inactive:active { transform: none; }
 .cour-item-card.dimmed { opacity: 0.42; background: var(--cour-bg); box-shadow: none; border-color: #C4C1BA; border-width: 1.5px; }
-.cour-item-card.lit { opacity: 1; background: var(--cour-surface); border-color: var(--cour-accent-mid); box-shadow: 0 2px 10px rgba(107,155,58,0.18); }
+.cour-item-card.lit { opacity: 1; background: var(--cour-surface); border-color: var(--cour-accent-mid); box-shadow: 0 2px 10px color-mix(in srgb, var(--cour-accent-mid) 18%, transparent); }
 .cour-item-card.lit .cour-item-check { border-color: var(--cour-accent); background: var(--cour-accent); }
 .cour-item-card.lit .cour-item-check-inner { opacity: 1; }
 .cour-item-card.lit .cour-item-name { font-weight: 500; }
@@ -2148,9 +2148,9 @@ body.presentation #exitPresentBtn{ display:flex; }
 .cour-item-card.done .cour-item-check-inner { opacity: 1; }
 .cour-item-name { flex: 1; min-width: 120px; font-size: 14px; font-weight: 400; color: var(--cour-text); transition: all 0.2s; line-height: 1.3; }
 .cour-item-card.done .cour-item-name { text-decoration: line-through; color: var(--cour-text-muted); }
-.cour-item-star { font-size: 15px; color: var(--cour-star); opacity: 0.9; cursor: pointer; transition: transform 0.2s, color 0.2s; padding: 2px; }
+.cour-item-star { font-size: 15px; color: var(--cour-star); opacity: 0.9; cursor: pointer; transition: transform 0.2s, color 0.2s; padding: 2px; display: inline-flex; align-items: center; }
 .cour-item-star:active { transform: scale(1.4); }
-.cour-item-star-empty { font-size: 15px; color: var(--cour-star-off); cursor: pointer; transition: transform 0.2s, color 0.2s; padding: 2px; opacity: 0.5; }
+.cour-item-star-empty { font-size: 15px; color: var(--cour-star-off); cursor: pointer; transition: transform 0.2s, color 0.2s; padding: 2px; opacity: 0.5; display: inline-flex; align-items: center; }
 .cour-item-star-empty:hover { color: var(--cour-star); opacity: 0.7; }
 .cour-item-star-empty:active { transform: scale(1.4); color: var(--cour-star); opacity: 1; }
 @keyframes courStarPop { 0% { transform: scale(1); } 40% { transform: scale(1.5) rotate(20deg); } 70% { transform: scale(0.9) rotate(-10deg); } 100% { transform: scale(1) rotate(0deg); } }
@@ -2166,7 +2166,7 @@ body.presentation #exitPresentBtn{ display:flex; }
 .cour-bottom-count { font-size: 13px; color: var(--cour-text-muted); font-weight: 300; white-space: nowrap; }
 .cour-bottom-count strong { color: var(--cour-text); font-weight: 500; }
 .cour-bottom-actions { display: flex; gap: 8px; align-items: center; }
-.cour-btn-add { display: flex; align-items: center; gap: 6px; padding: 10px 18px; border-radius: 100px; background: var(--cour-accent); color: #fff; border: none; font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 500; cursor: pointer; transition: all 0.2s; box-shadow: 0 4px 14px rgba(45,80,22,0.3); }
+.cour-btn-add { display: flex; align-items: center; gap: 6px; padding: 10px 18px; border-radius: 100px; background: var(--cour-accent); color: #fff; border: none; font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 500; cursor: pointer; transition: all 0.2s; box-shadow: 0 4px 14px color-mix(in srgb, var(--cour-accent) 30%, transparent); }
 .cour-btn-add:active { transform: scale(0.96); }
 .cour-btn-reset { display: flex; align-items: center; gap: 6px; padding: 10px 14px; border-radius: 100px; background: var(--cour-accent-light); color: var(--cour-accent); border: none; font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 500; cursor: pointer; transition: all 0.2s; }
 .cour-btn-reset:active { transform: scale(0.96); background: var(--cour-checked); }
@@ -2206,11 +2206,11 @@ select.cour-input-field { -webkit-appearance: menulist; appearance: menulist; }
 .cour-store-pill.selected.cour-pill-marche { background: #9B5A00; }
 .cour-favori-toggle { display: flex; align-items: center; gap: 12px; padding: 13px 16px; border-radius: 12px; background: var(--cour-bg); border: 1.5px solid var(--cour-border); cursor: pointer; transition: all 0.18s; user-select: none; }
 .cour-favori-toggle.active { border-color: var(--cour-star); background: #FFFBF0; }
-.cour-favori-star-icon { font-size: 20px; color: var(--cour-star-off); transition: color 0.2s, transform 0.2s; }
+.cour-favori-star-icon { font-size: 20px; color: var(--cour-star-off); transition: color 0.2s, transform 0.2s; display: inline-flex; align-items: center; }
 .cour-favori-toggle.active .cour-favori-star-icon { color: var(--cour-star); transform: scale(1.2); }
 .cour-favori-toggle-text { font-size: 14px; color: var(--cour-text-muted); transition: color 0.2s; }
 .cour-favori-toggle.active .cour-favori-toggle-text { color: var(--cour-text); }
-.cour-btn-submit { width: 100%; padding: 16px; margin-top: 8px; border-radius: 14px; background: var(--cour-accent); color: #fff; border: none; font-family: 'DM Serif Display', serif; font-size: 17px; cursor: pointer; transition: all 0.2s; box-shadow: 0 4px 16px rgba(45,80,22,0.3); letter-spacing: 0.2px; }
+.cour-btn-submit { width: 100%; padding: 16px; margin-top: 8px; border-radius: 14px; background: var(--cour-accent); color: #fff; border: none; font-family: 'DM Serif Display', serif; font-size: 17px; cursor: pointer; transition: all 0.2s; box-shadow: 0 4px 16px color-mix(in srgb, var(--cour-accent) 30%, transparent); letter-spacing: 0.2px; }
 .cour-btn-submit:active { transform: scale(0.98); }
 .cour-btn-submit:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
 .cour-btn-delete-link { display: block; width: 100%; margin-top: 10px; padding: 8px; border: none; background: transparent; color: #B3261E; font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 500; text-align: center; cursor: pointer; opacity: 0.75; transition: opacity 0.15s; }
@@ -2626,7 +2626,7 @@ select.cour-input-field { -webkit-appearance: menulist; appearance: menulist; }
     <div id="recDetailHeader">
       <button id="recCloseBtn" onclick="recCloseDetail()">&#8592;</button>
       <span id="recDetailTitle"></span>
-      <button id="recEditBtn" onclick="recOpenFormFromDetail()">✏ Modifier</button>
+      <button id="recEditBtn" onclick="recOpenFormFromDetail()"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:3px"><path d="M17 3a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4L17 3z"/></svg>Modifier</button>
     </div>
     <div id="recDetailBody"></div>
   </div>
@@ -2668,7 +2668,7 @@ select.cour-input-field { -webkit-appearance: menulist; appearance: menulist; }
         <div class="rec-form-group"><label>URL photo</label><input type="url" id="recFImage" placeholder="https://…"></div>
         <div class="rec-form-group"><label>Tags</label><input type="text" id="recFTags" placeholder="végétarien, rapide…"></div>
         <div class="rec-form-actions">
-          <button class="rec-btn-delete" id="recDeleteBtn" onclick="recDeleteCurrentRecipe()" style="display:none">🗑 Supprimer</button>
+          <button class="rec-btn-delete" id="recDeleteBtn" onclick="recDeleteCurrentRecipe()" style="display:none"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:3px"><path d="M4 7h16M9 7V4h6v3M6 7l1 13a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1l1-13"/></svg>Supprimer</button>
           <button class="rec-btn-cancel" onclick="recCloseForm()">Annuler</button>
           <button class="rec-btn-save" id="recSaveBtn" onclick="recSaveRecipe()">Enregistrer</button>
         </div>
@@ -5204,11 +5204,18 @@ function renderRepas(){
 //  (préfixe cour* pour éviter toute collision avec le reste
 //  du widget — voir render()/toggleItem() déjà utilisés ailleurs)
 // ══════════════════════════════════════════════════════
+const COUR_ICON_STAR = '<svg viewBox="0 0 24 24" width="1em" height="1em" fill="currentColor" stroke="currentColor" stroke-width="1" stroke-linejoin="round"><path d="M12 2.5l2.9 6.1 6.6.7-4.9 4.6 1.3 6.6L12 17.6l-5.9 3 1.3-6.6-4.9-4.6 6.6-.7L12 2.5z"/></svg>';
+const COUR_ICON_SEARCH = '<svg viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16" y2="16"/></svg>';
+const COUR_ICON_CART = '<svg viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="20" r="1"/><circle cx="17" cy="20" r="1"/><path d="M3 4h2l2.2 11.4a2 2 0 0 0 2 1.6h7.6a2 2 0 0 0 2-1.6L21 8H6"/></svg>';
+const COUR_ICON_CHECKCIRCLE = '<svg viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M8 12.5l2.5 2.5L16 9.5"/></svg>';
+const COUR_ICON_LEAF = '<svg viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 20c8 0 14-6 14-14V4h-2C9 4 5 10 5 18v2z"/><path d="M5 20c2-4 4.5-7 9-9.5"/></svg>';
+const COUR_ICON_STOREFRONT = '<svg viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l1.5-5h15L21 9"/><path d="M4 9v10a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1V9"/><path d="M9 20v-6h6v6"/><path d="M3 9a2.5 2.5 0 0 0 5 0 2.5 2.5 0 0 0 5 0 2.5 2.5 0 0 0 5 0 2.5 2.5 0 0 0 5 0"/></svg>';
+const COUR_ICON_BASKET = '<svg viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 10h14l-1.5 9a1.5 1.5 0 0 1-1.5 1.3H8a1.5 1.5 0 0 1-1.5-1.3L5 10z"/><path d="M9 10 8 5M15 10l1-5M6 5h12"/></svg>';
 const COUR_STORES_DEF = [
-  { id: 'all',            label: 'Liste',          icon: '🛒' },
-  { id: 'Biologic',       label: 'Biologic',       icon: '🌿' },
-  { id: 'Grande surface', label: 'Grande surface', icon: '🏪' },
-  { id: 'Marché',         label: 'Marché',         icon: '🧺' },
+  { id: 'all',            label: 'Liste',          icon: COUR_ICON_CART },
+  { id: 'Biologic',       label: 'Biologic',       icon: COUR_ICON_LEAF },
+  { id: 'Grande surface', label: 'Grande surface', icon: COUR_ICON_STOREFRONT },
+  { id: 'Marché',         label: 'Marché',         icon: COUR_ICON_BASKET },
 ];
 const COUR_BADGE_CLASS = { 'Biologic': 'cour-badge-bio', 'Grande surface': 'cour-badge-grande', 'Marché': 'cour-badge-marche' };
 const COUR_PILL_CLASS  = { 'Biologic': 'cour-pill-bio',  'Grande surface': 'cour-pill-grande',  'Marché': 'cour-pill-marche' };
@@ -5354,7 +5361,7 @@ function courHandleSearch(val) {
   }
   const sorted = filtered.sort((a, b) => (a.ordre || 0) - (b.ordre || 0));
   if (sorted.length === 0) {
-    listSection.innerHTML = '<div class="cour-list-empty"><div class="cour-list-empty-icon">🔍</div>'
+    listSection.innerHTML = '<div class="cour-list-empty"><div class="cour-list-empty-icon">' + COUR_ICON_SEARCH + '</div>'
       + '<div class="cour-list-empty-text">Aucun résultat pour<br><em>' + esc(val) + '</em></div></div>';
     return;
   }
@@ -5545,7 +5552,7 @@ function courRenderModal() {
     + '</select></div>'
     + '<div class="cour-input-group"><label class="cour-input-label">Favori</label>'
     + '<div class="cour-favori-toggle' + (f.favori ? ' active' : '') + '" onclick="courToggleFormFavori()">'
-    + '<span class="cour-favori-star-icon">★</span><span class="cour-favori-toggle-text">' + (f.favori ? 'Oui, c\'est un favori' : 'Marquer comme favori') + '</span></div></div>'
+    + '<span class="cour-favori-star-icon">' + COUR_ICON_STAR + '</span><span class="cour-favori-toggle-text">' + (f.favori ? 'Oui, c\'est un favori' : 'Marquer comme favori') + '</span></div></div>'
     + (f.mode === 'edit' && f.confirmDelete
         ? '<div class="cour-delete-confirm"><p class="cour-delete-confirm-text">Supprimer définitivement \u00ab ' + esc(f.nom) + ' \u00bb\u00a0?</p>'
           + '<div class="cour-delete-confirm-actions">'
@@ -5565,8 +5572,8 @@ function courRenderItemCard(r, isAll, highlightQ) {
   let cardClass = 'cour-item-card';
   cardClass += isAll ? (checked ? ' lit' : ' dimmed') : ' lit';
   const starHtml = isAll
-    ? (r.favori ? '<span class="cour-item-star" onclick="courToggleFavori(' + r.id + ', event)">★</span>' : '<span class="cour-item-star-empty" onclick="courToggleFavori(' + r.id + ', event)">★</span>')
-    : (r.favori ? '<span class="cour-item-star">★</span>' : '');
+    ? (r.favori ? '<span class="cour-item-star" onclick="courToggleFavori(' + r.id + ', event)">' + COUR_ICON_STAR + '</span>' : '<span class="cour-item-star-empty" onclick="courToggleFavori(' + r.id + ', event)">' + COUR_ICON_STAR + '</span>')
+    : (r.favori ? '<span class="cour-item-star">' + COUR_ICON_STAR + '</span>' : '');
   const showRayonBadge = r.rayon && !courState.groupByRayon;
   const rayonBadgeHtml = showRayonBadge ? '<span class="cour-badge-rayon" title="' + esc(r.rayon) + '">' + courRayonIcon(r.rayon) + '</span>' : '';
   const badgesHtml = isAll && stores.length
@@ -5646,7 +5653,7 @@ function courRender() {
   let itemsHtml = '';
   if (sorted.length === 0) {
     const emptyMsg = isAll ? 'Aucun article dans la liste' : 'Aucun article sélectionné<br>pour ce magasin';
-    itemsHtml = '<div class="cour-list-empty"><div class="cour-list-empty-icon">' + (isAll ? '🛒' : '✓') + '</div>'
+    itemsHtml = '<div class="cour-list-empty"><div class="cour-list-empty-icon">' + (isAll ? COUR_ICON_CART : COUR_ICON_CHECKCIRCLE) + '</div>'
       + '<div class="cour-list-empty-text">' + emptyMsg + '</div></div>';
   } else if (courState.groupByRayon) {
     const groups = new Map();
