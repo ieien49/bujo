@@ -2073,6 +2073,177 @@ body.presentation #exitPresentBtn{ display:flex; }
 .repas-input { display: none; width: 100%; height: 100%; min-height: 112px; border: none; background: none; resize: none; outline: none; font-family: inherit; font-size: 12.5px; color: var(--text); line-height: 1.4; cursor: text; text-align: center; }
 .repas-cell.repas-editing .repas-input { display: block; }
 .repas-cell.repas-editing .repas-display { display: none; }
+
+/* ── COURSES (sous-onglet de Repas) ── */
+#page-courses {
+  --cour-bg: #FFFFFF; --cour-surface: #FFFFFF; --cour-text: #1A1A18; --cour-text-muted: #8A8880;
+  --cour-accent: #2D5016; --cour-accent-light: #E8F0DE; --cour-accent-mid: #6B9B3A; --cour-border: #E4E2DC;
+  --cour-checked: #C8D8B4; --cour-star: #D4A017; --cour-star-off: #D9D7D1; --cour-radius: 16px;
+  --cour-shadow: 0 2px 12px rgba(0,0,0,0.06); --cour-shadow-lg: 0 8px 32px rgba(0,0,0,0.12);
+  background: var(--cour-bg); color: var(--cour-text); font-family: 'DM Sans', sans-serif; -webkit-font-smoothing: antialiased;
+}
+#page-courses mark { background: #FFF3B0; color: var(--cour-text); border-radius: 2px; padding: 0 1px; }
+#courApp { display: flex; flex-direction: column; flex: 1; min-height: 0; overflow: hidden; position: relative; }
+.cour-header { padding: 10px 16px 6px; background: var(--cour-bg); position: sticky; top: 0; z-index: 10; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.cour-header-title { font-family: 'DM Serif Display', serif; font-size: 20px; font-weight: 400; letter-spacing: -0.3px; color: var(--cour-text); }
+.cour-store-section { padding: 6px 16px 2px; }
+.cour-store-chips { display: flex; gap: 6px; flex-wrap: wrap; }
+.cour-chip { display: flex; align-items: center; gap: 5px; padding: 5px 11px; border-radius: 100px; border: 1.5px solid var(--cour-border); background: var(--cour-surface); font-size: 12px; font-weight: 400; color: var(--cour-text-muted); cursor: pointer; transition: all 0.2s ease; user-select: none; white-space: nowrap; }
+.cour-chip:active { transform: scale(0.96); }
+.cour-chip.active { background: var(--cour-accent); border-color: var(--cour-accent); color: #fff; box-shadow: 0 3px 10px rgba(45,80,22,0.25); }
+.cour-chip-icon { font-size: 13px; }
+.cour-toolbar { padding: 0 12px 6px; display: flex; flex-direction: column; gap: 6px; }
+.cour-toolbar-store { padding-top: 4px; }
+.cour-search-input { width: 100%; padding: 8px 14px 8px 34px; border: 1.5px solid var(--cour-border); border-radius: 10px; background: var(--cour-surface); font-family: 'DM Sans', sans-serif; font-size: 13px; color: var(--cour-text); outline: none; transition: border-color 0.2s; -webkit-appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%238A8880' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='11' cy='11' r='8'/%3E%3Cline x1='21' y1='21' x2='16.65' y2='16.65'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: 11px center; }
+.cour-search-input:focus { border-color: var(--cour-accent-mid); }
+.cour-search-input::placeholder { color: var(--cour-text-muted); }
+.cour-filter-row { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+.cour-filter-pill { display: flex; align-items: center; gap: 4px; padding: 4px 10px; border-radius: 100px; border: 1.5px solid var(--cour-border); background: var(--cour-surface); font-size: 11px; font-weight: 500; color: var(--cour-text-muted); cursor: pointer; transition: all 0.18s ease; user-select: none; white-space: nowrap; }
+.cour-filter-pill:active { transform: scale(0.95); }
+.cour-filter-pill.active { border-color: transparent; color: #fff; box-shadow: 0 2px 8px rgba(0,0,0,0.15); }
+.cour-filter-pill.active.cour-pill-bio    { background: #2D6A4F; }
+.cour-filter-pill.active.cour-pill-grande { background: #3B4EBD; }
+.cour-filter-pill.active.cour-pill-marche { background: #9B5A00; }
+.cour-filter-pill.active.cour-pill-favori { background: var(--cour-star); color: #fff; border-color: transparent; }
+.cour-filter-pill.active.cour-pill-alpha  { background: var(--cour-accent); }
+.cour-filter-pill.active.cour-pill-rayon  { background: var(--cour-accent-mid); }
+.cour-rayon-header { display: flex; align-items: center; justify-content: space-between; font-size: 11px; font-weight: 600; letter-spacing: 0.6px; text-transform: uppercase; color: var(--cour-text-muted); padding: 12px 6px 6px; cursor: pointer; user-select: none; }
+.cour-rayon-header:first-child { padding-top: 2px; }
+.cour-rayon-header-left { display: flex; align-items: center; gap: 6px; }
+.cour-rayon-header-left svg { display: block; color: var(--cour-accent-mid); flex-shrink: 0; }
+.cour-rayon-header-right { display: flex; align-items: center; gap: 8px; }
+.cour-rayon-count-badge { background: var(--cour-accent-light); color: var(--cour-accent); font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 100px; letter-spacing: 0.3px; }
+.cour-rayon-chevron { display: flex; color: var(--cour-text-muted); transition: transform 0.2s ease; }
+.cour-rayon-chevron.collapsed { transform: rotate(-90deg); }
+.cour-divider { height: 1px; background: var(--cour-border); margin: 6px 16px; }
+.cour-list-section { flex: 1; padding: 0 10px 90px; overflow-y: auto; }
+@media (min-width: 700px) {
+  .cour-list-section { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); align-content: start; gap: 10px; }
+  .cour-item-card { margin-bottom: 0; }
+  .cour-rayon-header { grid-column: 1 / -1; }
+  .cour-list-empty { grid-column: 1 / -1; }
+}
+.cour-list-empty { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 60px 24px; text-align: center; color: var(--cour-text-muted); gap: 12px; }
+.cour-list-empty-icon { font-size: 40px; opacity: 0.4; }
+.cour-list-empty-text { font-size: 15px; font-weight: 300; line-height: 1.5; }
+.cour-item-card { display: flex; flex-direction: column; gap: 0; padding: 9px 13px; background: var(--cour-surface); border-radius: 12px; margin-bottom: 5px; box-shadow: var(--cour-shadow); border: 1.5px solid transparent; transition: all 0.25s ease; cursor: pointer; position: relative; overflow: hidden; animation: courSlideIn 0.2s ease both; }
+.cour-item-card-top { display: flex; align-items: center; gap: 10px; width: 100%; }
+.cour-item-card::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 3px; background: var(--cour-accent-mid); opacity: 0; transition: opacity 0.2s; border-radius: 0 2px 2px 0; }
+.cour-item-card:active { transform: scale(0.98); }
+.cour-item-card.done { background: #F9FAF7; border-color: var(--cour-border); box-shadow: none; opacity: 0.55; }
+.cour-item-card.done::before { opacity: 0 !important; }
+.cour-item-card:not(.done):hover::before { opacity: 1; }
+.cour-item-card.inactive { opacity: 0.38; cursor: default; box-shadow: none; background: var(--cour-bg); border-color: var(--cour-border); }
+.cour-item-card.inactive:active { transform: none; }
+.cour-item-card.dimmed { opacity: 0.42; background: var(--cour-bg); box-shadow: none; border-color: #C4C1BA; border-width: 1.5px; }
+.cour-item-card.lit { opacity: 1; background: var(--cour-surface); border-color: var(--cour-accent-mid); box-shadow: 0 2px 10px rgba(107,155,58,0.18); }
+.cour-item-card.lit .cour-item-check { border-color: var(--cour-accent); background: var(--cour-accent); }
+.cour-item-card.lit .cour-item-check-inner { opacity: 1; }
+.cour-item-card.lit .cour-item-name { font-weight: 500; }
+.cour-item-edit-btn { width: 28px; height: 28px; min-width: 28px; border-radius: 50%; border: none; background: transparent; color: var(--cour-text-muted); font-size: 16px; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: background 0.15s, color 0.15s; padding: 0; line-height: 1; }
+.cour-item-edit-btn:active { background: var(--cour-border); color: var(--cour-text); }
+.cour-item-check { width: 20px; height: 20px; min-width: 20px; border-radius: 50%; border: 2px solid var(--cour-border); display: flex; align-items: center; justify-content: center; transition: all 0.2s ease; background: transparent; }
+.cour-item-card.done .cour-item-check { background: var(--cour-accent); border-color: var(--cour-accent); }
+.cour-item-check-inner { width: 8px; height: 5px; border-left: 2px solid #fff; border-bottom: 2px solid #fff; transform: rotate(-45deg) translateY(-1px); opacity: 0; transition: opacity 0.15s; }
+.cour-item-card.done .cour-item-check-inner { opacity: 1; }
+.cour-item-name { flex: 1; font-size: 14px; font-weight: 400; color: var(--cour-text); transition: all 0.2s; line-height: 1.3; }
+.cour-item-card.done .cour-item-name { text-decoration: line-through; color: var(--cour-text-muted); }
+.cour-item-star { font-size: 15px; color: var(--cour-star); opacity: 0.9; cursor: pointer; transition: transform 0.2s, color 0.2s; padding: 2px; }
+.cour-item-star:active { transform: scale(1.4); }
+.cour-item-star-empty { font-size: 15px; color: var(--cour-star-off); cursor: pointer; transition: transform 0.2s, color 0.2s; padding: 2px; opacity: 0.5; }
+.cour-item-star-empty:hover { color: var(--cour-star); opacity: 0.7; }
+.cour-item-star-empty:active { transform: scale(1.4); color: var(--cour-star); opacity: 1; }
+@keyframes courStarPop { 0% { transform: scale(1); } 40% { transform: scale(1.5) rotate(20deg); } 70% { transform: scale(0.9) rotate(-10deg); } 100% { transform: scale(1) rotate(0deg); } }
+.cour-item-star.popping { animation: courStarPop 0.35s ease forwards; }
+.cour-item-stores { display: flex; gap: 4px; flex-wrap: wrap; justify-content: flex-end; }
+.cour-store-badge { font-size: 9px; font-weight: 500; padding: 2px 6px; border-radius: 20px; letter-spacing: 0.3px; white-space: nowrap; }
+.cour-badge-bio    { background: #E6F4EA; color: #2D6A4F; }
+.cour-badge-grande { background: #EEF2FF; color: #3B4EBD; }
+.cour-badge-marche { background: #FFF4E0; color: #9B5A00; }
+.cour-badge-rayon { display: inline-flex; align-items: center; color: var(--cour-accent-mid); opacity: 0.9; flex-shrink: 0; }
+.cour-badge-rayon svg { display: block; }
+.cour-bottom-bar { position: fixed; bottom: 0; left: 0; right: 0; padding: 8px 14px; background: var(--cour-bg); border-top: 1px solid var(--cour-border); display: flex; align-items: center; justify-content: space-between; gap: 10px; z-index: 10; }
+.cour-bottom-count { font-size: 13px; color: var(--cour-text-muted); font-weight: 300; white-space: nowrap; }
+.cour-bottom-count strong { color: var(--cour-text); font-weight: 500; }
+.cour-bottom-actions { display: flex; gap: 8px; align-items: center; }
+.cour-btn-add { display: flex; align-items: center; gap: 6px; padding: 10px 18px; border-radius: 100px; background: var(--cour-accent); color: #fff; border: none; font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 500; cursor: pointer; transition: all 0.2s; box-shadow: 0 4px 14px rgba(45,80,22,0.3); }
+.cour-btn-add:active { transform: scale(0.96); }
+.cour-btn-reset { display: flex; align-items: center; gap: 6px; padding: 10px 14px; border-radius: 100px; background: var(--cour-accent-light); color: var(--cour-accent); border: none; font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 500; cursor: pointer; transition: all 0.2s; }
+.cour-btn-reset:active { transform: scale(0.96); background: var(--cour-checked); }
+.cour-btn-reset:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+.cour-modal-backdrop { position: fixed; inset: 0; background: rgba(26,26,24,0.45); backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px); z-index: 50; display: flex; align-items: center; justify-content: center; padding: 16px; animation: courFadeIn 0.2s ease; }
+@keyframes courFadeIn { from { opacity: 0; } to { opacity: 1; } }
+.cour-modal-backdrop.closing { animation: courFadeOut 0.2s ease forwards; }
+@keyframes courFadeOut { from { opacity: 1; } to { opacity: 0; } }
+.cour-modal-sheet { background: var(--cour-surface); border-radius: 24px; padding: 28px 24px 28px; width: 100%; max-width: 480px; max-height: 90vh; overflow-y: auto; box-shadow: var(--cour-shadow-lg); animation: courPopIn 0.25s cubic-bezier(0.32, 0.72, 0, 1); }
+@keyframes courPopIn { from { opacity: 0; transform: scale(0.94) translateY(8px); } to { opacity: 1; transform: scale(1) translateY(0); } }
+.cour-modal-backdrop.closing .cour-modal-sheet { animation: courPopOut 0.2s cubic-bezier(0.32, 0.72, 0, 1) forwards; }
+@keyframes courPopOut { from { opacity: 1; transform: scale(1); } to { opacity: 0; transform: scale(0.94); } }
+.cour-modal-handle { display: none; }
+.cour-modal-title { font-family: 'DM Serif Display', serif; font-size: 22px; font-weight: 400; margin-bottom: 20px; color: var(--cour-text); }
+.cour-input-group { margin-bottom: 16px; }
+.cour-input-label { font-size: 11px; font-weight: 500; letter-spacing: 1px; text-transform: uppercase; color: var(--cour-text-muted); margin-bottom: 8px; display: block; }
+.cour-input-field { width: 100%; padding: 13px 16px; border: 1.5px solid var(--cour-border); border-radius: 12px; background: var(--cour-bg); font-family: 'DM Sans', sans-serif; font-size: 16px; font-weight: 400; color: var(--cour-text); outline: none; transition: border-color 0.2s; -webkit-appearance: none; }
+.cour-input-field:focus { border-color: var(--cour-accent-mid); }
+.cour-input-field::placeholder { color: var(--cour-text-muted); }
+select.cour-input-field { -webkit-appearance: menulist; appearance: menulist; }
+.cour-input-textarea { resize: vertical; min-height: 70px; font-size: 14px; line-height: 1.5; }
+.cour-item-detail-wrap { display: flex; align-items: flex-start; gap: 4px; margin-top: 3px; padding-left: 30px; }
+.cour-item-detail-input { flex: 1; min-width: 0; border: none; border-bottom: 1.5px dashed transparent; background: transparent; font-family: 'DM Sans', sans-serif; font-size: 12px; color: var(--cour-text-muted); padding: 1px 2px; outline: none; transition: border-color 0.2s, color 0.2s; border-radius: 0; resize: none; overflow: hidden; line-height: 1.45; display: block; width: 100%; }
+.cour-item-detail-input::placeholder { color: var(--cour-border); font-style: italic; }
+.cour-item-detail-input:hover { border-bottom-color: var(--cour-border); }
+.cour-item-detail-input:focus { border-bottom-color: var(--cour-accent-mid); color: var(--cour-text); }
+.cour-item-card.done .cour-item-detail-input { opacity: 0.5; }
+.cour-item-detail-save { display: none; align-items: center; justify-content: center; padding: 2px 7px; border-radius: 6px; border: none; background: var(--cour-accent); color: #fff; font-family: 'DM Sans', sans-serif; font-size: 11px; font-weight: 500; cursor: pointer; flex-shrink: 0; transition: background 0.15s, transform 0.1s; white-space: nowrap; margin-top: 1px; }
+.cour-item-detail-save:active { transform: scale(0.95); }
+.cour-item-detail-save.visible { display: flex; }
+.cour-store-pills { display: flex; gap: 8px; flex-wrap: wrap; }
+.cour-store-pill { display: flex; align-items: center; gap: 6px; padding: 9px 14px; border-radius: 100px; border: 1.5px solid var(--cour-border); background: var(--cour-surface); font-size: 13px; font-weight: 400; color: var(--cour-text-muted); cursor: pointer; transition: all 0.18s ease; user-select: none; }
+.cour-store-pill:active { transform: scale(0.95); }
+.cour-store-pill.selected { border-color: transparent; color: #fff; box-shadow: 0 3px 10px rgba(0,0,0,0.15); }
+.cour-store-pill.selected.cour-pill-bio    { background: #2D6A4F; }
+.cour-store-pill.selected.cour-pill-grande { background: #3B4EBD; }
+.cour-store-pill.selected.cour-pill-marche { background: #9B5A00; }
+.cour-favori-toggle { display: flex; align-items: center; gap: 12px; padding: 13px 16px; border-radius: 12px; background: var(--cour-bg); border: 1.5px solid var(--cour-border); cursor: pointer; transition: all 0.18s; user-select: none; }
+.cour-favori-toggle.active { border-color: var(--cour-star); background: #FFFBF0; }
+.cour-favori-star-icon { font-size: 20px; color: var(--cour-star-off); transition: color 0.2s, transform 0.2s; }
+.cour-favori-toggle.active .cour-favori-star-icon { color: var(--cour-star); transform: scale(1.2); }
+.cour-favori-toggle-text { font-size: 14px; color: var(--cour-text-muted); transition: color 0.2s; }
+.cour-favori-toggle.active .cour-favori-toggle-text { color: var(--cour-text); }
+.cour-btn-submit { width: 100%; padding: 16px; margin-top: 8px; border-radius: 14px; background: var(--cour-accent); color: #fff; border: none; font-family: 'DM Serif Display', serif; font-size: 17px; cursor: pointer; transition: all 0.2s; box-shadow: 0 4px 16px rgba(45,80,22,0.3); letter-spacing: 0.2px; }
+.cour-btn-submit:active { transform: scale(0.98); }
+.cour-btn-submit:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+.cour-btn-delete-link { display: block; width: 100%; margin-top: 10px; padding: 8px; border: none; background: transparent; color: #B3261E; font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 500; text-align: center; cursor: pointer; opacity: 0.75; transition: opacity 0.15s; }
+.cour-btn-delete-link:hover { opacity: 1; }
+.cour-btn-delete-link:disabled { opacity: 0.4; cursor: not-allowed; }
+.cour-delete-confirm { margin-top: 4px; padding: 16px; border-radius: 14px; background: #FDECEA; border: 1.5px solid #F3C6C2; }
+.cour-delete-confirm-text { font-size: 14px; color: #7A231D; margin-bottom: 14px; line-height: 1.4; }
+.cour-delete-confirm-actions { display: flex; gap: 8px; }
+.cour-btn-cancel-delete, .cour-btn-confirm-delete { flex: 1; padding: 11px; border-radius: 10px; border: none; font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 500; cursor: pointer; transition: all 0.15s; }
+.cour-btn-cancel-delete { background: var(--cour-surface); color: var(--cour-text); border: 1.5px solid var(--cour-border); }
+.cour-btn-cancel-delete:active { transform: scale(0.97); }
+.cour-btn-confirm-delete { background: #B3261E; color: #fff; }
+.cour-btn-confirm-delete:active { transform: scale(0.97); }
+.cour-btn-cancel-delete:disabled, .cour-btn-confirm-delete:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+.cour-state-overlay { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; color: var(--cour-text-muted); padding: 32px; text-align: center; }
+.cour-loader { width: 28px; height: 28px; border: 2.5px solid var(--cour-border); border-top-color: var(--cour-accent-mid); border-radius: 50%; animation: courSpin 0.8s linear infinite; }
+@keyframes courSpin { to { transform: rotate(360deg); } }
+@keyframes courFlashCheck { 0% { background: var(--cour-surface); } 25% { background: var(--cour-checked); border-color: var(--cour-accent-mid); transform: scale(1.02); } 70% { background: var(--cour-checked); border-color: var(--cour-accent-mid); transform: scale(1.02); } 100% { background: var(--cour-surface); transform: scale(1); } }
+.cour-item-card.flash-check { animation: courFlashCheck 0.4s ease forwards !important; pointer-events: none; }
+@keyframes courSlideIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+.cour-item-card:nth-child(1)  { animation-delay: 0ms; }
+.cour-item-card:nth-child(2)  { animation-delay: 30ms; }
+.cour-item-card:nth-child(3)  { animation-delay: 60ms; }
+.cour-item-card:nth-child(4)  { animation-delay: 90ms; }
+.cour-item-card:nth-child(5)  { animation-delay: 120ms; }
+.cour-item-card:nth-child(6)  { animation-delay: 150ms; }
+.cour-item-card:nth-child(7)  { animation-delay: 180ms; }
+.cour-item-card:nth-child(8)  { animation-delay: 210ms; }
+.cour-item-card:nth-child(n+9){ animation-delay: 240ms; }
+.cour-scroll-hint { height: 40px; background: linear-gradient(to top, var(--cour-bg), transparent); position: fixed; bottom: 65px; left: 0; right: 0; pointer-events: none; z-index: 5; }
+.cour-toast { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); background: var(--cour-text); color: #fff; padding: 10px 20px; border-radius: 100px; font-size: 13px; font-weight: 400; z-index: 100; white-space: nowrap; animation: courToastIn 0.2s ease, courToastOut 0.3s ease 1.8s forwards; pointer-events: none; }
+@keyframes courToastIn { from { opacity: 0; transform: translateX(-50%) translateY(-8px); } to { opacity: 1; transform: translateX(-50%) translateY(0); } }
+@keyframes courToastOut { from { opacity: 1; } to { opacity: 0; } }
 </style>
 </head>
 <body>
@@ -2435,6 +2606,7 @@ body.presentation #exitPresentBtn{ display:flex; }
     <div class="fd-prec repas-subtabs">
       <button class="fd-pb repas-subtab-btn" data-sub="recettes" onclick="switchRepasSubTab('recettes')">Recettes</button>
       <button class="fd-pb repas-subtab-btn" data-sub="menus" onclick="switchRepasSubTab('menus')">Menus</button>
+      <button class="fd-pb repas-subtab-btn" data-sub="courses" onclick="switchRepasSubTab('courses')">Courses</button>
     </div>
     <input type="text" id="recSearchInput" placeholder="Rechercher…" oninput="recApplyFilters()">
     <button class="rec-filter-btn active" onclick="recSetFilter(this,'')">Tout</button>
@@ -2696,6 +2868,7 @@ body.presentation #exitPresentBtn{ display:flex; }
       <div class="fd-prec repas-subtabs">
         <button class="fd-pb repas-subtab-btn" data-sub="recettes" onclick="switchRepasSubTab('recettes')">Recettes</button>
         <button class="fd-pb repas-subtab-btn" data-sub="menus" onclick="switchRepasSubTab('menus')">Menus</button>
+        <button class="fd-pb repas-subtab-btn" data-sub="courses" onclick="switchRepasSubTab('courses')">Courses</button>
       </div>
       <label class="repas-start-label">Début du planning
         <input type="date" id="repasStartDate" onchange="repasSetStartDate(this.value)">
@@ -2708,6 +2881,11 @@ body.presentation #exitPresentBtn{ display:flex; }
     <div class="repas-scroll">
       <div id="repasGrid"></div>
     </div>
+  </div>
+  <div class="page" id="page-courses">
+    <div id="courApp"></div>
+    <div id="courModalContainer"></div>
+    <div id="courToastContainer"></div>
   </div>
 
 </div><!-- /app-body -->
@@ -3369,6 +3547,15 @@ const WCFG_REQUIRED_TABLES = [
     { id: 'moment', type: 'Text' },
     { id: 'texte',  type: 'Text' },
   ]},
+  { id: 'Courses', cols: [
+    { id: 'nom',     type: 'Text' },
+    { id: 'detail',  type: 'Text' },
+    { id: 'favori',  type: 'Bool' },
+    { id: 'acheter', type: 'Bool' },
+    { id: 'magasin', type: 'ChoiceList' },
+    { id: 'rayon',   type: 'Choice' },
+    { id: 'ordre',   type: 'Numeric' },
+  ]},
   { id: 'Lectures', cols: [
     { id: 'titre',        type: 'Text' },
     { id: 'auteur',       type: 'Text' },
@@ -3580,6 +3767,7 @@ let mindmapLoaded = false;
 let recettesLoaded = false;
 let kanbanLoaded = false;
 let repasLoaded = false;
+let coursesLoaded = false;
 let repasTasks = [];
 
 let currentTabStored = null;
@@ -3589,6 +3777,7 @@ function switchRepasSubTab(sub) {
   try { localStorage.setItem('bujoWidget_repasSubTab_' + CACHE_NS, sub); } catch(e) {}
   document.getElementById('page-recettes').classList.toggle('active', sub === 'recettes');
   document.getElementById('page-repas').classList.toggle('active', sub === 'menus');
+  document.getElementById('page-courses').classList.toggle('active', sub === 'courses');
   document.querySelectorAll('.repas-subtab-btn').forEach(b => b.classList.toggle('active', b.dataset.sub === sub));
   if (sub === 'recettes' && !recettesLoaded) {
     recettesLoaded = true;
@@ -3599,6 +3788,10 @@ function switchRepasSubTab(sub) {
     repasLoaded = true;
     if (typeof grist !== 'undefined') loadRepas();
     else renderRepas();
+  }
+  if (sub === 'courses' && !coursesLoaded) {
+    coursesLoaded = true;
+    loadCourses();
   }
 }
 function switchTab(tab) {
@@ -5007,6 +5200,515 @@ function renderRepas(){
 }
 
 // ══════════════════════════════════════════════════════
+//  COURSES — liste de courses (rayons, favoris, magasins)
+//  (préfixe cour* pour éviter toute collision avec le reste
+//  du widget — voir render()/toggleItem() déjà utilisés ailleurs)
+// ══════════════════════════════════════════════════════
+const COUR_STORES_DEF = [
+  { id: 'all',            label: 'Liste',          icon: '🛒' },
+  { id: 'Biologic',       label: 'Biologic',       icon: '🌿' },
+  { id: 'Grande surface', label: 'Grande surface', icon: '🏪' },
+  { id: 'Marché',         label: 'Marché',         icon: '🧺' },
+];
+const COUR_BADGE_CLASS = { 'Biologic': 'cour-badge-bio', 'Grande surface': 'cour-badge-grande', 'Marché': 'cour-badge-marche' };
+const COUR_PILL_CLASS  = { 'Biologic': 'cour-pill-bio',  'Grande surface': 'cour-pill-grande',  'Marché': 'cour-pill-marche' };
+const COUR_STORE_OPTIONS = ['Biologic', 'Grande surface', 'Marché'];
+const COUR_RAYONS_DEF = [
+  { id: 'Fruits et légumes', icon: '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 8c-3 0-5.5 2.7-5.5 6.2C6.5 17.8 8.8 20 11 20c.7 0 1-.3 1-.3s.3.3 1 .3c2.2 0 4.5-2.2 4.5-5.8C17.5 10.7 15 8 12 8z"/><path d="M12 8V6c0-1 .6-2 2-2.3"/></svg>' },
+  { id: 'Boulangerie / Pâtisserie', icon: '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 13c0-3.3 3.6-6 8-6s8 2.7 8 6-3.6 5-8 5-8-1.7-8-5z"/><path d="M9 10.5c.5 1 .5 2 0 3M12 10c.5 1.2.5 2.6 0 3.8M15 10.5c.5 1 .5 2 0 3"/></svg>' },
+  { id: 'Crèmerie', icon: '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M8 4h8l1 3v12a1 1 0 0 1-1 1H8a1 1 0 0 1-1-1V7l1-3z"/><path d="M8 4l4 3 4-3M7 10h10"/></svg>' },
+  { id: 'Boucherie / Charcuterie', icon: '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M14 4c2 0 4 2 4 4.5 0 2-1.3 3.5-3 4.2l-4.3 4.3a2 2 0 1 1-2.8-2.8l4.3-4.3C11.5 9 10 7 10 5c0-1 1-1 1.5-.5"/><circle cx="6" cy="18" r="2"/></svg>' },
+  { id: 'Poissonnerie', icon: '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12c2.5-3 6-5 10-5 3 0 5.5 2 7 5-1.5 3-4 5-7 5-4 0-7.5-2-10-5z"/><path d="M20 12l2-2v4l-2-2z"/><circle cx="8" cy="11" r="0.6" fill="currentColor" stroke="none"/></svg>' },
+  { id: 'Épicerie salée', icon: '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="9" width="12" height="11" rx="1.5"/><path d="M9 9V6a3 3 0 0 1 6 0v3"/></svg>' },
+  { id: 'Épicerie sucrée', icon: '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8"/><circle cx="9" cy="10" r="0.8" fill="currentColor" stroke="none"/><circle cx="14" cy="9" r="0.8" fill="currentColor" stroke="none"/><circle cx="15" cy="14" r="0.8" fill="currentColor" stroke="none"/><circle cx="10" cy="15" r="0.8" fill="currentColor" stroke="none"/></svg>' },
+  { id: 'Boissons', icon: '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M7 4h10l-1.2 15a1 1 0 0 1-1 1H9.2a1 1 0 0 1-1-1L7 4z"/><path d="M7.6 9h8.8"/></svg>' },
+  { id: 'Surgelés', icon: '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v18M4.5 7.5l15 9M19.5 7.5l-15 9"/><path d="M12 3l-1.8 1.8M12 3l1.8 1.8M12 21l-1.8-1.8M12 21l1.8-1.8"/></svg>' },
+  { id: 'Hygiène / Beauté', icon: '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3c3 4 6 7.5 6 11a6 6 0 1 1-12 0c0-3.5 3-7 6-11z"/></svg>' },
+  { id: 'Entretien / Droguerie', icon: '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="7" y="9" width="8" height="12" rx="1.5"/><path d="M10 9V6h3v3M13 5h4M17 5l1.5-1.5M17 6.5 18.5 8"/></svg>' },
+  { id: 'Autre', icon: '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 8L12 4l8.5 4L12 12 3.5 8z"/><path d="M3.5 8v8L12 20l8.5-4V8"/><path d="M12 12v8"/></svg>' },
+];
+function courRayonIndex(rayon) {
+  if (!rayon) return COUR_RAYONS_DEF.length;
+  const i = COUR_RAYONS_DEF.findIndex(r => r.id === rayon);
+  return i === -1 ? COUR_RAYONS_DEF.length : i;
+}
+function courRayonIcon(rayon) {
+  const def = COUR_RAYONS_DEF.find(r => r.id === rayon);
+  return def ? def.icon : COUR_RAYONS_DEF[COUR_RAYONS_DEF.length - 1].icon;
+}
+let courState = {
+  allRecords: [], records: [], checkedIds: new Set(), activeStore: 'all',
+  searchQuery: '', filterStore: '', filterFavori: false, sortAlpha: false,
+  groupByRayon: false, collapsedRayons: new Set(), loading: true, error: null,
+  form: { open: false, nom: '', detail: '', favori: false, magasins: [], rayon: '', saving: false },
+};
+function courParseStores(val) {
+  if (!val) return [];
+  if (Array.isArray(val)) { if (val[0] === 'L') return val.slice(1).map(String); return val.map(String); }
+  if (typeof val === 'string') {
+    try {
+      const parsed = JSON.parse(val);
+      if (Array.isArray(parsed)) { if (parsed[0] === 'L') return parsed.slice(1).map(String); return parsed.map(String); }
+    } catch(_) {}
+    return val.split(',').map(s => s.trim()).filter(Boolean);
+  }
+  return [];
+}
+function courEncodeChoiceList(arr) { return ['L', ...arr]; }
+
+async function loadCourses(){
+  if (typeof grist === 'undefined') { courState.loading = false; courRender(); return; }
+  try {
+    const raw = await grist.docApi.fetchTable('Courses');
+    const mapped = (raw.id||[]).map((id,i)=>({
+      id,
+      nom: String(raw.nom?.[i] ?? ''),
+      detail: String(raw.detail?.[i] ?? ''),
+      favori: !!raw.favori?.[i],
+      acheter: !!raw.acheter?.[i],
+      magasin: raw.magasin?.[i] ?? null,
+      rayon: String(raw.rayon?.[i] ?? ''),
+      ordre: Number(raw.ordre?.[i] ?? i),
+    }));
+    courState.allRecords = mapped;
+    courState.records = mapped.filter(r => r.acheter).sort((a,b) => (a.ordre||0)-(b.ordre||0));
+    courState.checkedIds = new Set(mapped.filter(r => r.acheter).map(r => r.id));
+    courState.loading = false;
+    courState.error = null;
+  } catch(e) {
+    console.warn('Courses:', e);
+    courState.loading = false;
+    courState.error = 'Impossible de charger la liste de courses (table « Courses » absente ou colonnes incorrectes ?).';
+  }
+  courRender();
+}
+
+function courGetFilteredItems() {
+  if (courState.activeStore === 'all') {
+    const q = courState.searchQuery.trim().toLowerCase();
+    let items = courState.allRecords.slice();
+    if (q) items = items.filter(r => (r.nom || '').toLowerCase().includes(q));
+    if (courState.filterStore) items = items.filter(r => courParseStores(r.magasin).includes(courState.filterStore));
+    if (courState.filterFavori) items = items.filter(r => r.favori);
+    return items;
+  }
+  return courState.allRecords.filter(r =>
+    courState.checkedIds.has(r.id) && courParseStores(r.magasin).includes(courState.activeStore)
+  ).sort((a, b) => {
+    const ri = courRayonIndex(a.rayon) - courRayonIndex(b.rayon);
+    return ri !== 0 ? ri : (a.ordre || 0) - (b.ordre || 0);
+  });
+}
+function courMaxOrdre() {
+  if (!courState.allRecords.length) return 0;
+  return Math.max(...courState.allRecords.map(r => r.ordre || 0));
+}
+
+function courToggleStore(id) {
+  courState.activeStore = id;
+  courState.searchQuery = '';
+  if (id !== 'all') {
+    courState.filterStore = ''; courState.filterFavori = false; courState.sortAlpha = false;
+    if (courState.form.open) courCloseModal();
+  }
+  courRender();
+}
+function courSetFilterStore(val) { courState.filterStore = (courState.filterStore === val) ? '' : val; courRender(); }
+function courToggleFilterFavori() { courState.filterFavori = !courState.filterFavori; courRender(); }
+function courToggleSortAlpha() { courState.sortAlpha = !courState.sortAlpha; if (courState.sortAlpha) courState.groupByRayon = false; courRender(); }
+function courToggleGroupByRayon() { courState.groupByRayon = !courState.groupByRayon; if (courState.groupByRayon) courState.sortAlpha = false; courRender(); }
+function courToggleRayonCollapse(idx) { if (courState.collapsedRayons.has(idx)) courState.collapsedRayons.delete(idx); else courState.collapsedRayons.add(idx); courRender(); }
+function courGetPresentRayonIdx() { return [...new Set(courGetFilteredItems().map(r => courRayonIndex(r.rayon)))]; }
+function courToggleAllRayonsCollapse() {
+  const idxs = courGetPresentRayonIdx();
+  const allCollapsed = idxs.length > 0 && idxs.every(i => courState.collapsedRayons.has(i));
+  if (allCollapsed) courState.collapsedRayons.clear();
+  else idxs.forEach(i => courState.collapsedRayons.add(i));
+  courRender();
+}
+
+function courHandleSearch(val) {
+  courState.searchQuery = val;
+  const isAll = courState.activeStore === 'all';
+  if (!isAll) return;
+  if (courState.groupByRayon) {
+    const el = document.querySelector('.cour-search-input');
+    const selStart = el ? el.selectionStart : null, selEnd = el ? el.selectionEnd : null;
+    courRender();
+    const newEl = document.querySelector('.cour-search-input');
+    if (newEl) { newEl.focus(); if (selStart !== null) newEl.setSelectionRange(selStart, selEnd); }
+    return;
+  }
+  const q = val.trim().toLowerCase();
+  const listSection = document.getElementById('courListSection');
+  const countEl = document.querySelector('.cour-bottom-count');
+  if (!listSection) { courRender(); return; }
+  const baseItems = courState.allRecords.slice().sort((a, b) => (a.ordre || 0) - (b.ordre || 0));
+  const filtered = q ? baseItems.filter(r => (r.nom || '').toLowerCase().includes(q)) : baseItems;
+  const toCheck = filtered.filter(r => r.acheter);
+  const remaining = toCheck.filter(r => !courState.checkedIds.has(r.id)).length;
+  const doneCount = toCheck.filter(r => courState.checkedIds.has(r.id)).length;
+  if (countEl) {
+    countEl.innerHTML = '<strong>' + remaining + '</strong> restant' + (remaining !== 1 ? 's' : '')
+      + (doneCount > 0 ? ' · <strong>' + doneCount + '</strong> coché' + (doneCount !== 1 ? 's' : '') : '');
+  }
+  const sorted = filtered.sort((a, b) => (a.ordre || 0) - (b.ordre || 0));
+  if (sorted.length === 0) {
+    listSection.innerHTML = '<div class="cour-list-empty"><div class="cour-list-empty-icon">🔍</div>'
+      + '<div class="cour-list-empty-text">Aucun résultat pour<br><em>' + esc(val) + '</em></div></div>';
+    return;
+  }
+  listSection.innerHTML = sorted.map(r => courRenderItemCard(r, true, q)).join('');
+}
+
+function courPatchCountsAndHeaders() {
+  const isAll = courState.activeStore === 'all';
+  const items = courGetFilteredItems();
+  const activeItems = isAll ? items.filter(r => r.acheter) : items;
+  const remaining = isAll ? activeItems.filter(r => !courState.checkedIds.has(r.id)).length : 0;
+  const doneCount = isAll ? activeItems.filter(r => courState.checkedIds.has(r.id)).length : items.length;
+  const countEl = document.querySelector('.cour-bottom-count');
+  if (countEl) {
+    countEl.innerHTML = '<strong>' + remaining + '</strong> restant' + (remaining !== 1 ? 's' : '')
+      + (doneCount > 0 ? ' \xb7 <strong>' + doneCount + '</strong> coch\xe9' + (doneCount !== 1 ? 's' : '') : '');
+  }
+  if (!courState.groupByRayon) return;
+  const counts = new Map();
+  items.forEach(r => { if (!r.acheter) return; const idx = courRayonIndex(r.rayon); counts.set(idx, (counts.get(idx) || 0) + 1); });
+  document.querySelectorAll('#page-courses .cour-rayon-header').forEach(h => {
+    const idx = parseInt(h.getAttribute('data-rayon-idx'), 10);
+    const n = counts.get(idx) || 0;
+    const right = h.querySelector('.cour-rayon-header-right');
+    if (!right) return;
+    let badge = right.querySelector('.cour-rayon-count-badge');
+    if (n > 0) {
+      if (!badge) { badge = document.createElement('span'); badge.className = 'cour-rayon-count-badge'; right.insertBefore(badge, right.firstChild); }
+      badge.textContent = n;
+    } else if (badge) { badge.remove(); }
+  });
+}
+
+function courToggleItem(id, event) {
+  if (event) event.stopPropagation();
+  const isAll = courState.activeStore === 'all';
+  const cardEl = event && event.currentTarget ? event.currentTarget.closest('.cour-item-card') : null;
+  const newVal = !courState.checkedIds.has(id);
+  const r = courState.allRecords.find(x => x.id === id);
+  if (newVal) { courState.checkedIds.add(id); if (r) r.acheter = true; }
+  else { courState.checkedIds.delete(id); if (r) r.acheter = false; }
+  if (isAll) {
+    const el = cardEl || document.querySelector('.cour-item-card[data-id="' + id + '"]');
+    if (el) { el.classList.toggle('lit', newVal); el.classList.toggle('dimmed', !newVal); }
+    courPatchCountsAndHeaders();
+  } else if (newVal && cardEl) {
+    cardEl.classList.add('flash-check');
+    setTimeout(() => courRender(), 420);
+  } else {
+    courRender();
+  }
+  OfflineSync.applyUserActions([['UpdateRecord','Courses', id, { acheter: newVal }]]).catch(console.error);
+}
+function courAutoResize(el) { el.style.height = 'auto'; el.style.height = el.scrollHeight + 'px'; }
+function courShowDetailSave(inputEl) {
+  const btn = inputEl.nextElementSibling;
+  if (btn && btn.classList.contains('cour-item-detail-save')) btn.classList.add('visible');
+}
+function courSaveDetailFromInput(inputEl, id) {
+  const value = inputEl.value;
+  const btn = inputEl.nextElementSibling;
+  const r = courState.allRecords.find(x => x.id === id);
+  if (!r) return;
+  r.detail = value;
+  if (btn) btn.classList.remove('visible');
+  OfflineSync.applyUserActions([['UpdateRecord','Courses', id, { detail: value }]])
+    .then(res => { if (res) courShowToast('Détail enregistré ✓'); })
+    .catch(console.error);
+}
+function courToggleFavori(id, event) {
+  event.stopPropagation();
+  const r = courState.allRecords.find(x => x.id === id);
+  if (!r) return;
+  const newVal = !r.favori;
+  r.favori = newVal;
+  const starEl = event.currentTarget;
+  if (starEl) { starEl.classList.add('popping'); setTimeout(() => starEl.classList.remove('popping'), 350); }
+  courRender();
+  OfflineSync.applyUserActions([['UpdateRecord','Courses', id, { favori: newVal }]]).catch(console.error);
+}
+function courOpenEditForm(id, event) {
+  event.stopPropagation();
+  const r = courState.allRecords.find(x => x.id === id);
+  if (!r) return;
+  courState.form = { open: true, mode: 'edit', editId: id, nom: r.nom || '', detail: r.detail || '', favori: !!r.favori, magasins: courParseStores(r.magasin), rayon: r.rayon || '', saving: false, confirmDelete: false };
+  courRenderModal();
+}
+function courOpenAddForm() {
+  courState.form = { open: true, mode: 'add', editId: null, nom: '', detail: '', favori: false, magasins: [], rayon: '', saving: false, confirmDelete: false };
+  courRenderModal();
+}
+function courCloseModal(cb) {
+  const backdrop = document.querySelector('#page-courses .cour-modal-backdrop');
+  if (backdrop) {
+    backdrop.classList.add('closing');
+    setTimeout(() => { courState.form.open = false; courRenderModal(); if (cb) cb(); }, 200);
+  } else {
+    courState.form.open = false; courRenderModal(); if (cb) cb();
+  }
+}
+function courHandleBackdropClick(e) { if (e.target === e.currentTarget) courCloseModal(); }
+function courToggleFormStore(s) {
+  const idx = courState.form.magasins.indexOf(s);
+  if (idx >= 0) courState.form.magasins.splice(idx, 1); else courState.form.magasins.push(s);
+  courRenderModal();
+}
+function courHandleFormRayon(val) { courState.form.rayon = val; }
+function courToggleFormFavori() { courState.form.favori = !courState.form.favori; courRenderModal(); }
+function courHandleNomInput(val) {
+  courState.form.nom = val;
+  const btn = document.getElementById('courBtnSubmit');
+  if (btn) btn.disabled = !val.trim() || courState.form.saving;
+}
+function courHandleDetailInput(val) { courState.form.detail = val; }
+function courAskDeleteConfirm() { courState.form.confirmDelete = true; courRenderModal(); }
+function courCancelDelete() { courState.form.confirmDelete = false; courRenderModal(); }
+
+async function courConfirmDeleteItem() {
+  if (courState.form.saving) return;
+  const id = courState.form.editId;
+  const nom = courState.form.nom;
+  courState.form.saving = true;
+  courRenderModal();
+  const res = await OfflineSync.applyUserActions([['RemoveRecord','Courses', id]]);
+  if (res) await loadCourses();
+  courCloseModal(() => courShowToast('\u00ab ' + nom + ' \u00bb supprim\u00e9 \u2713'));
+}
+
+async function courSubmitForm() {
+  const nom = courState.form.nom.trim();
+  if (!nom || courState.form.saving) return;
+  courState.form.saving = true;
+  courRenderModal();
+  const fields = {
+    nom: nom,
+    detail: courState.form.detail,
+    favori: courState.form.favori,
+    magasin: courState.form.magasins.length ? courEncodeChoiceList(courState.form.magasins) : null,
+    rayon: courState.form.rayon || null,
+  };
+  if (courState.form.mode === 'edit') {
+    const res = await OfflineSync.applyUserActions([['UpdateRecord','Courses', courState.form.editId, fields]]);
+    if (res) await loadCourses();
+    courCloseModal(() => courShowToast('\u00ab ' + nom + ' \u00bb modifi\u00e9 \u2713'));
+  } else {
+    fields.acheter = true;
+    fields.ordre = courMaxOrdre() + 1;
+    const res = await OfflineSync.applyUserActions([['AddRecord','Courses', null, fields]]);
+    if (res) await loadCourses();
+    courCloseModal(() => courShowToast('\u00ab ' + nom + ' \u00bb ajout\u00e9 \u2713'));
+  }
+}
+
+function courShowToast(msg) {
+  const c = document.getElementById('courToastContainer');
+  if (!c) return;
+  c.innerHTML = '<div class="cour-toast">' + esc(msg) + '</div>';
+  setTimeout(() => { c.innerHTML = ''; }, 2300);
+}
+
+function courRenderModal() {
+  const c = document.getElementById('courModalContainer');
+  if (!c) return;
+  if (!courState.form.open) { c.innerHTML = ''; return; }
+  const f = courState.form;
+  const pillsHtml = COUR_STORE_OPTIONS.map(s => {
+    const sel = f.magasins.includes(s);
+    const def = COUR_STORES_DEF.find(x => x.id === s);
+    const icon = def ? def.icon : '';
+    return '<button class="cour-store-pill ' + COUR_PILL_CLASS[s] + (sel ? ' selected' : '') + '" onclick="courToggleFormStore(\'' + s.replace(/'/g,"\\'") + '\')">' + icon + ' ' + esc(s) + '</button>';
+  }).join('');
+  c.innerHTML =
+    '<div class="cour-modal-backdrop" onclick="courHandleBackdropClick(event)">'
+    + '<div class="cour-modal-sheet" onclick="event.stopPropagation()">'
+    + '<div class="cour-modal-handle"></div>'
+    + '<div class="cour-modal-title">' + (f.mode === 'edit' ? 'Modifier l\'article' : 'Ajouter un article') + '</div>'
+    + '<div class="cour-input-group"><label class="cour-input-label">Nom</label>'
+    + '<input id="courFormNom" class="cour-input-field" type="text" placeholder="Ex\u00a0: Lentilles corail\u2026" value="' + esc(f.nom) + '"'
+    + ' oninput="courHandleNomInput(this.value)"' + (f.saving ? ' disabled' : '') + ' autocomplete="off" autocorrect="off" /></div>'
+    + '<div class="cour-input-group"><label class="cour-input-label">D\u00e9tail</label>'
+    + '<textarea id="courFormDetail" class="cour-input-field cour-input-textarea" placeholder="Quantit\u00e9, marque, pr\u00e9cision\u2026"'
+    + ' oninput="courHandleDetailInput(this.value)"' + (f.saving ? ' disabled' : '') + '>' + esc(f.detail) + '</textarea></div>'
+    + '<div class="cour-input-group"><label class="cour-input-label">Magasin(s)</label><div class="cour-store-pills">' + pillsHtml + '</div></div>'
+    + '<div class="cour-input-group"><label class="cour-input-label">Rayon</label>'
+    + '<select id="courFormRayon" class="cour-input-field" onchange="courHandleFormRayon(this.value)"' + (f.saving ? ' disabled' : '') + '>'
+    + '<option value="">\u2014 Aucun \u2014</option>'
+    + COUR_RAYONS_DEF.map(r => '<option value="' + esc(r.id) + '"' + (f.rayon === r.id ? ' selected' : '') + '>' + esc(r.id) + '</option>').join('')
+    + '</select></div>'
+    + '<div class="cour-input-group"><label class="cour-input-label">Favori</label>'
+    + '<div class="cour-favori-toggle' + (f.favori ? ' active' : '') + '" onclick="courToggleFormFavori()">'
+    + '<span class="cour-favori-star-icon">★</span><span class="cour-favori-toggle-text">' + (f.favori ? 'Oui, c\'est un favori' : 'Marquer comme favori') + '</span></div></div>'
+    + (f.mode === 'edit' && f.confirmDelete
+        ? '<div class="cour-delete-confirm"><p class="cour-delete-confirm-text">Supprimer définitivement \u00ab ' + esc(f.nom) + ' \u00bb\u00a0?</p>'
+          + '<div class="cour-delete-confirm-actions">'
+          + '<button class="cour-btn-cancel-delete" onclick="courCancelDelete()"' + (f.saving ? ' disabled' : '') + '>Annuler</button>'
+          + '<button class="cour-btn-confirm-delete" onclick="courConfirmDeleteItem()"' + (f.saving ? ' disabled' : '') + '>' + (f.saving ? 'Suppression\u2026' : 'Oui, supprimer') + '</button>'
+          + '</div></div>'
+        : '<button id="courBtnSubmit" class="cour-btn-submit" onclick="courSubmitForm()"' + (!f.nom.trim() || f.saving ? ' disabled' : '') + '>'
+          + (f.saving ? (f.mode === 'edit' ? 'Modification\u2026' : 'Ajout en cours\u2026') : (f.mode === 'edit' ? 'Enregistrer' : 'Ajouter à la liste')) + '</button>'
+          + (f.mode === 'edit' ? '<button class="cour-btn-delete-link" onclick="courAskDeleteConfirm()"' + (f.saving ? ' disabled' : '') + '>Supprimer cet article</button>' : ''))
+    + '</div></div>';
+  setTimeout(() => { const input = document.getElementById('courFormNom'); if (input && !f.saving) input.focus(); }, 280);
+}
+
+function courRenderItemCard(r, isAll, highlightQ) {
+  const checked = courState.checkedIds.has(r.id);
+  const stores = courParseStores(r.magasin);
+  let cardClass = 'cour-item-card';
+  cardClass += isAll ? (checked ? ' lit' : ' dimmed') : ' lit';
+  const starHtml = isAll
+    ? (r.favori ? '<span class="cour-item-star" onclick="courToggleFavori(' + r.id + ', event)">★</span>' : '<span class="cour-item-star-empty" onclick="courToggleFavori(' + r.id + ', event)">★</span>')
+    : (r.favori ? '<span class="cour-item-star">★</span>' : '');
+  const showRayonBadge = r.rayon && !courState.groupByRayon;
+  const rayonBadgeHtml = showRayonBadge ? '<span class="cour-badge-rayon" title="' + esc(r.rayon) + '">' + courRayonIcon(r.rayon) + '</span>' : '';
+  const badgesHtml = isAll && stores.length
+    ? '<div class="cour-item-stores">' + stores.map(s => '<span class="cour-store-badge ' + (COUR_BADGE_CLASS[s] || '') + '">' + esc(s) + '</span>').join('') + '</div>' : '';
+  const editBtnHtml = isAll ? '<button class="cour-item-edit-btn" onclick="courOpenEditForm(' + r.id + ', event)" title="Modifier">⋯</button>' : '';
+  const checkClick = 'courToggleItem(' + r.id + ', event)';
+  let nomHtml = esc(r.nom || '');
+  if (highlightQ) {
+    const re = new RegExp('(' + highlightQ.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + ')', 'gi');
+    nomHtml = nomHtml.replace(re, '<mark>$1</mark>');
+  }
+  const detailHtml = '<div class="cour-item-detail-wrap" onclick="event.stopPropagation()">'
+    + '<textarea class="cour-item-detail-input" rows="1" placeholder="+ d\u00e9tail"'
+    + ' oninput="courAutoResize(this);courShowDetailSave(this)"'
+    + ' onkeydown="if(event.key===\'Enter\'&&!event.shiftKey){event.preventDefault();courSaveDetailFromInput(this,' + r.id + ')}"'
+    + '>' + esc(r.detail || '') + '</textarea>'
+    + '<button class="cour-item-detail-save" onclick="courSaveDetailFromInput(this.previousElementSibling,' + r.id + ')">✓</button>'
+    + '</div>';
+  return '<div class="' + cardClass + '" data-id="' + r.id + '">'
+    + '<div class="cour-item-card-top">'
+    + '<div class="cour-item-check" onclick="' + checkClick + '; event.stopPropagation()"><div class="cour-item-check-inner"></div></div>'
+    + '<span class="cour-item-name">' + nomHtml + '</span>'
+    + rayonBadgeHtml + starHtml + badgesHtml + editBtnHtml
+    + '</div>' + detailHtml + '</div>';
+}
+
+function courRender() {
+  const app = document.getElementById('courApp');
+  if (!app) return;
+  const prevListSection = document.getElementById('courListSection');
+  const prevScrollTop = prevListSection ? prevListSection.scrollTop : 0;
+
+  if (courState.loading) { app.innerHTML = '<div class="cour-state-overlay"><div class="cour-loader"></div><p>Chargement\u2026</p></div>'; return; }
+  if (courState.error) { app.innerHTML = '<div class="cour-state-overlay"><p>\u26a0\ufe0f ' + esc(courState.error) + '</p></div>'; return; }
+
+  const isAll = courState.activeStore === 'all';
+  const items = courGetFilteredItems();
+  const activeItems = isAll ? items.filter(r => r.acheter) : items;
+  const remaining = isAll ? activeItems.filter(r => !courState.checkedIds.has(r.id)).length : 0;
+  const doneCount = isAll ? activeItems.filter(r => courState.checkedIds.has(r.id)).length : items.length;
+
+  const sorted = [...items].sort((a, b) => {
+    if (isAll) {
+      if (courState.sortAlpha) return (a.nom || '').localeCompare(b.nom || '', 'fr', { sensitivity: 'base' });
+      return (a.ordre || 0) - (b.ordre || 0);
+    }
+    const ri = courRayonIndex(a.rayon) - courRayonIndex(b.rayon);
+    return ri !== 0 ? ri : (a.ordre || 0) - (b.ordre || 0);
+  });
+
+  const allRayonsCollapsed = courState.groupByRayon && (() => {
+    const idxs = courGetPresentRayonIdx();
+    return idxs.length > 0 && idxs.every(i => courState.collapsedRayons.has(i));
+  })();
+
+  const filterPillsHtml = COUR_STORE_OPTIONS.map(s => {
+    const def = COUR_STORES_DEF.find(x => x.id === s);
+    const icon = def ? def.icon : '';
+    const isActive = courState.filterStore === s;
+    const safeId = encodeURIComponent(s);
+    return '<button class="cour-filter-pill ' + COUR_PILL_CLASS[s] + (isActive ? ' active' : '')
+      + '" onclick="courSetFilterStore(decodeURIComponent(&quot;' + safeId + '&quot;))">' + icon + '\u00a0' + esc(s) + '</button>';
+  }).join('')
+    + '<button class="cour-filter-pill cour-pill-favori' + (courState.filterFavori ? ' active' : '') + '" onclick="courToggleFilterFavori()">\u2605\u00a0Favoris</button>'
+    + '<button class="cour-filter-pill cour-pill-alpha'  + (courState.sortAlpha   ? ' active' : '') + '" onclick="courToggleSortAlpha()">A\u2013Z</button>'
+    + '<button class="cour-filter-pill cour-pill-rayon'  + (courState.groupByRayon ? ' active' : '') + '" onclick="courToggleGroupByRayon()">\ud83d\uddc2\ufe0f\u00a0Par rayon</button>'
+    + (courState.groupByRayon
+        ? '<button class="cour-filter-pill cour-pill-rayon-toggle" onclick="courToggleAllRayonsCollapse()">' + (allRayonsCollapsed ? 'Tout d\u00e9plier' : 'Tout plier') + '</button>'
+        : '');
+
+  const chipsHtml = COUR_STORES_DEF.map(s => {
+    const active = courState.activeStore === s.id;
+    return '<button class="cour-chip' + (active ? ' active' : '') + '" onclick="courToggleStore(\'' + s.id.replace(/'/g,"\\'") + '\')">'
+      + '<span class="cour-chip-icon">' + s.icon + '</span>' + esc(s.label) + '</button>';
+  }).join('');
+
+  let itemsHtml = '';
+  if (sorted.length === 0) {
+    const emptyMsg = isAll ? 'Aucun article dans la liste' : 'Aucun article sélectionné<br>pour ce magasin';
+    itemsHtml = '<div class="cour-list-empty"><div class="cour-list-empty-icon">' + (isAll ? '🛒' : '✓') + '</div>'
+      + '<div class="cour-list-empty-text">' + emptyMsg + '</div></div>';
+  } else if (courState.groupByRayon) {
+    const groups = new Map();
+    sorted.forEach(r => { const idx = courRayonIndex(r.rayon); if (!groups.has(idx)) groups.set(idx, []); groups.get(idx).push(r); });
+    const orderedIdx = [...groups.keys()].sort((a, b) => a - b);
+    itemsHtml = orderedIdx.map(idx => {
+      const label = idx < COUR_RAYONS_DEF.length ? COUR_RAYONS_DEF[idx].id : 'Sans rayon';
+      const icon = idx < COUR_RAYONS_DEF.length ? COUR_RAYONS_DEF[idx].icon : COUR_RAYONS_DEF[COUR_RAYONS_DEF.length - 1].icon;
+      const groupItems = groups.get(idx);
+      const toBuyCount = groupItems.filter(r => r.acheter).length;
+      const isCollapsed = courState.collapsedRayons.has(idx);
+      const cards = isCollapsed ? '' : groupItems.map(r => courRenderItemCard(r, isAll)).join('');
+      return '<div class="cour-rayon-header" data-rayon-idx="' + idx + '" onclick="courToggleRayonCollapse(' + idx + ')">'
+        + '<span class="cour-rayon-header-left">' + icon + ' ' + esc(label) + '</span>'
+        + '<span class="cour-rayon-header-right">'
+        + (toBuyCount > 0 ? '<span class="cour-rayon-count-badge">' + toBuyCount + '</span>' : '')
+        + '<span class="cour-rayon-chevron' + (isCollapsed ? ' collapsed' : '') + '">'
+        + '<svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>'
+        + '</span></span></div>' + cards;
+    }).join('');
+  } else {
+    itemsHtml = sorted.map(r => courRenderItemCard(r, isAll)).join('');
+  }
+
+  const addBtnHtml = isAll ? '<button class="cour-btn-add" onclick="courOpenAddForm()">＋ Ajouter</button>' : '';
+
+  const subtabsHtml = '<div class="fd-prec repas-subtabs">'
+    + '<button class="fd-pb repas-subtab-btn" data-sub="recettes" onclick="switchRepasSubTab(\'recettes\')">Recettes</button>'
+    + '<button class="fd-pb repas-subtab-btn" data-sub="menus" onclick="switchRepasSubTab(\'menus\')">Menus</button>'
+    + '<button class="fd-pb repas-subtab-btn active" data-sub="courses" onclick="switchRepasSubTab(\'courses\')">Courses</button>'
+    + '</div>';
+
+  app.innerHTML =
+    '<div class="cour-header">' + subtabsHtml + '<div class="cour-header-title">COURSES</div></div>'
+    + '<div class="cour-store-section"><div class="cour-store-chips">' + chipsHtml + '</div></div>'
+    + '<div class="cour-divider"></div>'
+    + (isAll ? '<div class="cour-toolbar">'
+      + '<input class="cour-search-input" type="search" placeholder="Rechercher un aliment…" value="' + esc(courState.searchQuery) + '"'
+      + ' oninput="courHandleSearch(this.value)" autocomplete="off" autocorrect="off" />'
+      + '<div class="cour-filter-row">' + filterPillsHtml + '</div></div>'
+      : '<div class="cour-toolbar cour-toolbar-store"><div class="cour-filter-row">'
+      + '<button class="cour-filter-pill cour-pill-rayon' + (courState.groupByRayon ? ' active' : '') + '" onclick="courToggleGroupByRayon()">\ud83d\uddc2\ufe0f\u00a0Par rayon</button>'
+      + (courState.groupByRayon
+          ? '<button class="cour-filter-pill cour-pill-rayon-toggle" onclick="courToggleAllRayonsCollapse()">' + (allRayonsCollapsed ? 'Tout d\u00e9plier' : 'Tout plier') + '</button>'
+          : '')
+      + '</div></div>')
+    + '<div class="cour-list-section" id="courListSection">' + itemsHtml + '</div>'
+    + '<div class="cour-scroll-hint"></div>'
+    + '<div class="cour-bottom-bar">'
+    + '<div class="cour-bottom-count"><strong>' + remaining + '</strong> restant' + (remaining !== 1 ? 's' : '')
+    + (doneCount > 0 ? ' \xb7 <strong>' + doneCount + '</strong> coch\xe9' + (doneCount !== 1 ? 's' : '') : '') + '</div>'
+    + '<div class="cour-bottom-actions">' + addBtnHtml + '</div>'
+    + '</div>';
+
+  requestAnimationFrame(() => {
+    document.querySelectorAll('#page-courses .cour-item-detail-input').forEach(courAutoResize);
+    const newListSection = document.getElementById('courListSection');
+    if (newListSection && prevScrollTop) newListSection.scrollTop = prevScrollTop;
+  });
+}
+
+// ══════════════════════════════════════════════════════
 //  LECTURES — HELPERS dates
 // ══════════════════════════════════════════════════════
 function parseDt(ts){
@@ -5883,6 +6585,7 @@ const OfflineSync = (() => {
       try { await loadLectures(); } catch(e){}
       try { await loadOutliner(); } catch(e){}
       try { if (typeof loadCollections === 'function') await loadCollections(); } catch(e){}
+      try { if (typeof loadCourses === 'function') await loadCourses(); } catch(e){}
     }
   }
 
