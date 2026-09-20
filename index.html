@@ -5227,7 +5227,9 @@ function renderRepas(){
         ondblclick="repasEnterEdit(this)">
         <button type="button" class="repas-cell-pick" draggable="false" title="Choisir une recette"
           onmousedown="event.stopPropagation()" ondblclick="event.stopPropagation()"
-          onclick="event.stopPropagation(); repasOpenPicker('${d}','${moment}')">🍽</button>
+          onclick="event.stopPropagation(); repasOpenPicker('${d}','${moment}')">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 2v7c0 1.1.9 2 2 2h0a2 2 0 0 0 2-2V2"/><path d="M7 2v20"/><path d="M17 2a5 5 0 0 0-5 5v6h5"/><path d="M17 13v9"/></svg>
+        </button>
         <div class="repas-display">${texte ? esc(texte).replace(/\n/g,'<br>') : '<span class="repas-ph">Idée de repas…</span>'}</div>
         <textarea class="repas-input" data-date="${d}" data-moment="${moment}" oninput="repasScheduleSave(this)" onblur="repasExitEdit(this)">${esc(texte)}</textarea>
       </div>`;
