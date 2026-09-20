@@ -2604,9 +2604,9 @@ select.cour-input-field { -webkit-appearance: menulist; appearance: menulist; }
 <div class="page" id="page-recettes">
   <div id="recTopbar">
     <div class="fd-prec repas-subtabs">
-      <button class="fd-pb repas-subtab-btn" data-sub="recettes" onclick="switchRepasSubTab('recettes')">Recettes</button>
-      <button class="fd-pb repas-subtab-btn" data-sub="menus" onclick="switchRepasSubTab('menus')">Menus</button>
       <button class="fd-pb repas-subtab-btn" data-sub="courses" onclick="switchRepasSubTab('courses')">Courses</button>
+      <button class="fd-pb repas-subtab-btn" data-sub="menus" onclick="switchRepasSubTab('menus')">Menus</button>
+      <button class="fd-pb repas-subtab-btn" data-sub="recettes" onclick="switchRepasSubTab('recettes')">Recettes</button>
     </div>
     <input type="text" id="recSearchInput" placeholder="Rechercher…" oninput="recApplyFilters()">
     <button class="rec-filter-btn active" onclick="recSetFilter(this,'')">Tout</button>
@@ -2866,9 +2866,9 @@ select.cour-input-field { -webkit-appearance: menulist; appearance: menulist; }
   <div class="page" id="page-repas">
     <div class="repas-topbar">
       <div class="fd-prec repas-subtabs">
-        <button class="fd-pb repas-subtab-btn" data-sub="recettes" onclick="switchRepasSubTab('recettes')">Recettes</button>
-        <button class="fd-pb repas-subtab-btn" data-sub="menus" onclick="switchRepasSubTab('menus')">Menus</button>
         <button class="fd-pb repas-subtab-btn" data-sub="courses" onclick="switchRepasSubTab('courses')">Courses</button>
+        <button class="fd-pb repas-subtab-btn" data-sub="menus" onclick="switchRepasSubTab('menus')">Menus</button>
+        <button class="fd-pb repas-subtab-btn" data-sub="recettes" onclick="switchRepasSubTab('recettes')">Recettes</button>
       </div>
       <label class="repas-start-label">Début du planning
         <input type="date" id="repasStartDate" onchange="repasSetStartDate(this.value)">
@@ -5681,9 +5681,9 @@ function courRender() {
   const addBtnHtml = isAll ? '<button class="cour-btn-add" onclick="courOpenAddForm()">＋ Ajouter</button>' : '';
 
   const subtabsHtml = '<div class="fd-prec repas-subtabs">'
-    + '<button class="fd-pb repas-subtab-btn" data-sub="recettes" onclick="switchRepasSubTab(\'recettes\')">Recettes</button>'
-    + '<button class="fd-pb repas-subtab-btn" data-sub="menus" onclick="switchRepasSubTab(\'menus\')">Menus</button>'
     + '<button class="fd-pb repas-subtab-btn active" data-sub="courses" onclick="switchRepasSubTab(\'courses\')">Courses</button>'
+    + '<button class="fd-pb repas-subtab-btn" data-sub="menus" onclick="switchRepasSubTab(\'menus\')">Menus</button>'
+    + '<button class="fd-pb repas-subtab-btn" data-sub="recettes" onclick="switchRepasSubTab(\'recettes\')">Recettes</button>'
     + '</div>';
 
   app.innerHTML =
