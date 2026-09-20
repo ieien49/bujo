@@ -97,12 +97,12 @@ button, input, textarea, select { font-family:inherit; }
 
 /* ============ RECETTES ============ */
 .rec-list { padding:0 16px; display:flex; flex-direction:column; gap:10px; }
-.rec-row { display:flex; gap:12px; background:var(--card); border-radius:14px; padding:10px; align-items:center; }
+.rec-row { display:flex; gap:12px; background:var(--card); border-radius:14px; padding:10px; align-items:flex-start; }
 .rec-row:active { background:var(--sep-op); }
 .rec-thumb { width:60px; height:60px; border-radius:11px; flex-shrink:0; display:flex; align-items:center; justify-content:center; font-size:26px; background:var(--sep-op); overflow:hidden; }
 .rec-thumb img { width:100%; height:100%; object-fit:cover; }
-.rec-info { flex:1; min-width:0; }
-.rec-name { font-size:16px; font-weight:600; margin-bottom:3px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.rec-info { flex:1; min-width:0; align-self:center; }
+.rec-name { font-size:16px; font-weight:600; margin-bottom:3px; white-space:normal; overflow-wrap:break-word; }
 .rec-meta { font-size:12.5px; color:var(--label2); display:flex; align-items:center; gap:6px; flex-wrap:wrap; }
 .rec-badge { font-size:11px; font-weight:700; padding:2px 8px; border-radius:100px; }
 .rec-stars { color:var(--yellow); display:inline-flex; align-items:center; gap:1px; }
