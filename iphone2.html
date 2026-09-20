@@ -684,6 +684,7 @@ function recRenderChips(){
 }
 function recSetCat(c){ recActiveCat=c; recRenderChips(); recRender(); }
 function recClearSearch(){ document.getElementById('recSearchInput').value=''; recRender(); }
+function recImgFallback(imgEl){ imgEl.parentNode.innerHTML = recCatEmoji(imgEl.dataset.cat || ''); }
 
 function recRender(){
   const q=document.getElementById('recSearchInput').value.trim().toLowerCase();
@@ -696,7 +697,7 @@ function recRender(){
   const box=document.getElementById('recContent');
   if(!list.length){ box.innerHTML=emptyState('utensils','Aucune recette','Touche + pour ajouter ta première recette.'); return; }
   box.innerHTML='<div class="rec-list" style="padding-top:4px;">' + list.map(r=>{
-    const img = r.Image_url ? `<img src="${esc(r.Image_url)}" onerror="this.parentNode.textContent='${recCatEmoji(r.Categorie)}'">` : recCatEmoji(r.Categorie);
+    const img = r.Image_url ? `<img src="${esc(r.Image_url)}" data-cat="${esc(r.Categorie)}" onerror="recImgFallback(this)">` : recCatEmoji(r.Categorie);
     const temps=[r.Temps_preparation?r.Temps_preparation+' min':'',r.Temps_cuisson?'+ '+r.Temps_cuisson+' min':''].filter(Boolean).join(' ');
     return `<div class="rec-row" onclick="recOpenDetail(${r.id})">
       <div class="rec-thumb">${img}</div>
@@ -717,7 +718,7 @@ function recOpenDetail(id){
   const r=recAll.find(x=>x.id===id); if(!r) return;
   recDetailId=id;
   document.querySelector('#sheetRecDetail .t').textContent = r.Nom || 'Sans titre';
-  const img = r.Image_url ? `<img src="${esc(r.Image_url)}" onerror="this.parentNode.textContent='${recCatEmoji(r.Categorie)}'">` : recCatEmoji(r.Categorie);
+  const img = r.Image_url ? `<img src="${esc(r.Image_url)}" data-cat="${esc(r.Categorie)}" onerror="recImgFallback(this)">` : recCatEmoji(r.Categorie);
   let badges='';
   if(r.Categorie) badges+=`<span class="rec-badge ${recCatClass(r.Categorie)}">${esc(r.Categorie)}</span>`;
   if(r.Difficulte) badges+=`<span class="rec-badge cat-default">${esc(r.Difficulte)}</span>`;
