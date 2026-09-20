@@ -2126,9 +2126,9 @@ body.presentation #exitPresentBtn{ display:flex; }
 .cour-list-empty { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 60px 24px; text-align: center; color: var(--cour-text-muted); gap: 12px; }
 .cour-list-empty-icon { font-size: 40px; opacity: 0.4; }
 .cour-list-empty-text { font-size: 15px; font-weight: 300; line-height: 1.5; }
-.cour-item-card { display: flex; flex-direction: column; gap: 0; padding: 9px 13px; background: var(--cour-surface); border-radius: 12px; margin-bottom: 5px; box-shadow: var(--cour-shadow); border: 1.5px solid transparent; transition: all 0.25s ease; cursor: pointer; position: relative; overflow: hidden; animation: courSlideIn 0.2s ease both; }
+.cour-item-card { display: flex; flex-direction: column; gap: 0; padding: 9px 13px; background: var(--cour-surface); border-radius: 12px; margin-bottom: 5px; box-shadow: var(--cour-shadow); border: 1.5px solid transparent; transition: all 0.25s ease; cursor: pointer; position: relative; overflow: visible; animation: courSlideIn 0.2s ease both; }
 .cour-item-card-top { display: flex; align-items: center; gap: 10px; width: 100%; flex-wrap: wrap; }
-.cour-item-card::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 3px; background: var(--cour-accent-mid); opacity: 0; transition: opacity 0.2s; border-radius: 0 2px 2px 0; }
+.cour-item-card::before { content: ''; position: absolute; left: 0; top: 2px; bottom: 2px; width: 3px; background: var(--cour-accent-mid); opacity: 0; transition: opacity 0.2s; border-radius: 3px; }
 .cour-item-card:active { transform: scale(0.98); }
 .cour-item-card.done { background: #F9FAF7; border-color: var(--cour-border); box-shadow: none; opacity: 0.55; }
 .cour-item-card.done::before { opacity: 0 !important; }
@@ -5702,9 +5702,11 @@ function courRender() {
     + '</div>';
 
   requestAnimationFrame(() => {
-    document.querySelectorAll('#page-courses .cour-item-detail-input').forEach(courAutoResize);
-    const newListSection = document.getElementById('courListSection');
-    if (newListSection && prevScrollTop) newListSection.scrollTop = prevScrollTop;
+    requestAnimationFrame(() => {
+      document.querySelectorAll('#page-courses .cour-item-detail-input').forEach(courAutoResize);
+      const newListSection = document.getElementById('courListSection');
+      if (newListSection && prevScrollTop) newListSection.scrollTop = prevScrollTop;
+    });
   });
 }
 
