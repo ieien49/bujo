@@ -864,6 +864,7 @@ function menuRender(){
     </div>`;
   }
   document.getElementById('menuContent').innerHTML = html;
+  document.querySelectorAll('#menuContent .meal-input').forEach(menuAutoGrow);
 }
 function menuMealRow(date,moment,label,texte){
   return `<div class="meal-row">
