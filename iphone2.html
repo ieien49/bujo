@@ -218,6 +218,7 @@ button, input, textarea, select { font-family:inherit; }
       <button class="active" data-v="liste" onclick="courSetView('liste')">À acheter</button>
       <button data-v="tout" onclick="courSetView('tout')">Tous les articles</button>
     </div>
+    <div class="chipsrow" id="courMagasinChips"></div>
   </div>
   <div class="content" id="courContent"></div>
 </div>
@@ -283,6 +284,8 @@ button, input, textarea, select { font-family:inherit; }
     <div class="field-group">
       <div class="field"><label>Nom</label><input type="text" id="cfNom" placeholder="ex. Tomates"></div>
       <div class="field"><label>Détail</label><input type="text" id="cfDetail" placeholder="ex. 1 kg"></div>
+      <div class="field"><label>Magasin</label><input type="text" id="cfMagasin" placeholder="ex. Biologic" list="cfMagasinList"></div>
+      <datalist id="cfMagasinList"></datalist>
       <div class="field"><label>Favori</label><button class="toggle" id="cfFavori" onclick="this.classList.toggle('on')"></button></div>
     </div>
     <div class="field-group">
@@ -471,18 +474,19 @@ let courItems=[];        // tous les articles (table Courses)
 let courView='liste';    // 'liste' = à acheter | 'tout' = catalogue complet
 let courEditId=null;
 let courFormRayon='';
+let courActiveMagasin='';   // '' = tous les magasins
 
 async function loadCourses(){
   if(!HAS_GRIST){
     courItems=[
-      {id:1,nom:'Tomates',detail:'1 kg',favori:true,acheter:true,rayon:'Fruits et légumes',ordre:0},
-      {id:2,nom:'Pain de campagne',detail:'',favori:false,acheter:true,rayon:'Boulangerie / Pâtisserie',ordre:1},
-      {id:3,nom:'Lait demi-écrémé',detail:'1 L',favori:false,acheter:true,rayon:'Crèmerie',ordre:2},
-      {id:4,nom:'Escalopes de poulet',detail:'4 pièces',favori:false,acheter:false,rayon:'Boucherie / Charcuterie',ordre:3},
-      {id:5,nom:'Pâtes',detail:'',favori:true,acheter:false,rayon:'Épicerie salée',ordre:4},
-      {id:6,nom:'Café',detail:'',favori:false,acheter:false,rayon:'Épicerie sucrée',ordre:5},
+      {id:1,nom:'Tomates',detail:'1 kg',favori:true,acheter:true,rayon:'Fruits et légumes',magasin:'Biologic',ordre:0},
+      {id:2,nom:'Pain de campagne',detail:'',favori:false,acheter:true,rayon:'Boulangerie / Pâtisserie',magasin:'',ordre:1},
+      {id:3,nom:'Lait demi-écrémé',detail:'1 L',favori:false,acheter:true,rayon:'Crèmerie',magasin:'Grande surface',ordre:2},
+      {id:4,nom:'Escalopes de poulet',detail:'4 pièces',favori:false,acheter:false,rayon:'Boucherie / Charcuterie',magasin:'Marché',ordre:3},
+      {id:5,nom:'Pâtes',detail:'',favori:true,acheter:false,rayon:'Épicerie salée',magasin:'Grande surface',ordre:4},
+      {id:6,nom:'Café',detail:'',favori:false,acheter:false,rayon:'Épicerie sucrée',magasin:'',ordre:5},
     ];
-    courRender(); return;
+    courRenderMagasinChips(); courRender(); return;
   }
   try{
     const raw = await grist.docApi.fetchTable('Courses');
@@ -493,12 +497,30 @@ async function loadCourses(){
       favori:!!raw.favori?.[i],
       acheter:!!raw.acheter?.[i],
       rayon:String(raw.rayon?.[i]??''),
+      magasin:String(raw.magasin?.[i]??''),
       ordre:Number(raw.ordre?.[i]??i),
     }));
   }catch(e){ console.warn('Courses:',e); courItems=[]; }
+  courRenderMagasinChips();
   courRender();
 }
 function courMaxOrdre(){ return courItems.length ? Math.max(...courItems.map(r=>r.ordre||0)) : 0; }
+
+function courMagasinList(){
+  const set=new Set();
+  courItems.forEach(it=>{ if(it.magasin) set.add(it.magasin); });
+  return Array.from(set).sort((a,b)=>a.localeCompare(b,'fr'));
+}
+function courRenderMagasinChips(){
+  const box=document.getElementById('courMagasinChips');
+  const mags=courMagasinList();
+  if(courActiveMagasin && !mags.includes(courActiveMagasin)) courActiveMagasin='';
+  if(!mags.length){ box.innerHTML=''; box.style.display='none'; return; }
+  box.style.display='flex';
+  box.innerHTML = `<button class="chip ${courActiveMagasin===''?'active':''}" onclick="courSetMagasin('')">Tous</button>`
+    + mags.map(m=>`<button class="chip ${courActiveMagasin===m?'active':''}" onclick="courSetMagasin('${m.replace(/'/g,"\\'")}')">${esc(m)}</button>`).join('');
+}
+function courSetMagasin(m){ courActiveMagasin=m; courRenderMagasinChips(); courRender(); }
 
 function courSetView(v){
   courView=v;
@@ -508,8 +530,9 @@ function courSetView(v){
 
 function courRender(){
   const box=document.getElementById('courContent');
+  const byMagasin=r=>!courActiveMagasin || r.magasin===courActiveMagasin;
   if(courView==='liste'){
-    const items=courItems.filter(r=>r.acheter).sort((a,b)=> rayonIndex(a.rayon)-rayonIndex(b.rayon) || (a.ordre||0)-(b.ordre||0));
+    const items=courItems.filter(r=>r.acheter && byMagasin(r)).sort((a,b)=> rayonIndex(a.rayon)-rayonIndex(b.rayon) || (a.ordre||0)-(b.ordre||0));
     if(!items.length){ box.innerHTML=emptyState('cart','Liste vide','Ajoute un article ou passe dans « Tous les articles » pour en cocher.'); return; }
     const groups={};
     items.forEach(it=>{ (groups[it.rayon]=groups[it.rayon]||[]).push(it); });
@@ -521,13 +544,13 @@ function courRender(){
     });
     box.innerHTML=html;
   } else {
-    const items=courItems.slice().sort((a,b)=> a.nom.localeCompare(b.nom,'fr'));
+    const items=courItems.filter(byMagasin).slice().sort((a,b)=> a.nom.localeCompare(b.nom,'fr'));
     if(!items.length){ box.innerHTML=emptyState('clipboard','Aucun article','Touche le bouton + pour créer ton premier article.'); return; }
     box.innerHTML = '<div class="grouped-list" style="margin-top:6px;">' + items.map(it => courRowHtml(it,false)).join('') + '</div>';
   }
 }
 function courRowHtml(it, inList){
-  const sub=[it.detail, it.favori?'★ favori':''].filter(Boolean).join(' · ');
+  const sub=[it.detail, it.magasin, it.favori?'★ favori':''].filter(Boolean).join(' · ');
   return `<div class="swipe-wrap" data-id="${it.id}">
     <div class="swipe-actions"><button class="del" onclick="courDeleteItem(${it.id})">Supprimer</button></div>
     <div class="swipe-front row" ontouchstart="swipeStart(event)" ontouchmove="swipeMove(event)" ontouchend="swipeEnd(event)">
@@ -564,6 +587,8 @@ function courOpenForm(id){
   document.getElementById('courFormTitle').textContent = it ? 'Modifier l\u2019article' : 'Nouvel article';
   document.getElementById('cfNom').value = it ? it.nom : '';
   document.getElementById('cfDetail').value = it ? it.detail : '';
+  document.getElementById('cfMagasin').value = it ? (it.magasin||'') : '';
+  document.getElementById('cfMagasinList').innerHTML = courMagasinList().map(m=>`<option value="${esc(m)}">`).join('');
   document.getElementById('cfFavori').classList.toggle('on', !!(it && it.favori));
   courFormRayon = it ? it.rayon : '';
   document.getElementById('cfRayonGrid').innerHTML = RAYONS.map(r =>
@@ -587,6 +612,7 @@ async function courSaveItem(){
   const fields={
     nom,
     detail:document.getElementById('cfDetail').value.trim(),
+    magasin:document.getElementById('cfMagasin').value.trim() || null,
     favori:document.getElementById('cfFavori').classList.contains('on'),
     rayon:courFormRayon || null,
   };
