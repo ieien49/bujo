@@ -72,13 +72,6 @@ button, input, textarea, select { font-family:inherit; }
 .row + .row::before { content:''; position:absolute; top:0; left:14px; right:0; height:.5px; background:var(--sep); }
 .row:active { background:var(--sep-op); }
 
-/* swipe-to-delete wrapper */
-.swipe-wrap { position:relative; overflow:hidden; }
-.swipe-actions { position:absolute; top:0; right:0; bottom:0; display:flex; }
-.swipe-actions button { width:74px; border:none; color:#fff; font-size:13px; font-weight:600; cursor:pointer; }
-.swipe-actions .del { background:var(--red); }
-.swipe-front { position:relative; background:var(--card); transition:transform .18s ease; touch-action:pan-y; }
-
 /* ============ COURSES ============ */
 .chk { width:23px; height:23px; border-radius:50%; border:2px solid var(--label3); flex-shrink:0; display:flex; align-items:center; justify-content:center; transition:background .15s,border-color .15s; }
 .chk.on { background:var(--blue); border-color:var(--blue); }
@@ -292,7 +285,6 @@ button, input, textarea, select { font-family:inherit; }
       <div class="field-full"><label>Rayon</label></div>
       <div class="rayon-picker-grid" id="cfRayonGrid"></div>
     </div>
-    <button onclick="courDeleteFromForm()" id="cfDelBtn" style="display:none;width:100%;padding:13px;background:var(--card);border:none;border-radius:12px;color:var(--red);font-size:16px;font-weight:600;">Supprimer l'article</button>
   </div>
 </div>
 
@@ -559,18 +551,15 @@ function courRender(){
 }
 function courRowHtml(it, inList){
   const sub=[it.detail, (it.magasin||[]).join(', '), it.favori?'★ favori':''].filter(Boolean).join(' · ');
-  return `<div class="swipe-wrap" data-id="${it.id}">
-    <div class="swipe-actions"><button class="del" onclick="courDeleteItem(${it.id})">Supprimer</button></div>
-    <div class="swipe-front row" ontouchstart="swipeStart(event)" ontouchmove="swipeMove(event)" ontouchend="swipeEnd(event)">
-      <div class="chk ${it.acheter?'on':''}" onclick="event.stopPropagation();courToggleAcheter(${it.id})">
-        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 13l4 4L19 7"/></svg>
-      </div>
-      <div class="row-body" onclick="courOpenForm(${it.id})">
-        <div class="row-title">${esc(it.nom)}</div>
-        ${sub?`<div class="row-sub">${esc(sub)}</div>`:''}
-      </div>
-      <div class="row-chevron">›</div>
+  return `<div class="row" data-id="${it.id}">
+    <div class="chk ${it.acheter?'on':''}" onclick="event.stopPropagation();courToggleAcheter(${it.id})">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 13l4 4L19 7"/></svg>
     </div>
+    <div class="row-body" onclick="courOpenForm(${it.id})">
+      <div class="row-title">${esc(it.nom)}</div>
+      ${sub?`<div class="row-sub">${esc(sub)}</div>`:''}
+    </div>
+    <div class="row-chevron">›</div>
   </div>`;
 }
 function emptyState(iconName,t,s){ return `<div class="empty-state"><span class="ico">${icon(iconName,40)}</span><div class="t">${esc(t)}</div><div class="s">${esc(s)}</div></div>`; }
@@ -582,13 +571,6 @@ async function courToggleAcheter(id){
   try{ await gristApply([['UpdateRecord','Courses',id,{acheter:it.acheter}]]); }
   catch(e){ it.acheter=!it.acheter; courRender(); }
 }
-async function courDeleteItem(id){
-  courItems=courItems.filter(x=>x.id!==id);
-  courRender();
-  try{ await gristApply([['RemoveRecord','Courses',id]]); toast('Article supprimé'); }
-  catch(e){ await loadCourses(); }
-}
-
 function courOpenForm(id){
   courEditId=id;
   const it = id ? courItems.find(x=>x.id===id) : null;
@@ -602,7 +584,6 @@ function courOpenForm(id){
   document.getElementById('cfRayonGrid').innerHTML = RAYONS.map(r =>
     `<div class="rayon-opt ${r.id===courFormRayon?'on':''}" onclick="courPickRayon('${r.id.replace(/'/g,"\\'")}')"><span class="e">${icon(r.id,20)}</span>${esc(r.id)}</div>`
   ).join('');
-  document.getElementById('cfDelBtn').style.display = it ? 'block' : 'none';
   openSheet('sheetCourForm');
   setTimeout(()=>document.getElementById('cfNom').focus(),260);
 }
@@ -638,33 +619,6 @@ async function courSaveItem(){
   }catch(e){}
   btn.disabled=false; btn.textContent='Enregistrer';
 }
-async function courDeleteFromForm(){
-  if(!courEditId) return;
-  if(!confirm('Supprimer cet article ?')) return;
-  await courDeleteItem(courEditId);
-  closeAllSheets();
-}
-
-/* --- swipe-to-delete tactile --- */
-let swipeState=null;
-function swipeStart(e){
-  const wrap=e.currentTarget.closest('.swipe-wrap');
-  swipeState={wrap, x0:e.touches[0].clientX, dx:0};
-}
-function swipeMove(e){
-  if(!swipeState) return;
-  const dx=e.touches[0].clientX - swipeState.x0;
-  swipeState.dx=dx;
-  if(dx<0){ e.currentTarget.style.transform=`translateX(${Math.max(dx,-74)}px)`; }
-}
-function swipeEnd(e){
-  if(!swipeState) return;
-  const front=e.currentTarget;
-  if(swipeState.dx < -40){ front.style.transform='translateX(-74px)'; }
-  else { front.style.transform='translateX(0)'; }
-  swipeState=null;
-}
-
 /* =====================================================================
    ONGLET RECETTES
 ===================================================================== */
