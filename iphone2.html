@@ -459,7 +459,7 @@ function switchTab(tab){
   document.querySelectorAll('.tabbtn').forEach(b=>b.classList.remove('active'));
   document.getElementById('tb-'+tab).classList.add('active');
   document.getElementById('fabBtn').style.display = (tab==='menus'||tab==='collections') ? 'none' : 'flex';
-  if(tab==='menus') document.querySelectorAll('#menuContent .meal-input').forEach(menuAutoGrow);
+  if(tab==='menus'){ document.querySelectorAll('#menuContent .meal-input').forEach(menuAutoGrow); menuScrollToToday(); }
 }
 function fabAction(){
   if(currentTab==='courses') courOpenForm(null);
@@ -870,7 +870,7 @@ function menuRender(){
     const isToday = date===t;
     const rMidi=repasFind(date,'midi');
     const rSoir=repasFind(date,'soir');
-    html += `<div class="day-card">
+    html += `<div class="day-card" data-date="${date}">
       <div class="day-hdr">
         <span class="dname">${JOURS[d.getDay()]}</span>
         <span class="ddate">${d.getDate()} ${MOIS[d.getMonth()]}</span>
@@ -882,6 +882,12 @@ function menuRender(){
   }
   document.getElementById('menuContent').innerHTML = html;
   document.querySelectorAll('#menuContent .meal-input').forEach(menuAutoGrow);
+  menuScrollToToday();
+}
+function menuScrollToToday(){
+  if(menuWeekOffset!==0) return; // seule la semaine courante contient "aujourd'hui"
+  const card=document.querySelector(`#menuContent .day-card[data-date="${todayISO()}"]`);
+  if(card) card.scrollIntoView({block:'start'});
 }
 function menuMealRow(date,moment,label,texte){
   return `<div class="meal-row">
