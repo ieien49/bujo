@@ -141,6 +141,19 @@ button, input, textarea, select { font-family:inherit; }
 .meal-input::placeholder { color:var(--label3); }
 .meal-pick { flex-shrink:0; width:30px; height:30px; border-radius:50%; background:var(--sep-op); border:none; color:var(--blue); font-size:14px; display:flex; align-items:center; justify-content:center; cursor:pointer; margin-top:4px; }
 
+/* ============ COLLECTIONS ============ */
+.col-tag-mob { font-size:10.5px; font-weight:600; color:var(--label2); background:var(--sep-op); border-radius:100px; padding:2px 8px; }
+.col-swatch-dot { width:22px; height:22px; border-radius:50%; flex-shrink:0; border:.5px solid var(--sep); }
+.col-swatch-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; padding:10px 16px 18px; }
+.col-swatch-item { aspect-ratio:1; border-radius:14px; display:flex; align-items:flex-end; padding:8px; }
+.col-swatch-name { font-size:11px; font-weight:700; color:#fff; text-shadow:0 1px 3px rgba(0,0,0,.5); }
+.col-table-wrap { overflow-x:auto; margin:10px 16px 18px; -webkit-overflow-scrolling:touch; }
+.col-table { width:100%; border-collapse:collapse; font-size:13px; background:var(--card); border-radius:14px; overflow:hidden; }
+.col-table th { text-align:left; font-size:11px; text-transform:uppercase; letter-spacing:.02em; color:var(--label2); padding:9px 12px; white-space:nowrap; border-bottom:.5px solid var(--sep); }
+.col-table td { padding:9px 12px; white-space:nowrap; border-bottom:.5px solid var(--sep-op); color:var(--label); }
+.col-table td.td-titre { font-weight:600; white-space:normal; }
+.col-table tr:last-child td { border-bottom:none; }
+
 /* ============ TABBAR ============ */
 .tabbar { flex-shrink:0; display:flex; background:var(--bar-bg); backdrop-filter:blur(20px); -webkit-backdrop-filter:blur(20px); border-top:.5px solid var(--sep); padding-bottom:env(safe-area-inset-bottom,0px); position:relative; z-index:30; }
 .tabbtn { flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; padding:6px 0 4px; border:none; background:none; color:var(--label3); cursor:pointer; }
@@ -243,6 +256,15 @@ button, input, textarea, select { font-family:inherit; }
   <div class="content" id="menuContent"></div>
 </div>
 
+<!-- ============ ONGLET COLLECTIONS ============ -->
+<div class="tabpage" id="tab-collections">
+  <div class="topbar">
+    <div class="topbar-title">Collections</div>
+    <div class="chipsrow" id="colChips"></div>
+  </div>
+  <div class="content" id="colContent"></div>
+</div>
+
 <!-- ============ TAB BAR ============ -->
 <div class="tabbar">
   <button class="tabbtn active" id="tb-courses" onclick="switchTab('courses')">
@@ -256,6 +278,10 @@ button, input, textarea, select { font-family:inherit; }
   <button class="tabbtn" id="tb-menus" onclick="switchTab('menus')">
     <svg width="25" height="25" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="4.5" width="17" height="16" rx="2.4"/><path d="M3.5 9.3h17M8 3v3M16 3v3"/><path d="M7.8 13.2h2.2M7.8 16.3h2.2M11.9 13.2h2.2M11.9 16.3h2.2M16 13.2h1.6M16 16.3h1.6"/></svg>
     <span class="lbl">Menus</span>
+  </button>
+  <button class="tabbtn" id="tb-collections" onclick="switchTab('collections')">
+    <svg width="25" height="25" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="3.5" width="7.5" height="7.5" rx="1.6"/><rect x="13" y="3.5" width="7.5" height="7.5" rx="1.6"/><rect x="3.5" y="13" width="7.5" height="7.5" rx="1.6"/><rect x="13" y="13" width="7.5" height="7.5" rx="1.6"/></svg>
+    <span class="lbl">Collections</span>
   </button>
 </div>
 
@@ -381,6 +407,7 @@ const ICON_PATHS = {
   search: '<circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/>',
   close: '<path d="M6 6l12 12M18 6 6 18"/>',
   box: '<path d="M3.5 8L12 4l8.5 4L12 12 3.5 8z"/><path d="M3.5 8v8L12 20l8.5-4V8"/><path d="M12 12v8"/>',
+  link: '<path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>',
   'Fruits et légumes': '<path d="M12 8c-3 0-5.5 2.7-5.5 6.2C6.5 17.8 8.8 20 11 20c.7 0 1-.3 1-.3s.3.3 1 .3c2.2 0 4.5-2.2 4.5-5.8C17.5 10.7 15 8 12 8z"/><path d="M12 8V6c0-1 .6-2 2-2.3"/>',
   'Boulangerie / Pâtisserie': '<path d="M4 13c0-3.3 3.6-6 8-6s8 2.7 8 6-3.6 5-8 5-8-1.7-8-5z"/><path d="M9 10.5c.5 1 .5 2 0 3M12 10c.5 1.2.5 2.6 0 3.8M15 10.5c.5 1 .5 2 0 3"/>',
   'Crèmerie': '<path d="M8 4h8l1 3v12a1 1 0 0 1-1 1H8a1 1 0 0 1-1-1V7l1-3z"/><path d="M8 4l4 3 4-3M7 10h10"/>',
@@ -431,7 +458,7 @@ function switchTab(tab){
   document.getElementById('tab-'+tab).classList.add('active');
   document.querySelectorAll('.tabbtn').forEach(b=>b.classList.remove('active'));
   document.getElementById('tb-'+tab).classList.add('active');
-  document.getElementById('fabBtn').style.display = (tab==='menus') ? 'none' : 'flex';
+  document.getElementById('fabBtn').style.display = (tab==='menus'||tab==='collections') ? 'none' : 'flex';
   if(tab==='menus') document.querySelectorAll('#menuContent .meal-input').forEach(menuAutoGrow);
 }
 function fabAction(){
@@ -921,10 +948,227 @@ function pickRecipeForMeal(recipeId){
 }
 
 /* =====================================================================
+   ONGLET COLLECTIONS (lecture seule — respecte la vue configurée
+   sur chaque collection dans le widget principal : liste / cards / table)
+===================================================================== */
+let colsAll=[];       // table Collections
+let colItemsAll=[];   // table Items
+let colActiveId=null;
+
+function colIconHtml(svgCode, size){
+  if (svgCode && svgCode.trim().startsWith('<svg')) {
+    let out = svgCode.replace(/(fill|stroke)\s*=\s*"(#000000|#000|black|rgb\(0,\s*0,\s*0\))"/gi, '$1="currentColor"');
+    out = out.replace(/<svg([^>]*)>/i, (m, attrs) => {
+      const clean = attrs.replace(/\swidth="[^"]*"/gi,'').replace(/\sheight="[^"]*"/gi,'').replace(/\sclass="[^"]*"/gi,'');
+      const hasFill = /\bfill\s*=/i.test(clean), hasStroke = /\bstroke\s*=/i.test(clean);
+      const defaultColor = (!hasFill && !hasStroke) ? ' fill="currentColor"' : '';
+      return `<svg${clean} width="${size}" height="${size}"${defaultColor}>`;
+    });
+    return out;
+  }
+  return icon('box', size);
+}
+function colThumbIcon(theme){ return theme==='liens' ? 'link' : 'clipboard'; }
+function colThumbHtml(it, theme){
+  if (it.cover) return `<img src="${esc(it.cover)}" loading="lazy" onerror="this.remove()">`;
+  return icon(colThumbIcon(theme), 22);
+}
+function colTagsHtml(tagStr){
+  if(!tagStr) return '';
+  const tags = tagStr.split(',').map(t=>t.trim()).filter(Boolean);
+  if(!tags.length) return '';
+  return '<div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:3px">' + tags.map(t=>`<span class="col-tag-mob">${esc(t)}</span>`).join('') + '</div>';
+}
+function colTagsPlain(tagStr){
+  return (tagStr||'').split(',').map(t=>t.trim()).filter(Boolean).join(', ');
+}
+
+async function loadCollectionsMobile(){
+  if(!HAS_GRIST){
+    colsAll=[
+      {id:1,nom:'Courses maison',theme:'listes', icone:'',vue:'liste',ordre:0},
+      {id:2,nom:'Liens utiles',  theme:'liens',  icone:'',vue:'cards',ordre:1},
+      {id:3,nom:'Palette déco',  theme:'couleurs',icone:'',vue:'cards',ordre:2},
+    ];
+    colItemsAll=[
+      {id:1,collection:1,titre:'Lait',   texte:'',url:'',cover:'',tag:'',fait:false,ordre:0},
+      {id:2,collection:1,titre:'Farine', texte:'',url:'',cover:'',tag:'pâtisserie',fait:true,ordre:1},
+      {id:3,collection:2,titre:'Grist Docs',texte:'',url:'https://support.getgrist.com',cover:'',tag:'grist',fait:false,ordre:0},
+      {id:4,collection:3,titre:'Terre cuite',texte:'',url:'#c17a5a',cover:'',tag:'chaud',fait:false,ordre:0},
+    ];
+    if(!colActiveId && colsAll.length) colActiveId=colsAll[0].id;
+    colRenderChips(); colRender(); return;
+  }
+  try{
+    const [rc, ri] = await Promise.all([
+      grist.docApi.fetchTable('Collections'),
+      grist.docApi.fetchTable('Items')
+    ]);
+    colsAll = (rc.id||[]).map((id,i)=>{
+      const theme = String(rc.theme?.[i] || 'listes');
+      let vue = String(rc.vue?.[i] || '');
+      if(!vue) vue = (theme==='listes'||theme==='liens') ? 'liste' : 'cards';
+      return { id, nom:String(rc.nom?.[i]||''), theme, icone:String(rc.icone?.[i]||''), vue, ordre:Number(rc.ordre?.[i]??i) };
+    }).sort((a,b)=>a.ordre-b.ordre);
+    colItemsAll = (ri.id||[]).map((id,i)=>({
+      id, collection:Number(ri.collection?.[i]||0),
+      titre:String(ri.titre?.[i]||''), texte:String(ri.texte?.[i]||''),
+      url:String(ri.url?.[i]||''), cover:String(ri.cover?.[i]||''),
+      tag:String(ri.tag?.[i]||''), fait:!!ri.fait?.[i], ordre:Number(ri.ordre?.[i]??i),
+    }));
+  }catch(e){ console.warn('Collections/Items:',e); colsAll=[]; colItemsAll=[]; }
+  if(colActiveId && !colsAll.some(c=>c.id===colActiveId)) colActiveId=null;
+  if(!colActiveId && colsAll.length) colActiveId=colsAll[0].id;
+  colRenderChips(); colRender();
+}
+
+function colRenderChips(){
+  const box=document.getElementById('colChips');
+  if(!colsAll.length){ box.innerHTML=''; return; }
+  box.innerHTML = colsAll.map(c=>{
+    const count = colItemsAll.filter(it=>it.collection===c.id).length;
+    return `<button class="chip ${colActiveId===c.id?'active':''}" onclick="colSelect(${c.id})">${colIconHtml(c.icone,14)} ${esc(c.nom)}${count?` <span style="opacity:.6">${count}</span>`:''}</button>`;
+  }).join('');
+}
+function colSelect(id){ if(colActiveId===id) return; colActiveId=id; colRenderChips(); colRender(); }
+
+function colRender(){
+  const box=document.getElementById('colContent');
+  if(!colsAll.length){ box.innerHTML=emptyState('box','Aucune collection','Crée une collection depuis le widget principal.'); return; }
+  const col = colsAll.find(c=>c.id===colActiveId);
+  if(!col){ box.innerHTML=''; return; }
+  const colItems = colItemsAll.filter(it=>it.collection===col.id).sort((a,b)=>(a.ordre??0)-(b.ordre??0));
+  if(!colItems.length){ box.innerHTML=emptyState('box','Collection vide','Aucun élément dans cette collection pour l’instant.'); return; }
+  if(col.vue==='table') box.innerHTML = colRenderTable(colItems, col.theme);
+  else if(col.vue==='cards') box.innerHTML = colRenderCards(colItems, col.theme);
+  else box.innerHTML = colRenderListe(colItems, col.theme);
+}
+
+function colRenderListe(colItems, theme){
+  const rows = colItems.map(it=>{
+    if(theme==='listes'){
+      return `<div class="row">
+        <div class="chk${it.fait?' on':''}"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 13l4 4L19 7"/></svg></div>
+        <div class="row-body">
+          <div class="row-title${it.fait?' done':''}">${esc(it.titre||'Sans titre')}</div>
+          ${colTagsHtml(it.tag)}
+        </div>
+      </div>`;
+    }
+    if(theme==='liens'){
+      const urlDisplay = it.url ? it.url.replace(/^https?:\/\//,'').split('/')[0] : '';
+      return `<div class="row"${it.url?` onclick="window.open('${esc(it.url)}','_blank')"`:''}>
+        <span style="display:flex;color:var(--label2)">${icon('link',18)}</span>
+        <div class="row-body">
+          <div class="row-title">${esc(it.titre||it.url||'Sans titre')}</div>
+          ${urlDisplay?`<div class="row-sub">${esc(urlDisplay)}</div>`:''}
+          ${colTagsHtml(it.tag)}
+        </div>
+        ${it.url?'<div class="row-chevron">›</div>':''}
+      </div>`;
+    }
+    if(theme==='couleurs'){
+      const hex=(it.url||'').trim();
+      return `<div class="row">
+        <div class="col-swatch-dot" style="background:${hex||'var(--sep-op)'}"></div>
+        <div class="row-body">
+          <div class="row-title">${esc(it.titre||'Sans nom')}</div>
+          ${hex?`<div class="row-sub">${esc(hex)}</div>`:''}
+        </div>
+      </div>`;
+    }
+    const preview=(it.texte||'').replace(/<[^>]+>/g,'').trim().substring(0,80);
+    return `<div class="row">
+      <span style="display:flex;color:var(--label2)">${colThumbHtml(it,theme)}</span>
+      <div class="row-body">
+        <div class="row-title">${esc(it.titre||'Sans titre')}</div>
+        ${preview?`<div class="row-sub">${esc(preview)}${(it.texte||'').length>80?'…':''}</div>`:''}
+        ${colTagsHtml(it.tag)}
+      </div>
+    </div>`;
+  }).join('');
+  return '<div class="grouped-list" style="margin-top:10px;">' + rows + '</div>';
+}
+
+function colRenderCards(colItems, theme){
+  if(theme==='couleurs'){
+    const html = colItems.map(it=>{
+      const hex=(it.url||'').trim()||'#ccc';
+      return `<div class="col-swatch-item" style="background:${hex}"><span class="col-swatch-name">${esc(it.titre||'Sans nom')}</span></div>`;
+    }).join('');
+    return '<div class="col-swatch-grid">' + html + '</div>';
+  }
+  const html = colItems.map(it=>{
+    let name, meta='';
+    if(theme==='listes'){
+      name = `<span style="${it.fait?'text-decoration:line-through;color:var(--label3)':''}">${esc(it.titre||'Sans titre')}</span>`;
+    } else if(theme==='liens'){
+      name = esc(it.titre||it.url||'Sans titre');
+      meta = it.url ? it.url.replace(/^https?:\/\//,'').split('/')[0] : '';
+    } else {
+      name = esc(it.titre||'Sans titre');
+      meta = (it.texte||'').replace(/<[^>]+>/g,'').trim().substring(0,70);
+    }
+    return `<div class="rec-row"${theme==='liens'&&it.url?` onclick="window.open('${esc(it.url)}','_blank')"`:''}>
+      <div class="rec-thumb">${colThumbHtml(it,theme)}</div>
+      <div class="rec-info">
+        <div class="rec-name">${name}</div>
+        ${meta?`<div class="rec-meta">${esc(meta)}</div>`:''}
+        ${colTagsHtml(it.tag)}
+      </div>
+    </div>`;
+  }).join('');
+  return '<div class="rec-list" style="padding-top:10px;">' + html + '</div>';
+}
+
+function colRenderTable(colItems, theme){
+  let head='', rows='';
+  if(theme==='listes'){
+    head = '<th style="width:28px"></th><th>Titre</th><th>Tag</th>';
+    rows = colItems.map(it=>`<tr>
+      <td>${it.fait?'✓':''}</td>
+      <td class="td-titre" style="${it.fait?'text-decoration:line-through;color:var(--label3)':''}">${esc(it.titre||'Sans titre')}</td>
+      <td>${esc(colTagsPlain(it.tag))}</td>
+    </tr>`).join('');
+  } else if(theme==='liens'){
+    head = '<th>Titre</th><th>URL</th><th>Tag</th>';
+    rows = colItems.map(it=>{
+      const url = it.url ? it.url.replace(/^https?:\/\//,'').split('/')[0] : '';
+      return `<tr>
+        <td class="td-titre">${esc(it.titre||url||'Sans titre')}</td>
+        <td>${it.url?`<a href="${esc(it.url)}" target="_blank">${esc(url)}</a>`:''}</td>
+        <td>${esc(colTagsPlain(it.tag))}</td>
+      </tr>`;
+    }).join('');
+  } else if(theme==='couleurs'){
+    head = '<th style="width:28px"></th><th>Nom</th><th>Hex</th>';
+    rows = colItems.map(it=>{
+      const hex=(it.url||'').trim();
+      return `<tr>
+        <td><span class="col-swatch-dot" style="width:16px;height:16px;background:${hex||'var(--sep-op)'}"></span></td>
+        <td class="td-titre">${esc(it.titre||'Sans nom')}</td>
+        <td>${esc(hex)}</td>
+      </tr>`;
+    }).join('');
+  } else {
+    head = '<th>Titre</th><th>Aperçu</th><th>Tag</th>';
+    rows = colItems.map(it=>{
+      const preview=(it.texte||'').replace(/<[^>]+>/g,'').trim().substring(0,60);
+      return `<tr>
+        <td class="td-titre">${esc(it.titre||'Sans titre')}</td>
+        <td>${esc(preview)}${preview&&(it.texte||'').length>60?'…':''}</td>
+        <td>${esc(colTagsPlain(it.tag))}</td>
+      </tr>`;
+    }).join('');
+  }
+  return `<div class="col-table-wrap"><table class="col-table"><thead><tr>${head}</tr></thead><tbody>${rows}</tbody></table></div>`;
+}
+
+/* =====================================================================
    INIT
 ===================================================================== */
 async function boot(){
-  await Promise.all([loadCourses(), loadRecettes(), loadRepas()]);
+  await Promise.all([loadCourses(), loadRecettes(), loadRepas(), loadCollectionsMobile()]);
 }
 if(HAS_GRIST){
   (async () => {
