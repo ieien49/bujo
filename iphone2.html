@@ -955,6 +955,42 @@ let colsAll=[];       // table Collections
 let colItemsAll=[];   // table Items
 let colActiveId=null;
 
+/* ── Paramétrage partagé avec index (table Grist "Config" + profils invités) ── */
+let CFG={};
+const urlParams = new URLSearchParams(location.search);
+const guestSlug = urlParams.get('vue');
+let guestProfile = null;
+function cfgOn(key){ return CFG[key] !== 'false'; } // défaut = activé
+function getGuestProfiles(){ try{ return JSON.parse(CFG.guest_profiles||'[]'); }catch(e){ return []; } }
+function resolveGuestProfile(){ guestProfile = guestSlug ? (getGuestProfiles().find(p=>p.slug===guestSlug) || null) : null; }
+async function loadConfigMobile(){
+  if(!HAS_GRIST){ resolveGuestProfile(); return; }
+  try{
+    const raw = await grist.docApi.fetchTable('Config');
+    (raw.cle||[]).forEach((k,i)=>{ CFG[k]=String(raw.valeur?.[i]??''); });
+  }catch(e){ console.warn('Config:',e); }
+  resolveGuestProfile();
+}
+function applyTabVisibilityMobile(){
+  let repasOn = cfgOn('repas_on');
+  let collectionsOn = cfgOn('collections_on');
+  if(guestProfile){
+    repasOn = repasOn && (guestProfile.tabs||[]).includes('repas');
+    collectionsOn = collectionsOn && (guestProfile.tabs||[]).includes('collections');
+  }
+  ['tb-courses','tab-courses','tb-recettes','tab-recettes','tb-menus','tab-menus'].forEach(id=>{
+    document.getElementById(id).style.display = repasOn ? '' : 'none';
+  });
+  ['tb-collections','tab-collections'].forEach(id=>{
+    document.getElementById(id).style.display = collectionsOn ? '' : 'none';
+  });
+  const vis = { courses:repasOn, recettes:repasOn, menus:repasOn, collections:collectionsOn };
+  if(!vis[currentTab]){
+    const next = Object.keys(vis).find(t=>vis[t]);
+    if(next) switchTab(next);
+  }
+}
+
 function colIconHtml(svgCode, size){
   if (svgCode && svgCode.trim().startsWith('<svg')) {
     let out = svgCode.replace(/(fill|stroke)\s*=\s*"(#000000|#000|black|rgb\(0,\s*0,\s*0\))"/gi, '$1="currentColor"');
@@ -986,15 +1022,15 @@ function colTagsPlain(tagStr){
 async function loadCollectionsMobile(){
   if(!HAS_GRIST){
     colsAll=[
-      {id:1,nom:'Courses maison',theme:'listes', icone:'',vue:'liste',ordre:0},
-      {id:2,nom:'Liens utiles',  theme:'liens',  icone:'',vue:'cards',ordre:1},
-      {id:3,nom:'Palette déco',  theme:'couleurs',icone:'',vue:'cards',ordre:2},
+      {id:'g1',nom:'Courses maison',theme:'listes', icone:'',vue:'liste',ordre:0},
+      {id:'g2',nom:'Liens utiles',  theme:'liens',  icone:'',vue:'cards',ordre:1},
+      {id:'g3',nom:'Palette déco',  theme:'couleurs',icone:'',vue:'cards',ordre:2},
     ];
     colItemsAll=[
-      {id:1,collection:1,titre:'Lait',   texte:'',url:'',cover:'',tag:'',fait:false,ordre:0},
-      {id:2,collection:1,titre:'Farine', texte:'',url:'',cover:'',tag:'pâtisserie',fait:true,ordre:1},
-      {id:3,collection:2,titre:'Grist Docs',texte:'',url:'https://support.getgrist.com',cover:'',tag:'grist',fait:false,ordre:0},
-      {id:4,collection:3,titre:'Terre cuite',texte:'',url:'#c17a5a',cover:'',tag:'chaud',fait:false,ordre:0},
+      {id:1,collection:'g1',titre:'Lait',   texte:'',url:'',cover:'',tag:'',fait:false,ordre:0},
+      {id:2,collection:'g1',titre:'Farine', texte:'',url:'',cover:'',tag:'pâtisserie',fait:true,ordre:1},
+      {id:3,collection:'g2',titre:'Grist Docs',texte:'',url:'https://support.getgrist.com',cover:'',tag:'grist',fait:false,ordre:0},
+      {id:4,collection:'g3',titre:'Terre cuite',texte:'',url:'#c17a5a',cover:'',tag:'chaud',fait:false,ordre:0},
     ];
     if(!colActiveId && colsAll.length) colActiveId=colsAll[0].id;
     colRenderChips(); colRender(); return;
@@ -1008,10 +1044,12 @@ async function loadCollectionsMobile(){
       const theme = String(rc.theme?.[i] || 'listes');
       let vue = String(rc.vue?.[i] || '');
       if(!vue) vue = (theme==='listes'||theme==='liens') ? 'liste' : 'cards';
-      return { id, nom:String(rc.nom?.[i]||''), theme, icone:String(rc.icone?.[i]||''), vue, ordre:Number(rc.ordre?.[i]??i) };
+      return { id:'g'+id, nom:String(rc.nom?.[i]||''), theme, icone:String(rc.icone?.[i]||''), vue, ordre:Number(rc.ordre?.[i]??i) };
     }).sort((a,b)=>a.ordre-b.ordre);
+    // Profil invité : restreint aux collections cochées dans index (même format d'id "gN")
+    if (guestProfile) colsAll = colsAll.filter(c => (guestProfile.cols||[]).includes(c.id));
     colItemsAll = (ri.id||[]).map((id,i)=>({
-      id, collection:Number(ri.collection?.[i]||0),
+      id, collection:'g'+(ri.collection?.[i]||0),
       titre:String(ri.titre?.[i]||''), texte:String(ri.texte?.[i]||''),
       url:String(ri.url?.[i]||''), cover:String(ri.cover?.[i]||''),
       tag:String(ri.tag?.[i]||''), fait:!!ri.fait?.[i], ordre:Number(ri.ordre?.[i]??i),
@@ -1168,7 +1206,9 @@ function colRenderTable(colItems, theme){
    INIT
 ===================================================================== */
 async function boot(){
+  await loadConfigMobile();
   await Promise.all([loadCourses(), loadRecettes(), loadRepas(), loadCollectionsMobile()]);
+  applyTabVisibilityMobile();
 }
 if(HAS_GRIST){
   (async () => {
