@@ -747,6 +747,8 @@ select.cfilt { cursor: pointer; }
 }
 .wk-kanban-chk.checked { background: var(--accent); border-color: var(--accent); }
 .wk-kanban-name { flex: 1; word-break: break-word; }
+.wk-kanban-card:hover .turgent-btn { opacity: 1; }
+.wk-kanban-card .turgent-btn { margin-top: 1px; }
 .wk-kanban-body { flex: 1; min-width: 0; }
 .wk-kanban-late-date { font-size: 10.5px; color: var(--accent); margin-top: 2px; }
 .wk-kanban-fixed { padding: 8px; display: flex; flex-direction: column; gap: 4px; border-bottom: 1px dashed var(--border); margin: 0 8px; }
@@ -4188,6 +4190,10 @@ function tHTML(t,i,age,dateRight,late){
 }
 
 
+function wkUrgentBtn(t, idx){
+  return `<button class="turgent-btn${t.urgent?' on':''}" onclick="toggleUrgentTask(event,${idx})" title="${t.urgent?'Retirer l\'urgence':'Marquer comme urgent'}"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg></button>`;
+}
+
 // ══════════════════════════════════════════════════════
 //  COLONNE AGENDA SEMAINE (droite bujo)
 // ══════════════════════════════════════════════════════
@@ -4725,6 +4731,7 @@ function renderWeekKanban(){
         <div class="wk-kanban-name">${esc(t.name)}</div>
         <div class="wk-kanban-late-date">${dayLabel(t.date).lbl}</div>
       </div>
+      ${wkUrgentBtn(t, idx)}
     </div>`;
   }).join('');
   html += `</div></div>`;
@@ -4766,6 +4773,7 @@ function renderWeekKanban(){
       return `<div class="wk-kanban-card${t.done?' done':''}${t.urgent?' urgent':''}" data-task-id="${t.id}" ondblclick="openBmod(${idx})">
         <div class="wk-kanban-chk${t.done?' checked':''}" onclick="event.stopPropagation();toggleT(${idx})"></div>
         <div class="wk-kanban-name">${esc(t.name)}</div>
+        ${wkUrgentBtn(t, idx)}
       </div>`;
     }).join('');
     html += `</div></div>`;
