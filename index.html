@@ -3045,6 +3045,10 @@ select.cour-input-field { -webkit-appearance: menulist; appearance: menulist; }
       <span class="wcfg-tog-label">Projets</span>
       <div class="wcfg-tog-sw" id="wcfg-tog-projet_on"></div>
     </div>
+    <div class="wcfg-tog-row" onclick="wcfgToggle('week_weekend_on')">
+      <span class="wcfg-tog-label">Afficher samedi et dimanche (Cette semaine)</span>
+      <div class="wcfg-tog-sw" id="wcfg-tog-week_weekend_on"></div>
+    </div>
 
     <div class="wcfg-section-title">Colonnes Bujo</div>
     <div class="wcfg-tog-row" onclick="wcfgToggle('col_cal_on')">
@@ -3265,7 +3269,7 @@ function applyConfigValues() {
 // ══════════════════════════════════════════════════════
 let wcfgRowIds = {};
 let wcfgSaveT = null;
-const WCFG_TOGGLE_KEYS = ['bujo_on','lectures_on','collections_on','outliner_on','mindmap_on','kanban_on','repas_on','bday_on','projet_on','col_cal_on','col_week_on'];
+const WCFG_TOGGLE_KEYS = ['bujo_on','lectures_on','collections_on','outliner_on','mindmap_on','kanban_on','repas_on','bday_on','projet_on','col_cal_on','col_week_on','week_weekend_on'];
 const WCFG_ALL_KEYS = ['titre','accent','label_bujo','label_lectures','label_collections','label_outliner','label_mindmap','label_kanban','label_repas','default_bujo_view','tab_order','guest_profiles', ...WCFG_TOGGLE_KEYS];
 
 const urlParams = new URLSearchParams(location.search);
@@ -4698,7 +4702,15 @@ function addNoDateTask(inputEl){
 function renderWeekKanban(){
   // Fenêtre glissante : aujourd'hui + 3 jours suivants (les retards ont leur propre colonne)
   const mon=new Date(today);
-  const nextMon=new Date(mon); nextMon.setDate(mon.getDate()+4);
+  const nextMon=new Date(mon); nextMon.setDate(mon.getDate()+7);
+  // Jours affichés : aujourd'hui + 3 suivants (samedi/dimanche ignorés si l'option est désactivée)
+  const showWE = cfgOn('week_weekend_on');
+  const kDays = [new Date(today)];
+  for (let i=1; kDays.length<4 && i<15; i++){
+    const dd = new Date(today); dd.setDate(today.getDate()+i);
+    if (!showWE && (dd.getDay()===0 || dd.getDay()===6)) continue;
+    kDays.push(dd);
+  }
   let html = `<div class="wk-kanban">`;
 
   const lateTasks = tasks.filter(t => isLate(t) && (!t.projet || !cfgOn('projet_on'))).sort((a,b)=>a.date.localeCompare(b.date));
@@ -4731,8 +4743,7 @@ function renderWeekKanban(){
     });
   }
 
-  for (let d=0; d<4; d++){
-    const day = new Date(mon); day.setDate(mon.getDate()+d);
+  for (const day of kDays){
     const ds = `${day.getFullYear()}-${pad(day.getMonth()+1)}-${pad(day.getDate())}`;
     const {lbl} = dayLabel(ds);
     const dayTasks = tasks.filter(t=>!t.bday && t.date===ds && (!t.projet || !cfgOn('projet_on')));
