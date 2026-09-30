@@ -4489,8 +4489,9 @@ const todayB = cfgOn('bday_on') ? tasks.filter(t=>t.bday&&bdayNext(t)?.ds===toda
   document.getElementById('bujoWeekCol').style.display = kanbanFull ? 'none' : (cfgOn('col_week_on') ? '' : 'none');
 
   const pageBujoEl = document.getElementById('page-bujo');
-  pageBujoEl.classList.toggle('bujo-kanban-full', kanbanFull);
-  if (!kanbanFull && bujoSidebarOpen) { bujoSidebarOpen = false; pageBujoEl.classList.remove('bujo-sidebar-open'); }
+  // Colonne de gauche toujours visible (seule la droite est masquée en Kanban)
+  pageBujoEl.classList.remove('bujo-kanban-full', 'bujo-sidebar-open');
+  bujoSidebarOpen = false;
 
   if (v==='week' && bujoWeekMode==='kanban') initWeekKanbanSortable();
   if (v==='today') initTodayTaskSortable();
@@ -4695,8 +4696,9 @@ function addNoDateTask(inputEl){
 }
 
 function renderWeekKanban(){
-  const mon=new Date(today); mon.setDate(today.getDate()-((today.getDay()+6)%7));
-  const nextMon=new Date(mon); nextMon.setDate(mon.getDate()+7);
+  // Fenêtre glissante : aujourd'hui + 3 jours suivants (les retards ont leur propre colonne)
+  const mon=new Date(today);
+  const nextMon=new Date(mon); nextMon.setDate(mon.getDate()+4);
   let html = `<div class="wk-kanban">`;
 
   const lateTasks = tasks.filter(t => isLate(t) && (!t.projet || !cfgOn('projet_on'))).sort((a,b)=>a.date.localeCompare(b.date));
@@ -4729,7 +4731,7 @@ function renderWeekKanban(){
     });
   }
 
-  for (let d=0; d<7; d++){
+  for (let d=0; d<4; d++){
     const day = new Date(mon); day.setDate(mon.getDate()+d);
     const ds = `${day.getFullYear()}-${pad(day.getMonth()+1)}-${pad(day.getDate())}`;
     const {lbl} = dayLabel(ds);
