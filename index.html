@@ -1047,6 +1047,7 @@ select.cfilt { cursor: pointer; }
   gap: 10px;
 }
 .swatch-item {
+  cursor: pointer;
   position: relative;
   aspect-ratio: 1;
   border-radius: 10px;
@@ -7239,7 +7240,7 @@ function renderItemsCards(colItems, theme) {
     const html = colItems.map((it) => {
       const idx = items.indexOf(it);
       const hex = (it.url||'').trim() || '#ccc';
-      return `<div class="swatch-item" data-item-idx="${idx}" style="background:${hex}" onclick="openItemMod(${idx},'couleurs')">
+      return `<div class="swatch-item" data-item-idx="${idx}" style="background:${hex}" onclick="copyHexColor(${idx})" title="Cliquer pour copier le code">
         <span class="card-drag-handle" style="left:4px;right:auto" onclick="event.stopPropagation()">&#8942;&#8942;</span>
         <button class="swatch-item-edit" onclick="event.stopPropagation();openItemMod(${idx},'couleurs')">&#9998;</button>
         <div class="swatch-item-overlay">
@@ -7564,6 +7565,41 @@ function deleteCol() {
 }
 
 // ── Modale item ──
+function copyHexColor(idx) {
+  const hex = ((items[idx] && items[idx].url) || '').trim();
+  if (!hex) return;
+  const ok = () => hexCopyToast('Copié : ' + hex);
+  const fallback = () => {
+    try {
+      const ta = document.createElement('textarea');
+      ta.value = hex;
+      ta.style.cssText = 'position:fixed;top:0;left:0;opacity:0';
+      document.body.appendChild(ta);
+      ta.select();
+      const success = document.execCommand('copy');
+      document.body.removeChild(ta);
+      success ? ok() : prompt('Copie manuelle :', hex);
+    } catch (e) { prompt('Copie manuelle :', hex); }
+  };
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(hex).then(ok).catch(fallback);
+  } else {
+    fallback();
+  }
+}
+
+function hexCopyToast(msg) {
+  const old = document.getElementById('hexCopyToast');
+  if (old) old.remove();
+  const t = document.createElement('div');
+  t.id = 'hexCopyToast';
+  t.textContent = msg;
+  t.style.cssText = 'position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#222;color:#fff;padding:9px 18px;border-radius:20px;font-size:13px;z-index:9999;pointer-events:none;transition:opacity .3s;opacity:1';
+  document.body.appendChild(t);
+  setTimeout(() => { t.style.opacity = '0'; }, 1500);
+  setTimeout(() => { t.remove(); }, 1900);
+}
+
 function openItemMod(idx, theme) {
   editItemIdx = idx !== null && idx !== undefined ? idx : null;
   const it = editItemIdx !== null ? items[editItemIdx] : null;
