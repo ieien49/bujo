@@ -8132,6 +8132,7 @@ const collapsedIds = new Set(); // état plié/déplié, persistant entre les re
 
 const NODE_H = 40, NODE_MIN_W = 90, NODE_MAX_W = 260, NODE_PAD_X = 16;
 const LEVEL_GAP_MARGIN = 50, SIB_GAP = 14;
+let colEndByDepth = []; // x de fin de la colonne de cartes, par niveau (sert au tracé des liens)
 
 /* ---------- Grist wiring ---------- */
 
@@ -8508,6 +8509,7 @@ function render(){
     depthX[i] = depthX[i-1] + maxWidthByDepth[i-1] + LEVEL_GAP_MARGIN;
   }
   root.each(d => { d.x = depthX[d.depth]; });
+  colEndByDepth = depthX.map((x, i) => x + maxWidthByDepth[i]);
 
   drawLinks();
   drawNodes();
@@ -8593,8 +8595,9 @@ function drawLinks(){
   const path = d => {
     const sx = d.source.x + nodeWidth(d.source), sy = d.source.y;
     const tx = d.target.x + 2, ty = d.target.y;
-    const mx = (sx + tx) / 2;
-    return `M${sx},${sy}C${mx},${sy} ${mx},${ty} ${tx},${ty}`;
+    const ex = Math.max(sx, colEndByDepth[d.source.depth] ?? sx); // la courbe ne démarre qu'après la colonne
+    const mx = (ex + tx) / 2;
+    return `M${sx},${sy}L${ex},${sy}C${mx},${sy} ${mx},${ty} ${tx},${ty}`;
   };
   const sel = g.select('.links-layer').selectAll('path.link').data(links, d => d.target.data.id);
   sel.exit().remove();
