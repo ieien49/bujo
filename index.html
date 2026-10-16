@@ -1411,14 +1411,25 @@ select.cfilt { cursor: pointer; }
 .item-fiche-meta .item-tag { flex-shrink: 0; white-space: nowrap; }
 .item-fiche { position: relative; }
 .card-drag-handle {
-  position: absolute; top: 8px; right: 8px;
-  opacity: 0; cursor: grab; color: var(--light);
-  font-size: 12px; line-height: 1; padding: 2px 4px;
-  transition: opacity .12s, color .12s;
+  position: absolute; top: 6px; right: 6px; z-index: 3;
+  width: 26px; height: 26px; box-sizing: border-box;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 0;                       /* masque le glyphe ⋮⋮ du HTML, remplacé par la grille de points */
+  background: var(--bg); border: 1px solid var(--border); border-radius: 6px;
+  color: var(--muted); opacity: .5; cursor: grab; touch-action: none;
+  transition: opacity .12s, color .12s, border-color .12s;
+}
+.card-drag-handle::before {
+  content: ''; display: block; width: 10px; height: 15px;
+  background: radial-gradient(circle, currentColor 1.3px, transparent 1.6px) 0 0 / 5px 5px;
 }
 .item-fiche:hover .card-drag-handle,
 .swatch-item:hover .card-drag-handle { opacity: 1; }
-.card-drag-handle:hover { color: var(--accent); }
+.card-drag-handle:hover { color: var(--accent); border-color: var(--accent); }
+.card-drag-handle:active { cursor: grabbing; }
+.swatch-item .card-drag-handle { opacity: 0; }            /* pastilles couleur : poignée au survol seulement */
+.swatch-item:hover .card-drag-handle { opacity: 1; }
+.item-fiche .item-fiche-title { padding-right: 26px; }    /* le titre ne passe plus sous la poignée */
 .item-fiche-url { font-size: 10.5px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .item-fiche-url a { color: inherit; text-decoration: none; }
 .item-fiche-url a:hover { color: var(--accent); text-decoration: underline; }
@@ -1864,10 +1875,6 @@ body.presentation #exitPresentBtn{ display:flex; }
 #page-mindmap .node.is-root .node-label{ font-family:'Fraunces',serif; font-size:16px; font-weight:600; }
 #page-mindmap .toggle-circle{ fill:#fff; stroke:var(--mm-line); stroke-width:1.3px; cursor:pointer; }
 #page-mindmap .toggle-count{ font-family:'Inter',sans-serif; font-size:9.5px; font-weight:600; fill:var(--mm-ink-dim); pointer-events:none; }
-#page-mindmap .detail-btn{ opacity:0; cursor:pointer; transition:opacity .12s; }
-#page-mindmap .node:hover .detail-btn{ opacity:1; }
-#page-mindmap .detail-circle{ fill:#fff; stroke:var(--mm-line); stroke-width:1.3px; }
-#page-mindmap .detail-icon{ font-family:'Inter',sans-serif; font-size:10px; font-weight:700; fill:var(--mm-ink-dim); pointer-events:none; }
 #page-mindmap .link-indicator{ pointer-events:none; }
 #page-mindmap .edit-input{
   font-family:'Inter',sans-serif; font-size:13px; font-weight:500;
@@ -1897,10 +1904,12 @@ body.presentation #exitPresentBtn{ display:flex; }
   box-shadow:0 10px 40px rgba(0,0,0,.16); display:flex; flex-direction:column; gap:10px;
 }
 #page-mindmap .mm-popup-header{ display:flex; justify-content:space-between; align-items:center; }
-#page-mindmap .mm-popup-header span{
+#page-mindmap .mm-popup-header input{
   font-family:'Fraunces',serif; font-weight:600; font-size:15px;
-  overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+  border:none; border-bottom:1px solid transparent; border-radius:0; padding:2px 0; margin-right:8px;
+  overflow:hidden; text-overflow:ellipsis; white-space:nowrap; background:transparent;
 }
+#page-mindmap .mm-popup-header input:hover, #page-mindmap .mm-popup-header input:focus{ border-bottom-color:var(--mm-line); outline:none; }
 #page-mindmap .mm-popup-header button{ border:none; background:none; cursor:pointer; font-size:15px; color:var(--mm-ink-dim); flex:none; }
 #page-mindmap .mm-popup-label{ font-size:10.5px; font-weight:600; color:var(--mm-ink-dim); text-transform:uppercase; letter-spacing:.04em; margin-top:2px; }
 #page-mindmap .mm-popup input, #page-mindmap .mm-popup textarea{
@@ -2623,7 +2632,7 @@ select.cour-input-field { -webkit-appearance: menulist; appearance: menulist; }
   <div id="mmPopupOv" class="mm-popup-ov" onclick="if(event.target===this) closeDetailPopup()">
     <div class="mm-popup">
       <div class="mm-popup-header">
-        <span id="panelNodeLabel"></span>
+        <input id="panelNodeLabel" type="text" placeholder="Titre du nœud">
         <button id="closePanelBtn">✕</button>
       </div>
       <label class="mm-popup-label">Lien externe</label>
@@ -8132,6 +8141,7 @@ const collapsedIds = new Set(); // état plié/déplié, persistant entre les re
 
 const NODE_H = 40, NODE_MIN_W = 90, NODE_MAX_W = 260, NODE_PAD_X = 16;
 const LEVEL_GAP_MARGIN = 50, SIB_GAP = 14;
+const CLICK_DELAY = 300; // fenêtre double-clic = délai avant plier/déplier au simple clic
 let colEndByDepth = []; // x de fin de la colonne de cartes, par niveau (sert au tracé des liens)
 
 /* ---------- Grist wiring ---------- */
@@ -8632,9 +8642,6 @@ function drawNodes(){
   enter.append('g').attr('class', 'toggle-group').style('display', 'none')
     .call(tg => { tg.append('circle').attr('class', 'toggle-circle').attr('r', 8);
                   tg.append('text').attr('class', 'toggle-count').attr('text-anchor','middle').attr('dy', 3); });
-  enter.append('g').attr('class', 'detail-btn')
-    .call(db => { db.append('circle').attr('class', 'detail-circle').attr('r', 7);
-                  db.append('text').attr('class', 'detail-icon').attr('text-anchor','middle').attr('dy', 3).text('i'); });
 
   const merged = enter.merge(sel);
 
@@ -8675,13 +8682,9 @@ function drawNodes(){
     .on('click', (ev, d) => { ev.stopPropagation(); toggleCollapse(d.data); })
     .select('text.toggle-count').text(d => d.data.collapsedView ? d.data.children.length : '−');
 
-  merged.select('g.detail-btn')
-    .attr('transform', d => `translate(13,13)`)
-    .on('click', (ev, d) => { ev.stopPropagation(); openDetailPopup(d.data); });
-
   merged.call(d3.drag()
     .clickDistance(6)
-    .filter(ev => !ev.target.closest('.toggle-group') && !ev.target.closest('.detail-btn'))
+    .filter(ev => !ev.target.closest('.toggle-group'))
     .on('start', dragStarted)
     .on('drag', dragged)
     .on('end', dragEnded));
@@ -8744,18 +8747,23 @@ async function dragEnded(ev, d){
 
   if (!d.parent || presentationMode || !d._dragMoved){   // ← racine toujours cliquable/éditable, jamais déplaçable
     const now = Date.now();
-    const isDoubleClick = window._lastClickId === d.data.id && (now - (window._lastClickTime||0)) < 400;
+    const isDoubleClick = window._lastClickId === d.data.id && (now - (window._lastClickTime||0)) < CLICK_DELAY;
     window._lastClickId = d.data.id;
     window._lastClickTime = now;
 
     setSelectedNode(d.data.id);
-    if (isDoubleClick && !presentationMode){   // ← ajout du garde-fou
+    clearTimeout(window._clickFoldTimer);
+    if (isDoubleClick && !presentationMode){   // double clic : ouvre la modale (titre, lien, notes)
       window._lastClickId = null;
       render();
-      const target = root.descendants().find(n => n.data.id === d.data.id);
-      if (target) startEdit(target);
+      openDetailPopup(d.data);
     } else {
       render();
+      // simple clic : plier/déplier, différé pour laisser une chance au double clic
+      // (hors racine et hors mode présentation)
+      if (d.parent && !presentationMode && d.data.children && d.data.children.length){
+        window._clickFoldTimer = setTimeout(() => toggleCollapse(d.data), CLICK_DELAY);
+      }
     }
     return;
   }
@@ -8891,6 +8899,8 @@ async function onKeyDown(ev){
 
 async function addNode(parentId){
   if (offlineGuard()) return;
+  clearTimeout(window._clickFoldTimer);
+  collapsedIds.delete(parentId); // sinon le nouvel enfant serait créé caché
   const siblings = noeuds.filter(n => n.ParentId === parentId);
   const ordre = siblings.length ? Math.max(...siblings.map(s => s.Ordre||0)) + 1 : 0;
   const res = await grist.docApi.applyUserActions([
@@ -8925,7 +8935,7 @@ let detailPopupNodeId = null;
 function openDetailPopup(nodeData){
   detailPopupNodeId = nodeData.id;
   document.getElementById('mmPopupOv').classList.add('open');
-  document.getElementById('panelNodeLabel').textContent = nodeData.Label || '(sans titre)';
+  document.getElementById('panelNodeLabel').value = nodeData.Label || '';
   document.getElementById('panelUrlInput').value = nodeData.Url || '';
   document.getElementById('panelNotesInput').value = nodeData.Notes || '';
 }
@@ -8947,12 +8957,14 @@ function schedulePanelSave(){
     if (!idAtEdit) return;
     const url = document.getElementById('panelUrlInput').value.trim();
     const notes = document.getElementById('panelNotesInput').value;
+    const label = document.getElementById('panelNodeLabel').value.trim();
     await OfflineSync.applyUserActions([
-      ['UpdateRecord', TABLE_NOEUDS, idAtEdit, { Url: url, Notes: notes }]
+      ['UpdateRecord', TABLE_NOEUDS, idAtEdit, label ? { Label: label, Url: url, Notes: notes } : { Url: url, Notes: notes }]
     ]);
     await loadNoeuds();
   }, 500);
 }
+document.getElementById('panelNodeLabel').addEventListener('input', schedulePanelSave);
 document.getElementById('panelUrlInput').addEventListener('input', schedulePanelSave);
 document.getElementById('panelNotesInput').addEventListener('input', schedulePanelSave);
 
